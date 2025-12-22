@@ -43,12 +43,9 @@
         #enemy-sprite { font-size: 150px; margin: 20px 0; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
 
         .narrator-img {
-            width: 300px;
-            height: 300px; 
-            object-fit: contain;
+            width: 300px; height: 300px; object-fit: contain;
             animation: narrator-float 2s infinite alternate ease-in-out;
-            filter: drop-shadow(0 0 30px var(--gold));
-            border-radius: 20px;
+            filter: drop-shadow(0 0 30px var(--gold)); border-radius: 20px;
         }
         @keyframes narrator-float { 
             from { transform: translateY(0) rotate(-1deg); } 
@@ -72,7 +69,7 @@
         }
         button:hover { background: #5d4037; }
         button:active { background: var(--gold); color: black; }
-        button:disabled { opacity: 0.2; }
+        button:disabled { opacity: 0.5; cursor: default; }
 
         .overlay-menu { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -101,6 +98,7 @@
             <div>Gold: $<span id="v-gold">0</span></div>
             <div>Ammo: <span id="v-ammo">0</span></div>
             <div>Level: <span id="v-lvl">1</span></div>
+            <div>SP: <span id="v-sp">0</span></div>
             <div id="wpn-name" style="color:var(--gold)">Colt .45</div>
             <div id="pet-name" style="color:var(--ghost); font-size:14px;">No Companion</div>
         </div>
@@ -132,14 +130,15 @@
         <div id="action-buttons" class="controls"></div>
     </div>
 
-<div id="skill-menu" class="overlay-menu">
-        <h2 style="text-align:center; color:var(--xp)">Skill (SP: <span id="v-sp-menu">0</span>)</h2>
+    <div id="skill-menu" class="overlay-menu">
+        <h2 style="text-align:center; color:var(--xp)">SKILLS (SP: <span id="v-sp-menu">0</span>)</h2>
         <div class="controls">
             <button id="btn-doubleShot" onclick="learn('doubleShot')">Double Shot (1 SP)</button>
             <button id="btn-ironWill" onclick="learn('ironWill')">Iron Will (1 SP)</button>
             <button onclick="closeUI()" style="margin-top:20px; background:#222">BACK</button>
         </div>
     </div>
+
     <div id="stable-menu" class="overlay-menu">
         <h2 style="text-align:center; color:var(--ghost)">STABLES</h2>
         <div class="controls">
@@ -159,7 +158,6 @@
 <script>
     const NARRATOR_IMAGE_URL = "file:///Users/vadim/Downloads/Narrator.jpg";
 
-    // Начальное состояние
     const initialState = {
         gold: 150, ammo: 30, sanity: 0, level: 1, xp: 0, xpNext: 100, sp: 0,
         baseAtk: 30, inventory: [], enemy: null, isNight: false,
@@ -174,15 +172,12 @@
         el.innerHTML = `<div style="color:${color}">> ${msg}</div>` + el.innerHTML;
     }
 
-    // СОХРАНЕНИЕ В БАЗУ БРАУЗЕРА
     function save() {
-        // Убираем текущего врага из сохранения, чтобы не было багов при загрузке
         const saveState = {...state, enemy: null, isNight: false}; 
         localStorage.setItem('GHOST_HUNTER_DB', JSON.stringify(saveState));
         log("DATABASE UPDATED: Progress locked in.", "var(--xp)");
     }
 
-    // ЗАГРУЗКА ИЗ БАЗЫ
     function load() {
         const savedData = localStorage.getItem('GHOST_HUNTER_DB');
         if(savedData) {
@@ -194,7 +189,6 @@
         }
     }
 
-    // Покупаем питомца
     function buyPet(t) {
         if(state.gold >= 150) {
             state.gold -= 150;
@@ -215,14 +209,19 @@
     function updateDisplay() {
         if(state.gameEnded) return;
 
-        // 1. Общие статы
+        // Элементы
+        const dsBtn = document.getElementById('btn-doubleShot');
+        const iwBtn = document.getElementById('btn-ironWill');
+        const spMain = document.getElementById('v-sp');
+        const spMenu = document.getElementById('v-sp-menu');
+
+        // Общие статы
         document.getElementById('v-gold').innerText = state.gold;
         document.getElementById('v-ammo').innerText = state.ammo;
         document.getElementById('v-lvl').innerText = state.level;
-        document.getElementById('v-sp').innerText = state.sp; // SP в главном окне
-        if (document.getElementById('v-sp-menu')) {
-            document.getElementById('v-sp-menu').innerText = state.sp; // SP в меню навыков
-        }
+        
+        if(spMain) spMain.innerText = state.sp;
+        if(spMenu) spMenu.innerText = state.sp;
 
         document.getElementById('wpn-name').innerText = state.hasCursedGun ? "💀 SOUL EATER" : "COLT .45";
         document.getElementById('pet-name').innerText = state.companion ? `PET: ${state.companion.toUpperCase()}` : "NO COMPANION";
@@ -230,7 +229,6 @@
         document.getElementById('sanity-fill').style.width = state.sanity + '%';
         document.getElementById('xp-fill').style.width = (state.xp / state.xpNext * 100) + '%';
         
-
         const inv = document.getElementById('inventory-ui');
         inv.innerHTML = '';
         state.inventory.forEach((item, i) => {
@@ -254,18 +252,24 @@
             ez.style.display = 'none';
         }
 
-        const dsBtn = document.getElementById('btn-doubleShot');
-        const iwBtn = document.getElementById('btn-ironWill');
-        
-        if(dsBtn && state.skills.doubleShot) {
-            dsBtn.innerText = "Double Shot (LEARNED)";
-            dsBtn.disabled = true;
-            dsBtn.style.opacity = "0.5";
+        // Обновление кнопок навыков
+        if(dsBtn) {
+            if(state.skills.doubleShot) {
+                dsBtn.innerText = "Double Shot (LEARNED)";
+                dsBtn.disabled = true;
+            } else {
+                dsBtn.innerText = "Double Shot (1 SP)";
+                dsBtn.disabled = false;
+            }
         }
-        if(iwBtn && state.skills.ironWill) {
-            iwBtn.innerText = "Iron Will (LEARNED)";
-            iwBtn.disabled = true;
-            iwBtn.style.opacity = "0.5";
+        if(iwBtn) {
+            if(state.skills.ironWill) {
+                iwBtn.innerText = "Iron Will (LEARNED)";
+                iwBtn.disabled = true;
+            } else {
+                iwBtn.innerText = "Iron Will (1 SP)";
+                iwBtn.disabled = false;
+            }
         }
 
         renderButtons();
@@ -285,7 +289,6 @@
                  <button onclick="shop('whiskey')">🥃 BUY WHISKEY ($40)</button>
                  <button onclick="document.getElementById('stable-menu').style.display='block'">🐕 STABLES</button>
                  <button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
-            // ЦЕНА ТУТ
             if(state.level >= 7 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 SOUL EATER ($750)</button>`;
             h += `<button onclick="startHunt()" style="background:#333; color:var(--ghost)">🌙 START HUNT</button>`;
         } else {
@@ -356,7 +359,6 @@
             else { log("Not enough ammo!", "red"); return updateDisplay(); }
         } 
         else if(t === 'cursed') {
-            // ИСПРАВЛЕННЫЙ РАСХОД: 5 патронов
             if(state.ammo >= 5) {
                 state.ammo -= 5;
                 state.sanity += 10; 
@@ -391,24 +393,17 @@
         updateDisplay();
     }
 
-function enemyTurn() {
+    function enemyTurn() {
         document.getElementById('game-container').classList.add('shake');
         setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 200);
-        
         let dmg = 15 + (state.level * 2);
         if(state.skills.ironWill) dmg *= 0.6;
         state.sanity += Math.floor(dmg);
 
-        // ПРОВЕРКА СМЕРТИ
         if(state.sanity >= 100) {
             state.gameEnded = true;
-            
-            // ОБНУЛЕНИЕ И СОХРАНЕНИЕ СМЕРТИ
-            localStorage.removeItem('GHOST_HUNTER_DB'); // Удаляем базу данных
-            
+            localStorage.removeItem('GHOST_HUNTER_DB'); 
             alert("The darkness took you. YOUR PROGRESS HAS BEEN WIPED.");
-            
-            // Полная перезагрузка страницы для обнуления
             location.reload(); 
         }
     }
@@ -417,17 +412,20 @@ function enemyTurn() {
         if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 20; }
         if(t === 'tnt' && state.gold >= 50) { state.gold -= 50; state.inventory.push('tnt'); }
         if(t === 'whiskey' && state.gold >= 40) { state.gold -= 40; state.inventory.push('whiskey'); }
-        // ЦЕНА ТУТ
         if(t === 'cursed' && state.gold >= 750) { state.gold -= 750; state.hasCursedGun = true; }
         updateDisplay();
     }
 
     function learn(s) {
-        if(state.sp >= 1) {
+        if(state.sp >= 1 && !state.skills[s]) {
             state.sp--;
             state.skills[s] = true;
-            log(`Learned ${s}!`);
+            log(`STRENGTH INCREASED: Learned ${s}!`, "var(--xp)");
             updateDisplay();
+        } else if(state.skills[s]) {
+            log("You already know this skill.");
+        } else {
+            log("Not enough SP!");
         }
     }
 
