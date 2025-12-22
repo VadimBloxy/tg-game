@@ -319,14 +319,14 @@ document.addEventListener('keydown', (e) => {
 });
 
 function finishHacking() {
-    progressFill.style.background = "#ff3333";
-    output.style.color = "#ff3333";
+    progressFill.style.background = "#ff3333"; // Полоска краснеет
+    output.style.color = "#ff3333"; // Текст краснеет
     output.textContent += "\n\n[!!!] ACCESS GRANTED. EXFILTRATING DATA...";
     
-    setTimeout(() => {
-        // Здесь сработает триггер для Part 3
-        if (window.startFinalPhase) window.startFinalPhase();
-    }, 2000);
+    // ПРОВЕРЬ ЭТУ СТРОЧКУ:
+    if (typeof window.startFinalPhase === 'function') {
+        window.startFinalPhase(); // Запуск появления окон из Part 3
+    }
 }
 
 console.log("PART 2: Hacking Engine Online. Systems Ready.");
