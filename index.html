@@ -132,15 +132,14 @@
         <div id="action-buttons" class="controls"></div>
     </div>
 
-    <div id="skill-menu" class="overlay-menu">
-        <h2 style="text-align:center; color:var(--xp)">TRAINING (SP: <span id="v-sp">0</span>)</h2>
+<div id="skill-menu" class="overlay-menu">
+        <h2 style="text-align:center; color:var(--xp)">Skill (SP: <span id="v-sp-menu">0</span>)</h2>
         <div class="controls">
-            <button onclick="learn('doubleShot')">Double Shot (1 SP)</button>
-            <button onclick="learn('ironWill')">Iron Will (1 SP)</button>
-            <button onclick="closeUI()">BACK</button>
+            <button id="btn-doubleShot" onclick="learn('doubleShot')">Double Shot (1 SP)</button>
+            <button id="btn-ironWill" onclick="learn('ironWill')">Iron Will (1 SP)</button>
+            <button onclick="closeUI()" style="margin-top:20px; background:#222">BACK</button>
         </div>
     </div>
-
     <div id="stable-menu" class="overlay-menu">
         <h2 style="text-align:center; color:var(--ghost)">STABLES</h2>
         <div class="controls">
@@ -215,16 +214,23 @@
 
     function updateDisplay() {
         if(state.gameEnded) return;
+
+        // 1. Общие статы
         document.getElementById('v-gold').innerText = state.gold;
         document.getElementById('v-ammo').innerText = state.ammo;
         document.getElementById('v-lvl').innerText = state.level;
-        document.getElementById('v-sp').innerText = state.sp;
+        document.getElementById('v-sp').innerText = state.sp; // SP в главном окне
+        if (document.getElementById('v-sp-menu')) {
+            document.getElementById('v-sp-menu').innerText = state.sp; // SP в меню навыков
+        }
+
         document.getElementById('wpn-name').innerText = state.hasCursedGun ? "💀 SOUL EATER" : "COLT .45";
         document.getElementById('pet-name').innerText = state.companion ? `PET: ${state.companion.toUpperCase()}` : "NO COMPANION";
         
         document.getElementById('sanity-fill').style.width = state.sanity + '%';
         document.getElementById('xp-fill').style.width = (state.xp / state.xpNext * 100) + '%';
         
+
         const inv = document.getElementById('inventory-ui');
         inv.innerHTML = '';
         state.inventory.forEach((item, i) => {
@@ -238,20 +244,30 @@
 
         const ez = document.getElementById('enemy-zone');
         const spriteCont = document.getElementById('enemy-sprite');
-        
         if (state.enemy) {
             ez.style.display = 'flex';
             document.getElementById('enemy-name').innerText = state.enemy.name;
             document.getElementById('enemy-hp-fill').style.width = (state.enemy.hp / state.enemy.maxHp * 100) + '%';
-            
-            if(state.enemy.name === "NARRATOR") {
-                spriteCont.innerHTML = `<img src="${NARRATOR_IMAGE_URL}" class="narrator-img" alt="Narrator">`;
-            } else {
-                spriteCont.innerHTML = state.enemy.icon;
-            }
+            spriteCont.innerHTML = state.enemy.name === "NARRATOR" ? 
+                `<img src="${NARRATOR_IMAGE_URL}" class="narrator-img">` : state.enemy.icon;
         } else {
             ez.style.display = 'none';
         }
+
+        const dsBtn = document.getElementById('btn-doubleShot');
+        const iwBtn = document.getElementById('btn-ironWill');
+        
+        if(dsBtn && state.skills.doubleShot) {
+            dsBtn.innerText = "Double Shot (LEARNED)";
+            dsBtn.disabled = true;
+            dsBtn.style.opacity = "0.5";
+        }
+        if(iwBtn && state.skills.ironWill) {
+            iwBtn.innerText = "Iron Will (LEARNED)";
+            iwBtn.disabled = true;
+            iwBtn.style.opacity = "0.5";
+        }
+
         renderButtons();
     }
 
