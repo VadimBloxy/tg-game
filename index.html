@@ -2,16 +2,14 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Cowboy Legend: Unique Weapons</title>
+    <title>Cowboy Legend: Pro Inventory</title>
     <style>
         :root { --sand: #e2a76f; --sky: #87ceeb; --canyon: #a0522d; }
         body { margin: 0; background: #111; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; user-select: none; }
         
-        /* Сцена */
+        /* Сцена и Фон */
         #game-container { position: relative; width: 100vw; height: 100vh; background: var(--sky); display: none; overflow: hidden; }
         #ground { position: absolute; bottom: 0; width: 100%; height: 150px; background: var(--sand); z-index: 5; border-top: 5px solid #c48a57; }
-        
-        /* Фон */
         .canyon { position: absolute; bottom: 150px; width: 400px; height: 250px; background: var(--canyon); border-radius: 40% 40% 0 0; opacity: 0.6; }
         .cactus { position: absolute; bottom: 150px; width: 15px; height: 50px; background: #2d5a27; border-radius: 10px; z-index: 6; }
 
@@ -20,84 +18,79 @@
         .hat { position: absolute; top: 0; width: 44px; height: 12px; background: #4e342e; border-radius: 5px; left: 3px; border-bottom: 4px solid #2d1b18; }
         .head { position: absolute; top: 8px; width: 20px; height: 20px; background: #ffcc99; left: 15px; border-radius: 3px; }
         .body { position: absolute; top: 25px; width: 30px; height: 30px; background: #aa7744; left: 10px; border-radius: 4px; }
-        
-        /* Динамические пистолеты */
-        .gun { 
-            position: absolute; top: 35px; width: 28px; height: 12px; 
-            border-radius: 2px; transition: 0.3s;
-            box-shadow: 0 0 5px rgba(0,0,0,0.5);
-        }
-        .gun-left { left: -18px; }
-        .gun-right { right: -18px; }
+        .gun { position: absolute; top: 35px; width: 28px; height: 12px; border-radius: 2px; transition: 0.3s; }
+        .gun-left { left: -18px; } .gun-right { right: -18px; }
         
         @keyframes walk { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         .walking { animation: walk 0.4s infinite; }
 
-        /* Эффекты пуль */
-        .bullet { position: absolute; width: 25px; height: 8px; border-radius: 4px; z-index: 15; box-shadow: 0 0 10px inherit; }
-
-        /* Дроны */
+        /* Пули и Дроны */
+        .bullet { position: absolute; width: 25px; height: 8px; border-radius: 4px; z-index: 15; }
         .drone { position: absolute; width: 50px; height: 30px; background: #222; border-radius: 12px; z-index: 8; border: 2px solid #39ff14; box-shadow: 0 0 15px #39ff14; }
 
-        /* Меню и GUI */
+        /* Интерфейс */
         #menu, #inventory-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
         .btn { padding: 12px 30px; background: #8d6e63; border: none; border-bottom: 4px solid #4e342e; color: white; cursor: pointer; font-size: 18px; margin: 10px; border-radius: 8px; font-weight: bold; }
         .btn:hover { background: #a1887f; transform: scale(1.05); }
 
-        #loot-gui { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 4px solid gold; padding: 40px; z-index: 110; display: none; border-radius: 20px; text-align: center; box-shadow: 0 0 50px rgba(255,215,0,0.3); }
-        #progress-bar { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); width: 400px; height: 15px; background: rgba(0,0,0,0.4); border: 2px solid #fff; border-radius: 10px; overflow: hidden; z-index: 50; }
+        #loot-gui { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 4px solid gold; padding: 40px; z-index: 110; display: none; border-radius: 20px; text-align: center; }
+        #progress-bar { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); width: 400px; height: 15px; background: rgba(0,0,0,0.4); border: 2px solid #fff; border-radius: 10px; z-index: 50; }
         #progress-fill { width: 0%; height: 100%; background: #ffeb3b; }
+
+        /* Стили инвентаря */
+        .inv-card { background: #222; border: 2px solid; padding: 15px; border-radius: 12px; min-width: 160px; text-align: center; transition: 0.2s; }
+        .inv-card:hover { transform: translateY(-5px); background: #333; }
+        .stat-text { font-size: 13px; color: #bbb; margin: 5px 0; }
+        .active-label { color: gold; font-size: 11px; text-transform: uppercase; font-weight: bold; display: block; margin-top: 5px; }
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h1 style="color: #ff9800; font-size: 60px; text-shadow: 4px 4px #000;">GOLDEN COWBOY</h1>
-        <button class="btn" onclick="startGame()">В ПУТЬ!</button>
-        <button class="btn" onclick="toggleInv()">АРСЕНАЛ</button>
+        <h1 style="color: gold; font-size: 50px; text-shadow: 3px 3px #000;">GUNS & CANYONS</h1>
+        <button class="btn" onclick="startGame()">НАЧАТЬ УРОВЕНЬ</button>
+        <button class="btn" onclick="toggleInv()">АРСЕНАЛ (ИНВЕНТАРЬ)</button>
     </div>
 
     <div id="inventory-screen" style="display: none;">
-        <h2>ВАШИ ПУШКИ</h2>
+        <h2 style="color: gold;">ТВОЙ АРСЕНАЛ</h2>
         <div id="items-list" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;"></div>
-        <button class="btn" style="margin-top:30px" onclick="toggleInv()">ЗАКРЫТЬ</button>
+        <button class="btn" style="margin-top:30px" onclick="toggleInv()">ВЕРНУТЬСЯ</button>
     </div>
 
     <div id="game-container">
         <div id="progress-bar"><div id="progress-fill"></div></div>
         <div id="ground"></div>
         <div id="player" class="walking">
-            <div class="hat"></div>
-            <div class="head"></div>
-            <div class="body"></div>
+            <div class="hat"></div><div class="head"></div><div class="body"></div>
             <div id="g-left" class="gun gun-left"></div>
             <div id="g-right" class="gun gun-right"></div>
         </div>
         <div id="loot-gui">
             <h1 id="loot-name"></h1>
-            <div id="loot-icon" style="width:100px; height:40px; margin:20px auto; border-radius:5px;"></div>
+            <div id="loot-icon" style="width:100px; height:35px; margin:20px auto; border-radius:5px;"></div>
             <p id="loot-stats"></p>
-            <button class="btn" id="take-btn">ЭКИПИРОВАТЬ</button>
+            <p id="loot-msg" style="color: #ff5555; font-weight: bold;"></p>
+            <button class="btn" id="take-btn">ВЗЯТЬ</button>
+            <button class="btn" onclick="closeLevel()" id="close-loot-btn" style="display:none">ЗАКРЫТЬ</button>
         </div>
     </div>
 
 <script>
     const state = {
-        running: false, distance: 0, finish: 2500,
-        inv: [{name: "Ржавые пестики", dmg: 10, cd: 400, color: '#555', glow: 'transparent'}],
+        running: false, distance: 0, finish: 2000,
+        inv: [{name: "Ржавые пестики", dmg: 10, cd: 450, color: '#555', glow: 'transparent'}],
         eq: 0, lastShot: 0
     };
 
     let drones = [], bullets = [], decors = [];
 
     function updateGunVisuals() {
-        const weapon = state.inv[state.eq];
-        const gLeft = document.getElementById('g-left');
-        const gRight = document.getElementById('g-right');
-        [gLeft, gRight].forEach(g => {
-            g.style.backgroundColor = weapon.color;
-            g.style.boxShadow = `0 0 15px ${weapon.glow}`;
-            g.style.borderRight = `4px solid ${weapon.color === 'gold' ? '#aa8800' : '#222'}`;
+        const w = state.inv[state.eq];
+        const gL = document.getElementById('g-left'), gR = document.getElementById('g-right');
+        [gL, gR].forEach(g => {
+            g.style.backgroundColor = w.color;
+            g.style.boxShadow = `0 0 15px ${w.glow}`;
         });
     }
 
@@ -106,7 +99,7 @@
         document.getElementById('game-container').style.display = 'block';
         state.distance = 0; state.running = true;
         updateGunVisuals();
-        initDecors();
+        if(decors.length === 0) initDecors();
         spawnDrone();
         animate();
     }
@@ -119,68 +112,47 @@
             let x = Math.random() * window.innerWidth;
             el.style.left = x + 'px';
             document.getElementById('game-container').appendChild(el);
-            decors.push({ el, x, speed: isCactus ? 5 : 2 });
+            decors.push({ el, x, speed: isCactus ? 6 : 2 });
         }
     }
 
     function spawnDrone() {
         if(!state.running) return;
-        drones.push({ 
-            x: window.innerWidth, baseY: Math.random() * 300 + 100, 
-            y: 0, offset: Math.random() * 100, el: null 
-        });
+        drones.push({ x: window.innerWidth, baseY: Math.random() * 300 + 100, offset: Math.random() * 100, el: null });
         setTimeout(spawnDrone, 1800);
     }
 
     window.onclick = () => {
-        const weapon = state.inv[state.eq];
-        if(state.running && Date.now() - state.lastShot > weapon.cd) {
-            shoot(weapon);
+        const w = state.inv[state.eq];
+        if(state.running && Date.now() - state.lastShot > w.cd) {
+            const b = document.createElement('div');
+            b.className = 'bullet'; b.style.left = '130px'; b.style.bottom = '180px';
+            b.style.backgroundColor = w.color; b.style.boxShadow = `0 0 15px ${w.glow}`;
+            document.getElementById('game-container').appendChild(b);
+            bullets.push({ el: b, x: 130, y: window.innerHeight - 180 });
             state.lastShot = Date.now();
         }
     };
 
-    function shoot(w) {
-        const b = document.createElement('div');
-        b.className = 'bullet';
-        b.style.left = '130px';
-        b.style.bottom = '180px';
-        b.style.backgroundColor = w.color;
-        b.style.boxShadow = `0 0 15px ${w.glow}`;
-        document.getElementById('game-container').appendChild(b);
-        bullets.push({ el: b, x: 130, y: window.innerHeight - 180 });
-    }
-
     function animate() {
         if(!state.running) return;
-        state.distance += 5;
+        state.distance += 6;
         document.getElementById('progress-fill').style.width = (state.distance / state.finish * 100) + '%';
 
-        decors.forEach(d => {
-            d.x -= d.speed;
-            if(d.x < -400) d.x = window.innerWidth;
-            d.el.style.left = d.x + 'px';
-        });
+        decors.forEach(d => { d.x -= d.speed; if(d.x < -400) d.x = window.innerWidth; d.el.style.left = d.x + 'px'; });
 
         drones.forEach((d, i) => {
-            if(!d.el) {
-                d.el = document.createElement('div'); d.el.className = 'drone';
-                document.getElementById('game-container').appendChild(d.el);
-            }
-            d.x -= 7;
-            d.y = d.baseY + Math.sin(Date.now() / 250 + d.offset) * 20;
-            d.el.style.left = d.x + 'px';
-            d.el.style.top = d.y + 'px';
+            if(!d.el) { d.el = document.createElement('div'); d.el.className = 'drone'; document.getElementById('game-container').appendChild(d.el); }
+            d.x -= 8; d.y = d.baseY + Math.sin(Date.now() / 250 + d.offset) * 20;
+            d.el.style.left = d.x + 'px'; d.el.style.top = d.y + 'px';
             if(d.x < -100) { d.el.remove(); drones.splice(i, 1); }
         });
 
         bullets.forEach((b, i) => {
-            b.x += 20;
-            b.el.style.left = b.x + 'px';
+            b.x += 25; b.el.style.left = b.x + 'px';
             drones.forEach((d, di) => {
                 if(b.x > d.x && b.x < d.x + 50 && (window.innerHeight - b.y) > d.y && (window.innerHeight - b.y) < d.y + 30) {
-                    d.el.remove(); drones.splice(di, 1);
-                    b.el.remove(); bullets.splice(i, 1);
+                    d.el.remove(); drones.splice(di, 1); b.el.remove(); bullets.splice(i, 1);
                 }
             });
             if(b.x > window.innerWidth) { b.el.remove(); bullets.splice(i, 1); }
@@ -194,27 +166,41 @@
         state.running = false;
         const pool = [
             { name: "Стальной Магнум", dmg: 40, cd: 600, color: '#bdc3c7', glow: 'white' },
-            { name: "Плазменный Бластер", dmg: 20, cd: 150, color: '#00d2ff', glow: '#00d2ff' },
-            { name: "ЗОЛОТОЙ СМИТ", dmg: 150, cd: 1000, color: 'gold', glow: 'gold' }
+            { name: "Плазменный Бластер", dmg: 20, cd: 200, color: '#00d2ff', glow: '#00d2ff' },
+            { name: "ЗОЛОТОЙ СМИТ", dmg: 120, cd: 900, color: 'gold', glow: 'gold' }
         ];
         const item = pool[Math.floor(Math.random() * pool.length)];
+        const isDuplicate = state.inv.some(existing => existing.name === item.name);
+
         const gui = document.getElementById('loot-gui');
+        const takeBtn = document.getElementById('take-btn');
+        const closeBtn = document.getElementById('close-loot-btn');
+        
         document.getElementById('loot-name').innerText = item.name;
         document.getElementById('loot-name').style.color = item.color;
         document.getElementById('loot-icon').style.backgroundColor = item.color;
-        document.getElementById('loot-icon').style.boxShadow = `0 0 20px ${item.glow}`;
-        document.getElementById('loot-stats').innerText = `Урон: ${item.dmg} | Перезарядка: ${item.cd}мс`;
+        document.getElementById('loot-stats').innerHTML = `Урон: ${item.dmg} <br> КД: ${item.cd}мс`;
+        
         gui.style.display = 'block';
 
-        document.getElementById('take-btn').onclick = () => {
-            state.inv.push(item);
-            state.eq = state.inv.length - 1;
-            gui.style.display = 'none';
-            closeLevel();
-        };
+        if(isDuplicate) {
+            document.getElementById('loot-msg').innerText = "У ВАС УЖЕ ЕСТЬ ЭТА ПУШКА!";
+            takeBtn.style.display = 'none';
+            closeBtn.style.display = 'inline-block';
+        } else {
+            document.getElementById('loot-msg').innerText = "";
+            takeBtn.style.display = 'inline-block';
+            closeBtn.style.display = 'none';
+            takeBtn.onclick = () => {
+                state.inv.push(item);
+                state.eq = state.inv.length - 1;
+                closeLevel();
+            };
+        }
     }
 
     function closeLevel() {
+        document.getElementById('loot-gui').style.display = 'none';
         document.getElementById('game-container').style.display = 'none';
         document.getElementById('menu').style.display = 'flex';
         drones.forEach(d => d.el && d.el.remove()); drones = [];
@@ -226,9 +212,12 @@
         if(sc.style.display === 'none') {
             sc.style.display = 'flex';
             document.getElementById('items-list').innerHTML = state.inv.map((it, i) => `
-                <div style="background:#222; border:2px solid ${it.color}; padding:15px; border-radius:12px; min-width:120px; text-align:center;">
-                    <div style="color:${it.color}; font-weight:bold">${it.name}</div>
-                    <button class="btn" style="padding:5px 10px; font-size:12px;" onclick="state.eq=${i}; alert('Экипировано!')">ВЗЯТЬ</button>
+                <div class="inv-card" style="border-color: ${it.color}">
+                    <div style="color:${it.color}; font-weight:bold; font-size: 18px;">${it.name}</div>
+                    <div class="stat-text">УРОН: ${it.dmg}</div>
+                    <div class="stat-text">КД: ${it.cd}мс</div>
+                    ${state.eq === i ? '<span class="active-label">В РУКАХ</span>' : 
+                    `<button class="btn" style="padding:5px 10px; font-size:12px;" onclick="state.eq=${i}; toggleInv();">ВЗЯТЬ</button>`}
                 </div>
             `).join('');
         } else { sc.style.display = 'none'; }
