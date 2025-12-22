@@ -2,58 +2,54 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Cowboy Legend: Part 1 - Interface & Stats</title>
+    <title>Cowboy Legend: Part 2 - Motion & Stats</title>
     <style>
         :root { --sand: #e2a76f; --sky: #87ceeb; --canyon: #a0522d; }
         body { margin: 0; background: #111; font-family: 'Verdana', sans-serif; overflow: hidden; color: white; user-select: none; }
         
-        /* Слой игрового мира */
+        /* Фон игры */
         #world { position: fixed; inset: 0; background: var(--sky); z-index: 1; }
-        #ground { position: absolute; bottom: 0; width: 100%; height: 150px; background: var(--sand); border-top: 5px solid #c48a57; z-index: 2; }
+        #ground { position: absolute; bottom: 0; width: 100%; height: 150px; background: var(--sand); border-top: 5px solid #c48a57; z-index: 5; }
         
-        /* Декорации без багов наложения */
+        /* Декорации */
         .decor { position: absolute; bottom: 150px; pointer-events: none; }
         .canyon { width: 500px; height: 300px; background: var(--canyon); border-radius: 50% 50% 0 0; opacity: 0.6; filter: blur(2px); }
-        .cactus { width: 20px; height: 60px; background: #2d5a27; border-radius: 10px; z-index: 3; }
+        .cactus { width: 20px; height: 60px; background: #2d5a27; border-radius: 10px; z-index: 6; }
 
         /* Ковбой */
-        #cowboy { position: absolute; bottom: 140px; left: 80px; width: 50px; height: 60px; z-index: 10; transition: transform 0.2s; }
+        #cowboy { position: absolute; bottom: 140px; left: 80px; width: 50px; height: 60px; z-index: 10; }
         .hat { position: absolute; top: 0; width: 44px; height: 12px; background: #4e342e; border-radius: 5px; left: 3px; }
         .head { position: absolute; top: 8px; width: 20px; height: 20px; background: #ffcc99; left: 15px; border-radius: 3px; }
         .body { position: absolute; top: 25px; width: 30px; height: 30px; background: #aa7744; left: 10px; border-radius: 4px; }
-        .gun { position: absolute; top: 35px; width: 28px; height: 12px; border-radius: 2px; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        .gun { position: absolute; top: 35px; width: 28px; height: 12px; border-radius: 2px; }
         .gun-l { left: -18px; } .gun-r { right: -18px; }
         
         @keyframes menuJump { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-25px); } }
         .menu-animation { animation: menuJump 0.8s infinite ease-in-out; }
 
-        /* Интерфейсы - Исправленный Блюр (без полос) */
-        .screen-overlay { 
-            position: fixed; inset: 0; 
-            background: rgba(0, 0, 0, 0.3); 
-            backdrop-filter: blur(12px); 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-            z-index: 100;
+        /* Дроны с размытием */
+        .drone { 
+            position: absolute; width: 60px; height: 25px; background: #222; 
+            border-radius: 15px; z-index: 8; border: 2px solid #39ff14; 
+            box-shadow: -15px 0 20px rgba(57, 255, 20, 0.4); 
+            filter: blur(1px);
         }
 
-        .btn { 
-            padding: 15px 40px; background: #8d6e63; border: none; 
-            border-bottom: 5px solid #4e342e; color: white; cursor: pointer; 
-            font-size: 20px; margin: 10px; border-radius: 12px; font-weight: bold; 
+        /* UI: Прогресс и цифры */
+        #ui-top { 
+            position: fixed; top: 20px; left: 50%; transform: translateX(-50%); 
+            text-align: center; z-index: 200; display: none; 
         }
+        #stats-text { font-size: 18px; font-weight: bold; margin-bottom: 5px; color: #4e342e; text-shadow: 1px 1px 0px white; }
+        #progress-container { width: 400px; height: 14px; background: rgba(0,0,0,0.2); border-radius: 7px; overflow: hidden; border: 2px solid white; }
+        #progress-bar { width: 0%; height: 100%; background: gold; transition: width 0.1s linear; }
+
+        /* Экраны */
+        .screen-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.3); backdrop-filter: blur(12px); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .btn { padding: 15px 40px; background: #8d6e63; border: none; border-bottom: 5px solid #4e342e; color: white; cursor: pointer; font-size: 20px; margin: 10px; border-radius: 12px; font-weight: bold; }
         .btn:hover { background: #a1887f; transform: scale(1.05); }
 
-        /* Карточка оружия */
-        .card {
-            background: rgba(0,0,0,0.7); padding: 20px; border: 3px solid; 
-            border-radius: 15px; text-align: center; min-width: 200px;
-        }
-        .card h3 { margin: 0 0 10px 0; font-size: 22px; }
-        .stats-box { font-size: 14px; color: #ccc; line-height: 1.6; margin-bottom: 15px; }
-        .stats-box b { color: gold; font-family: monospace; font-size: 16px; }
-
-        #progress { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); width: 350px; height: 12px; background: rgba(0,0,0,0.4); border-radius: 10px; display: none; z-index: 50; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: gold; box-shadow: 0 0 10px gold; }
+        .card { background: rgba(0,0,0,0.7); padding: 20px; border: 3px solid; border-radius: 15px; text-align: center; min-width: 180px; }
     </style>
 </head>
 <body>
@@ -67,86 +63,134 @@
         </div>
     </div>
 
-    <div id="progress"><div id="progress-bar"></div></div>
+    <div id="ui-top">
+        <div id="stats-text">0 / 2500 м (0%)</div>
+        <div id="progress-container"><div id="progress-bar"></div></div>
+    </div>
 
     <div id="main-menu" class="screen-overlay">
-        <h1 style="color: gold; font-size: 55px; text-shadow: 4px 4px #4e342e; margin-bottom: 40px;">COWBOY LEGEND</h1>
-        <button class="btn" onclick="startPart1()">ИГРАТЬ</button>
-        <button class="btn" onclick="openInv()">ИНВЕНТАРЬ</button>
+        <h1 style="color: gold; font-size: 50px; text-shadow: 3px 3px #4e342e;">COWBOY LEGEND</h1>
+        <button class="btn" onclick="startGame()">ИГРАТЬ</button>
+        <button class="btn" onclick="toggleInv(true)">ИНВЕНТАРЬ</button>
     </div>
 
     <div id="inv-screen" class="screen-overlay" style="display: none;">
-        <h2 style="color: gold; font-size: 35px;">ВАШ АРСЕНАЛ</h2>
-        <div id="inv-list" style="display: flex; gap: 15px; flex-wrap: wrap; justify-content: center; margin-bottom: 20px;"></div>
-        <button class="btn" onclick="closeInv()">ЗАКРЫТЬ</button>
+        <h2 style="color: gold;">АРСЕНАЛ</h2>
+        <div id="inv-list" style="display: flex; gap: 15px;"></div>
+        <button class="btn" onclick="toggleInv(false)">ЗАКРЫТЬ</button>
     </div>
 
 <script>
-    const game = {
+    const state = {
         running: false,
-        distance: 0,
-        finish: 2000,
-        currentWeapon: 0,
+        dist: 0,
+        maxDist: 2500,
+        weapon: 0,
         weapons: [
-            { name: "Старые пушки", dmg: 10, spd: 450, color: "#555" },
-            { name: "Золотой Смит", dmg: 120, spd: 900, color: "gold" }
+            { name: "Обычные", dmg: 10, cd: 400, color: "#555" },
+            { name: "Золотой Смит", dmg: 100, cd: 800, color: "gold" }
         ]
     };
 
-    function startPart1() {
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('progress').style.display = 'block';
-        document.getElementById('cowboy').classList.remove('menu-animation');
-        game.running = true;
-        updateVisuals();
+    let decors = [];
+    let drones = [];
+
+    // Создаем фон
+    function initWorld() {
+        const world = document.getElementById('world');
+        for(let i=0; i<10; i++) {
+            const d = document.createElement('div');
+            const isCactus = Math.random() > 0.5;
+            d.className = `decor ${isCactus ? 'cactus' : 'canyon'}`;
+            let x = Math.random() * window.innerWidth;
+            d.style.left = x + 'px';
+            world.appendChild(d);
+            decors.push({ el: d, x: x, speed: isCactus ? 7 : 3 });
+        }
     }
 
-    function updateVisuals() {
-        const w = game.weapons[game.currentWeapon];
+    function startGame() {
+        document.getElementById('main-menu').style.display = 'none';
+        document.getElementById('ui-top').style.display = 'block';
+        document.getElementById('cowboy').classList.remove('menu-animation');
+        state.running = true;
+        state.dist = 0;
+        updateGuns();
+        spawnDrone();
+        animate();
+    }
+
+    function updateGuns() {
+        const w = state.weapons[state.weapon];
         document.getElementById('gun-l').style.backgroundColor = w.color;
         document.getElementById('gun-r').style.backgroundColor = w.color;
     }
 
-    function openInv() {
-        document.getElementById('main-menu').style.display = 'none';
-        const screen = document.getElementById('inv-screen');
-        screen.style.display = 'flex';
-        
-        const list = document.getElementById('inv-list');
-        list.innerHTML = game.weapons.map((w, i) => `
-            <div class="card" style="border-color: ${w.color}">
-                <h3 style="color: ${w.color}">${w.name}</h3>
-                <div class="stats-box">
-                    УРОН: <b>${w.dmg}</b><br>
-                    ОТКАТ: <b>${w.spd}мс</b>
-                </div>
-                ${game.currentWeapon === i ? 
-                    '<div style="color:gold; font-weight:bold">В РУКАХ</div>' : 
-                    `<button class="btn" style="font-size:14px; padding:5px 15px;" onclick="selectWeapon(${i})">ВЗЯТЬ</button>`}
-            </div>
-        `).join('');
-    }
-
-    function selectWeapon(i) {
-        game.currentWeapon = i;
-        updateVisuals();
-        openInv(); // Обновить список
-    }
-
-    function closeInv() {
-        document.getElementById('inv-screen').style.display = 'none';
-        document.getElementById('main-menu').style.display = 'flex';
-    }
-
-    // Инициализация декораций (фон)
-    const world = document.getElementById('world');
-    for(let i=0; i<15; i++) {
+    function spawnDrone() {
+        if(!state.running) return;
         const d = document.createElement('div');
-        const isCactus = Math.random() > 0.4;
-        d.className = `decor ${isCactus ? 'cactus' : 'canyon'}`;
-        d.style.left = (Math.random() * 2000) + 'px';
-        world.appendChild(d);
+        d.className = 'drone';
+        const y = Math.random() * 300 + 50;
+        d.style.top = y + 'px';
+        d.style.left = window.innerWidth + 'px';
+        document.getElementById('world').appendChild(d);
+        drones.push({ el: d, x: window.innerWidth, y: y });
+        setTimeout(spawnDrone, 1500 + Math.random() * 1000);
     }
+
+    function animate() {
+        if(!state.running) return;
+
+        // 1. Движение прогресса
+        state.dist += 5;
+        let percent = Math.floor((state.dist / state.maxDist) * 100);
+        document.getElementById('progress-bar').style.width = percent + '%';
+        document.getElementById('stats-text').innerText = `${state.dist} / ${state.maxDist} м (${percent}%)`;
+
+        // 2. Движение фона
+        decors.forEach(d => {
+            d.x -= d.speed;
+            if(d.x < -500) d.x = window.innerWidth;
+            d.el.style.left = d.x + 'px';
+        });
+
+        // 3. Движение дронов
+        drones.forEach((d, i) => {
+            d.x -= 12; // Высокая скорость
+            d.el.style.left = d.x + 'px';
+            if(d.x < -100) {
+                d.el.remove();
+                drones.splice(i, 1);
+            }
+        });
+
+        if(state.dist >= state.maxDist) {
+            alert("Уровень пройден!");
+            location.reload(); 
+        } else {
+            requestAnimationFrame(animate);
+        }
+    }
+
+    function toggleInv(show) {
+        document.getElementById('main-menu').style.display = show ? 'none' : 'flex';
+        document.getElementById('inv-screen').style.display = show ? 'flex' : 'none';
+        if(show) {
+            const list = document.getElementById('inv-list');
+            list.innerHTML = state.weapons.map((w, i) => `
+                <div class="card" style="border-color: ${w.color}">
+                    <h3 style="color:${w.color}">${w.name}</h3>
+                    <div style="font-size:12px; color:#ccc; margin-bottom:10px;">
+                        УРОН: <b>${w.dmg}</b> | ОТКАТ: <b>${w.cd}мс</b>
+                    </div>
+                    <button class="btn" style="padding:5px 15px; font-size:14px;" onclick="state.weapon=${i}; updateGuns(); toggleInv(true)">ВЗЯТЬ</button>
+                </div>
+            `).join('');
+        }
+    }
+
+    initWorld();
+    updateGuns();
 </script>
 </body>
 </html>
