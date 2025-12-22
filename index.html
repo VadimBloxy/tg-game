@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<title>Pixel 2D Game</title>
+<title>Pixel 2D Game Interactive</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
   html, body {
@@ -15,8 +15,8 @@
   }
   canvas {
     display: block;
-    image-rendering: pixelated; /* пиксельный стиль */
-    background: #87ceeb; /* небо */
+    image-rendering: pixelated;
+    background: #87ceeb;
   }
 </style>
 </head>
@@ -37,15 +37,15 @@ function resize() {
 window.addEventListener("resize", resize);
 resize();
 
-const TILE_SIZE = 32; // размер блока
+const TILE_SIZE = 32;
 const MAP_WIDTH = 20;
 const MAP_HEIGHT = 15;
 
 // карта блоков (0 = воздух, 1 = земля)
 let map = [];
-for(let y = 0; y < MAP_HEIGHT; y++){
+for(let y=0;y<MAP_HEIGHT;y++){
     map[y] = [];
-    for(let x = 0; x < MAP_WIDTH; x++){
+    for(let x=0;x<MAP_WIDTH;x++){
         map[y][x] = (y > MAP_HEIGHT/2) ? 1 : 0;
     }
 }
@@ -57,6 +57,20 @@ let player = {x: 5, y: 5, color: "#ff0"};
 let keys = {};
 document.addEventListener("keydown", e => keys[e.key] = true);
 document.addEventListener("keyup", e => keys[e.key] = false);
+
+// интерактивность мышью
+canvas.addEventListener("click", e => {
+    const rect = canvas.getBoundingClientRect();
+    const mx = e.clientX - rect.left;
+    const my = e.clientY - rect.top;
+    const tx = Math.floor(mx / TILE_SIZE);
+    const ty = Math.floor(my / TILE_SIZE);
+    
+    // смена блока: если был земля -> воздух, если воздух -> земля
+    if(map[ty] && map[ty][tx] !== undefined){
+        map[ty][tx] = map[ty][tx] === 1 ? 0 : 1;
+    }
+});
 
 // игровой цикл
 function gameLoop(){
