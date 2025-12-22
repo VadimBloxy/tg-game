@@ -2,175 +2,183 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Cowboy Legend: Canyon Hunt</title>
+    <title>Cowboy Legend: Unique Weapons</title>
     <style>
         :root { --sand: #e2a76f; --sky: #87ceeb; --canyon: #a0522d; }
-        body { margin: 0; background: #222; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; user-select: none; }
+        body { margin: 0; background: #111; font-family: 'Segoe UI', sans-serif; overflow: hidden; color: white; user-select: none; }
         
         /* Сцена */
         #game-container { position: relative; width: 100vw; height: 100vh; background: var(--sky); display: none; overflow: hidden; }
         #ground { position: absolute; bottom: 0; width: 100%; height: 150px; background: var(--sand); z-index: 5; border-top: 5px solid #c48a57; }
         
-        /* Декорации (Каньоны и Кактусы) */
-        .canyon { position: absolute; bottom: 150px; width: 300px; height: 200px; background: var(--canyon); border-radius: 50% 50% 0 0; opacity: 0.7; }
-        .cactus { position: absolute; bottom: 150px; width: 15px; height: 40px; background: #2d5a27; border-radius: 10px; z-index: 6; }
-        .cactus::before { content: ''; position: absolute; top: 10px; left: -10px; width: 10px; height: 15px; background: #2d5a27; border-radius: 5px; border-bottom: 5px solid #2d5a27; }
+        /* Фон */
+        .canyon { position: absolute; bottom: 150px; width: 400px; height: 250px; background: var(--canyon); border-radius: 40% 40% 0 0; opacity: 0.6; }
+        .cactus { position: absolute; bottom: 150px; width: 15px; height: 50px; background: #2d5a27; border-radius: 10px; z-index: 6; }
 
         /* Ковбой */
-        #player { position: absolute; bottom: 140px; left: 80px; width: 50px; height: 70px; z-index: 10; transition: transform 0.1s; }
-        .hat { position: absolute; top: 0; width: 40px; height: 10px; background: #5d4037; border-radius: 5px; left: 5px; border-bottom: 5px solid #3e2723; }
-        .body { position: absolute; top: 15px; width: 30px; height: 35px; background: #aa7744; left: 10px; border-radius: 5px; }
-        .gun { position: absolute; top: 25px; width: 25px; height: 10px; background: #444; border-radius: 2px; border-right: 5px solid #000; }
-        .gun-left { left: -15px; } .gun-right { right: -15px; }
+        #player { position: absolute; bottom: 140px; left: 80px; width: 50px; height: 70px; z-index: 10; }
+        .hat { position: absolute; top: 0; width: 44px; height: 12px; background: #4e342e; border-radius: 5px; left: 3px; border-bottom: 4px solid #2d1b18; }
+        .head { position: absolute; top: 8px; width: 20px; height: 20px; background: #ffcc99; left: 15px; border-radius: 3px; }
+        .body { position: absolute; top: 25px; width: 30px; height: 30px; background: #aa7744; left: 10px; border-radius: 4px; }
         
-        @keyframes walk { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        /* Динамические пистолеты */
+        .gun { 
+            position: absolute; top: 35px; width: 28px; height: 12px; 
+            border-radius: 2px; transition: 0.3s;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+        .gun-left { left: -18px; }
+        .gun-right { right: -18px; }
+        
+        @keyframes walk { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
         .walking { animation: walk 0.4s infinite; }
 
+        /* Эффекты пуль */
+        .bullet { position: absolute; width: 25px; height: 8px; border-radius: 4px; z-index: 15; box-shadow: 0 0 10px inherit; }
+
         /* Дроны */
-        .drone { position: absolute; width: 45px; height: 25px; background: #333; border-radius: 10px; z-index: 8; border: 2px solid #00ff00; box-shadow: 0 0 10px #00ff00; }
-        .drone::after { content: ''; position: absolute; top: -5px; left: 50%; transform: translateX(-50%); width: 30px; height: 5px; background: #666; border-radius: 5px; }
+        .drone { position: absolute; width: 50px; height: 30px; background: #222; border-radius: 12px; z-index: 8; border: 2px solid #39ff14; box-shadow: 0 0 15px #39ff14; }
 
-        /* Интерфейс */
-        #ui { position: fixed; top: 20px; width: 100%; display: flex; justify-content: center; z-index: 20; }
-        #progress-bar { width: 400px; height: 25px; background: rgba(0,0,0,0.5); border: 3px solid #fff; border-radius: 15px; overflow: hidden; }
-        #progress-fill { width: 0%; height: 100%; background: linear-gradient(90deg, #ff9800, #ffeb3b); transition: 0.1s; }
-        
-        #menu, #inventory-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
-        .btn { padding: 15px 40px; background: #aa7744; border: none; border-bottom: 5px solid #5d4037; color: white; cursor: pointer; font-size: 20px; margin: 10px; font-weight: bold; border-radius: 5px; }
-        .btn:hover { background: #cc9966; transform: scale(1.05); }
+        /* Меню и GUI */
+        #menu, #inventory-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.9); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 100; }
+        .btn { padding: 12px 30px; background: #8d6e63; border: none; border-bottom: 4px solid #4e342e; color: white; cursor: pointer; font-size: 18px; margin: 10px; border-radius: 8px; font-weight: bold; }
+        .btn:hover { background: #a1887f; transform: scale(1.05); }
 
-        #loot-gui { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #222; border: 4px solid gold; padding: 30px; z-index: 110; display: none; border-radius: 15px; text-align: center; }
+        #loot-gui { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #1a1a1a; border: 4px solid gold; padding: 40px; z-index: 110; display: none; border-radius: 20px; text-align: center; box-shadow: 0 0 50px rgba(255,215,0,0.3); }
+        #progress-bar { position: fixed; top: 30px; left: 50%; transform: translateX(-50%); width: 400px; height: 15px; background: rgba(0,0,0,0.4); border: 2px solid #fff; border-radius: 10px; overflow: hidden; z-index: 50; }
+        #progress-fill { width: 0%; height: 100%; background: #ffeb3b; }
     </style>
 </head>
 <body>
 
     <div id="menu">
-        <h1 style="font-size: 50px; color: gold; text-shadow: 3px 3px #000;">COWBOY CANYON</h1>
+        <h1 style="color: #ff9800; font-size: 60px; text-shadow: 4px 4px #000;">GOLDEN COWBOY</h1>
         <button class="btn" onclick="startGame()">В ПУТЬ!</button>
-        <button class="btn" onclick="toggleInv()">МОЙ ИНВЕНТАРЬ</button>
+        <button class="btn" onclick="toggleInv()">АРСЕНАЛ</button>
     </div>
 
     <div id="inventory-screen" style="display: none;">
-        <h2>АРСЕНАЛ</h2>
-        <div id="items-list" style="display: flex; gap: 10px;"></div>
-        <button class="btn" onclick="toggleInv()">НАЗАД</button>
+        <h2>ВАШИ ПУШКИ</h2>
+        <div id="items-list" style="display: flex; flex-wrap: wrap; justify-content: center; gap: 15px;"></div>
+        <button class="btn" style="margin-top:30px" onclick="toggleInv()">ЗАКРЫТЬ</button>
     </div>
 
     <div id="game-container">
-        <div id="ui"><div id="progress-bar"><div id="progress-fill"></div></div></div>
+        <div id="progress-bar"><div id="progress-fill"></div></div>
         <div id="ground"></div>
         <div id="player" class="walking">
             <div class="hat"></div>
+            <div class="head"></div>
             <div class="body"></div>
-            <div class="gun gun-left"></div>
-            <div class="gun gun-right"></div>
+            <div id="g-left" class="gun gun-left"></div>
+            <div id="g-right" class="gun gun-right"></div>
         </div>
         <div id="loot-gui">
-            <h2 id="loot-name" style="color: gold;"></h2>
+            <h1 id="loot-name"></h1>
+            <div id="loot-icon" style="width:100px; height:40px; margin:20px auto; border-radius:5px;"></div>
             <p id="loot-stats"></p>
-            <button class="btn" id="take-btn">ВЗЯТЬ ОРУЖИЕ</button>
+            <button class="btn" id="take-btn">ЭКИПИРОВАТЬ</button>
         </div>
     </div>
 
 <script>
     const state = {
-        running: false,
-        distance: 0,
-        finish: 3000,
-        inv: [{name: "Ржавые пестики", dmg: 10, cd: 400, color: '#444'}],
-        eq: 0,
-        lastShot: 0
+        running: false, distance: 0, finish: 2500,
+        inv: [{name: "Ржавые пестики", dmg: 10, cd: 400, color: '#555', glow: 'transparent'}],
+        eq: 0, lastShot: 0
     };
 
     let drones = [], bullets = [], decors = [];
 
+    function updateGunVisuals() {
+        const weapon = state.inv[state.eq];
+        const gLeft = document.getElementById('g-left');
+        const gRight = document.getElementById('g-right');
+        [gLeft, gRight].forEach(g => {
+            g.style.backgroundColor = weapon.color;
+            g.style.boxShadow = `0 0 15px ${weapon.glow}`;
+            g.style.borderRight = `4px solid ${weapon.color === 'gold' ? '#aa8800' : '#222'}`;
+        });
+    }
+
     function startGame() {
         document.getElementById('menu').style.display = 'none';
         document.getElementById('game-container').style.display = 'block';
-        state.distance = 0;
-        state.running = true;
-        initEnvironment();
+        state.distance = 0; state.running = true;
+        updateGunVisuals();
+        initDecors();
         spawnDrone();
         animate();
     }
 
-    function initEnvironment() {
-        for(let i=0; i<5; i++) createDecor(Math.random() * window.innerWidth);
-    }
-
-    function createDecor(x) {
-        const isCactus = Math.random() > 0.5;
-        const el = document.createElement('div');
-        el.className = isCactus ? 'cactus' : 'canyon';
-        el.style.left = x + 'px';
-        if(!isCactus) el.style.zIndex = '1';
-        document.getElementById('game-container').appendChild(el);
-        decors.push({ el, x, isCactus });
+    function initDecors() {
+        for(let i=0; i<6; i++) {
+            const el = document.createElement('div');
+            const isCactus = Math.random() > 0.4;
+            el.className = isCactus ? 'cactus' : 'canyon';
+            let x = Math.random() * window.innerWidth;
+            el.style.left = x + 'px';
+            document.getElementById('game-container').appendChild(el);
+            decors.push({ el, x, speed: isCactus ? 5 : 2 });
+        }
     }
 
     function spawnDrone() {
         if(!state.running) return;
         drones.push({ 
-            x: window.innerWidth, 
-            y: Math.random() * (window.innerHeight - 300) + 100, 
-            baseY: 0,
-            offset: Math.random() * 10,
-            el: null 
+            x: window.innerWidth, baseY: Math.random() * 300 + 100, 
+            y: 0, offset: Math.random() * 100, el: null 
         });
-        setTimeout(spawnDrone, 2000);
+        setTimeout(spawnDrone, 1800);
     }
 
     window.onclick = () => {
-        const now = Date.now();
-        const w = state.inv[state.eq];
-        if(state.running && now - state.lastShot > w.cd) {
-            shoot();
-            state.lastShot = now;
+        const weapon = state.inv[state.eq];
+        if(state.running && Date.now() - state.lastShot > weapon.cd) {
+            shoot(weapon);
+            state.lastShot = Date.now();
         }
     };
 
-    function shoot() {
+    function shoot(w) {
         const b = document.createElement('div');
         b.className = 'bullet';
-        b.style.cssText = `position:absolute; left:130px; bottom:185px; width:20px; height:6px; background:gold; z-index:15; border-radius:3px;`;
+        b.style.left = '130px';
+        b.style.bottom = '180px';
+        b.style.backgroundColor = w.color;
+        b.style.boxShadow = `0 0 15px ${w.glow}`;
         document.getElementById('game-container').appendChild(b);
-        bullets.push({ el: b, x: 130, y: window.innerHeight - 185 });
+        bullets.push({ el: b, x: 130, y: window.innerHeight - 180 });
     }
 
     function animate() {
         if(!state.running) return;
-
-        state.distance += 4;
+        state.distance += 5;
         document.getElementById('progress-fill').style.width = (state.distance / state.finish * 100) + '%';
 
-        // Движение декораций
-        decors.forEach((d, i) => {
-            d.x -= 4;
+        decors.forEach(d => {
+            d.x -= d.speed;
+            if(d.x < -400) d.x = window.innerWidth;
             d.el.style.left = d.x + 'px';
-            if(d.x < -400) { d.x = window.innerWidth; }
         });
 
-        // Дроны (левитация вверх-вниз)
         drones.forEach((d, i) => {
             if(!d.el) {
-                d.el = document.createElement('div');
-                d.el.className = 'drone';
+                d.el = document.createElement('div'); d.el.className = 'drone';
                 document.getElementById('game-container').appendChild(d.el);
-                d.baseY = d.y;
             }
-            d.x -= 6;
-            d.y = d.baseY + Math.sin(Date.now() / 300 + d.offset) * 15; // Движение на 15 пикселей
+            d.x -= 7;
+            d.y = d.baseY + Math.sin(Date.now() / 250 + d.offset) * 20;
             d.el.style.left = d.x + 'px';
             d.el.style.top = d.y + 'px';
             if(d.x < -100) { d.el.remove(); drones.splice(i, 1); }
         });
 
-        // Пули
         bullets.forEach((b, i) => {
-            b.x += 15;
+            b.x += 20;
             b.el.style.left = b.x + 'px';
             drones.forEach((d, di) => {
-                if(b.x > d.x && b.x < d.x + 50 && (window.innerHeight - b.y) > d.y && (window.innerHeight - b.y) < d.y + 40) {
+                if(b.x > d.x && b.x < d.x + 50 && (window.innerHeight - b.y) > d.y && (window.innerHeight - b.y) < d.y + 30) {
                     d.el.remove(); drones.splice(di, 1);
                     b.el.remove(); bullets.splice(i, 1);
                 }
@@ -184,46 +192,46 @@
 
     function win() {
         state.running = false;
-        const drops = [
-            { name: "Шерифский Магнум", dmg: 50, cd: 800, color: 'silver' },
-            { name: "Скорострел", dmg: 15, cd: 150, color: 'cyan' },
-            { name: "Золотой Смит", dmg: 100, cd: 1000, color: 'gold' }
+        const pool = [
+            { name: "Стальной Магнум", dmg: 40, cd: 600, color: '#bdc3c7', glow: 'white' },
+            { name: "Плазменный Бластер", dmg: 20, cd: 150, color: '#00d2ff', glow: '#00d2ff' },
+            { name: "ЗОЛОТОЙ СМИТ", dmg: 150, cd: 1000, color: 'gold', glow: 'gold' }
         ];
-        const item = drops[Math.floor(Math.random() * drops.length)];
+        const item = pool[Math.floor(Math.random() * pool.length)];
         const gui = document.getElementById('loot-gui');
-        gui.style.display = 'block';
         document.getElementById('loot-name').innerText = item.name;
-        document.getElementById('loot-stats').innerText = `Урон: ${item.dmg} | Скорость: ${item.cd}мс`;
-        
+        document.getElementById('loot-name').style.color = item.color;
+        document.getElementById('loot-icon').style.backgroundColor = item.color;
+        document.getElementById('loot-icon').style.boxShadow = `0 0 20px ${item.glow}`;
+        document.getElementById('loot-stats').innerText = `Урон: ${item.dmg} | Перезарядка: ${item.cd}мс`;
+        gui.style.display = 'block';
+
         document.getElementById('take-btn').onclick = () => {
             state.inv.push(item);
+            state.eq = state.inv.length - 1;
             gui.style.display = 'none';
-            document.getElementById('game-container').style.display = 'none';
-            document.getElementById('menu').style.display = 'flex';
-            resetLevel();
+            closeLevel();
         };
     }
 
-    function resetLevel() {
-        drones.forEach(d => d.el.remove()); drones = [];
+    function closeLevel() {
+        document.getElementById('game-container').style.display = 'none';
+        document.getElementById('menu').style.display = 'flex';
+        drones.forEach(d => d.el && d.el.remove()); drones = [];
         bullets.forEach(b => b.el.remove()); bullets = [];
     }
 
     function toggleInv() {
-        const screen = document.getElementById('inventory-screen');
-        if(screen.style.display === 'none') {
-            screen.style.display = 'flex';
-            const list = document.getElementById('items-list');
-            list.innerHTML = state.inv.map((it, i) => `
-                <div style="background:#333; padding:15px; border:2px solid ${it.color}; border-radius:10px; text-align:center;">
-                    <div style="font-weight:bold; color:${it.color}">${it.name}</div>
-                    <small>Урон: ${it.dmg}</small><br>
-                    <button class="btn" style="padding:5px 10px; font-size:14px;" onclick="state.eq=${i}; alert('Экипировано!')">ВЗЯТЬ</button>
+        const sc = document.getElementById('inventory-screen');
+        if(sc.style.display === 'none') {
+            sc.style.display = 'flex';
+            document.getElementById('items-list').innerHTML = state.inv.map((it, i) => `
+                <div style="background:#222; border:2px solid ${it.color}; padding:15px; border-radius:12px; min-width:120px; text-align:center;">
+                    <div style="color:${it.color}; font-weight:bold">${it.name}</div>
+                    <button class="btn" style="padding:5px 10px; font-size:12px;" onclick="state.eq=${i}; alert('Экипировано!')">ВЗЯТЬ</button>
                 </div>
             `).join('');
-        } else {
-            screen.style.display = 'none';
-        }
+        } else { sc.style.display = 'none'; }
     }
 </script>
 </body>
