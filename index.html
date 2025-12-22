@@ -1,218 +1,168 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>HACKER_RPG_ULTIMATE // VADIMIVASH</title>
+    <title>3D HACKER STRIKE // VADIMIVASH</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500;700&display=swap');
+        body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
+        canvas { display: block; width: 100vw; height: 100vh; filter: contrast(1.2) brightness(1.1); }
         
-        :root {
-            --neon: #00ff41;
-            --bg: #050505;
-            --danger: #ff003c;
-            --window: #0a0a0a;
+        /* Руки хакера */
+        #hud {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 600px; height: 300px; pointer-events: none;
+            display: flex; justify-content: space-between; align-items: flex-end;
         }
-
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background: #000; color: var(--neon);
-            font-family: 'Fira Code', monospace; overflow: hidden;
+        .hand {
+            width: 200px; height: 250px; background: #111;
+            border: 4px solid #00ff41; border-radius: 50px 50px 0 0;
+            box-shadow: 0 0 20px rgba(0,255,65,0.5);
+            transition: transform 0.1s;
         }
+        #left-hand { transform: rotate(-10deg) translateY(50px); }
+        #right-hand { transform: rotate(10deg) translateY(50px); }
 
-        /* Экраны */
-        .screen {
-            position: fixed; inset: 0; display: none;
-            flex-direction: column; align-items: center; justify-content: center;
-            background: radial-gradient(circle, #111 0%, #000 100%);
-        }
+        /* Анимация удара */
+        .punch { transform: translateY(-100px) scale(1.1) rotate(0deg) !important; }
 
-        /* Кнопки */
-        .btn {
-            background: transparent; border: 1px solid var(--neon);
-            color: var(--neon); padding: 12px 30px; margin: 10px;
-            font-family: inherit; cursor: pointer; text-transform: uppercase;
-            transition: 0.3s; z-index: 10;
-        }
-        .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 15px var(--neon); }
-        .btn:disabled { border-color: #333; color: #333; opacity: 0.5; }
-
-        /* Терминал */
-        #term-win { width: 80%; height: 60%; background: var(--window); border: 1px solid #333; position: relative; }
-        #console { padding: 20px; font-size: 14px; height: 80%; overflow-y: auto; white-space: pre-wrap; color: var(--neon); }
-        .p-bar { height: 5px; background: #111; width: 100%; }
-        .p-fill { height: 100%; background: var(--neon); width: 0%; transition: 0.1s; }
-
-        /* Инвентарь */
-        .inv-grid { display: grid; grid-template-columns: repeat(3, 180px); gap: 20px; }
-        .inv-item {
-            width: 180px; height: 200px; border: 1px solid var(--neon);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; background: rgba(0,255,65,0.05); transition: 0.2s;
-        }
-        .inv-item:hover { background: rgba(0,255,65,0.2); transform: scale(1.05); }
-        .icon { font-size: 40px; margin-bottom: 10px; }
-
-        /* Окно данных */
-        #viewer {
-            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 400px; background: #000; border: 2px solid var(--neon);
-            display: none; flex-direction: column; z-index: 2000;
-            box-shadow: 0 0 50px rgba(0,255,65,0.4);
-        }
-        .v-head { background: var(--neon); color: #000; padding: 10px; font-weight: bold; }
-        .v-body { padding: 20px; }
-
-        /* Банк */
-        #bank-ui { display: none; text-align: center; }
-        #bank-input { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; font-size: 20px; text-align: center; }
-
-        /* Эффект шума */
-        .crt::after {
-            content: ""; position: fixed; inset: 0;
-            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%), linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03));
-            z-index: 9999; pointer-events: none; background-size: 100% 3px, 3px 100%;
+        #ui {
+            position: fixed; top: 20px; left: 20px; color: #00ff41;
+            text-shadow: 0 0 5px #00ff41; font-size: 20px;
         }
     </style>
 </head>
-<body class="crt">
+<body>
 
-    <div id="m-menu" class="screen" style="display: flex;">
-        <h1 style="font-size: 3rem; text-shadow: 0 0 20px var(--neon);">VADIM_HACK_ULTIMATE</h1>
-        <button class="btn" onclick="startHack()">1. ВЗЛОМАТЬ СОСЕДА</button>
-        <button class="btn" onclick="openInv()">2. ИНВЕНТАРЬ (<span id="icount">0</span>)</button>
-        <button class="btn" id="bank-btn" onclick="openBank()">3. ВЗЛОМАТЬ БАНК (LOCK)</button>
-        <p style="font-size: 10px; color: #444;">*Сначала найди ПИН-код в дневнике соседа</p>
-    </div>
+    <div id="ui">SYSTEM_INTRUSION: ACTIVE<br>W,A,S,D - MOVE | SPACE - PUNCH</div>
+    
+    <canvas id="game"></canvas>
 
-    <div id="h-screen" class="screen">
-        <div id="term-win">
-            <div class="v-head" style="background:#1a1a1a; color:var(--neon)">NEIGHBOR_EXPLOIT_v2.sh</div>
-            <div class="p-bar"><div id="p-fill" class="p-fill"></div></div>
-            <div id="console"></div>
-        </div>
-        <p>ПЕЧАТАЙ НА КЛАВИАТУРЕ ДЛЯ ВЗЛОМА...</p>
-    </div>
-
-    <div id="i-screen" class="screen">
-        <h2>АРХИВ ДАННЫХ</h2>
-        <div class="inv-grid" id="igrid"></div>
-        <button class="btn" onclick="back()">НАЗАД</button>
-    </div>
-
-    <div id="viewer">
-        <div class="v-head" id="vtitle">FILE</div>
-        <div class="v-body">
-            <p id="vdesc"></p>
-            <div id="vcode" style="border:1px dashed var(--neon); padding:10px; margin-top:10px;"></div>
-        </div>
-        <button class="btn" onclick="closeV()">ЗАКРЫТЬ</button>
-    </div>
-
-    <div id="b-screen" class="screen">
-        <h2 style="color:var(--danger)">ATM_ALPHA_BANK v4.0</h2>
-        <p>ВВЕДИТЕ 4-ЗНАЧНЫЙ ПИН-КОД ИЗ ДНЕВНИКА:</p>
-        <input type="text" id="bank-input" maxlength="4" placeholder="****">
-        <br>
-        <button class="btn" onclick="checkBank()">CONFIRM</button>
-        <button class="btn" onclick="back()">ОТМЕНА</button>
+    <div id="hud">
+        <div id="left-hand" class="hand"></div>
+        <div id="right-hand" class="hand"></div>
     </div>
 
 <script>
-    let inv = [];
-    let typed = 0;
-    const goal = 1000;
-    
-    const items = {
-        'wifi': { name: 'WIFI_PASS', icon: '📶', desc: 'Логи роутера соседа.', data: 'IP: 192.168.0.42 | PASS: neighbor123' },
-        'diary': { name: 'DIARY.txt', icon: '📔', desc: 'Личный дневник Петра.', data: 'СЕКРЕТ: "Мой ПИН-код это год моего рождения - 1984"' },
-        'photo': { name: 'COMPROMAT', icon: '🖼️', desc: 'Секретное фото.', data: 'ID_ОБЪЕКТА: NEIGHBOR_42 | СТАТУС: ШАНТАЖ' }
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const lHand = document.getElementById('left-hand');
+    const rHand = document.getElementById('right-hand');
+
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // Карта лабиринта (1 - стена, 0 - пусто)
+    const map = [
+        [1,1,1,1,1,1,1,1,1,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,0,1,1,0,1,1,1,0,1],
+        [1,0,0,0,0,0,0,1,0,1],
+        [1,1,1,0,1,1,0,1,0,1],
+        [1,0,0,0,0,1,0,0,0,1],
+        [1,0,1,1,1,1,1,1,0,1],
+        [1,0,0,0,0,0,0,0,0,1],
+        [1,1,1,1,1,1,1,1,1,1],
+    ];
+
+    const player = { x: 1.5, y: 1.5, dir: 0, rot: 0, speed: 0 };
+
+    // Управление
+    const keys = {};
+    window.onkeydown = (e) => keys[e.code] = true;
+    window.onkeyup = (e) => keys[e.code] = false;
+
+    window.onmousedown = () => punch();
+    window.onkeydown = (e) => {
+        keys[e.code] = true;
+        if(e.code === 'Space') punch();
     };
 
-    // Звук
-    function sfx(f) {
-        try {
-            const a = new (window.AudioContext || window.webkitAudioContext)();
-            const o = a.createOscillator(); const g = a.createGain();
-            o.frequency.value = f; g.gain.value = 0.05;
-            o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.1);
-        } catch(e){}
-    }
-
-    // Навигация
-    function back() { document.querySelectorAll('.screen').forEach(s => s.style.display='none'); document.getElementById('m-menu').style.display='flex'; }
-    function openInv() { 
-        document.getElementById('m-menu').style.display='none'; 
-        document.getElementById('i-screen').style.display='flex'; 
-        renderInv();
-    }
-
-    function renderInv() {
-        const g = document.getElementById('igrid');
-        g.innerHTML = inv.length ? "" : "ПУСТО";
-        inv.forEach(k => {
-            const d = document.createElement('div'); d.className='inv-item';
-            d.innerHTML = `<div class="icon">${items[k].icon}</div><b>${items[k].name}</b>`;
-            d.onclick = () => openV(k); // Сделал обычный клик, чтобы не висло
-            g.appendChild(d);
-        });
-        document.getElementById('icount').innerText = inv.length;
-        if(inv.includes('diary')) document.getElementById('bank-btn').innerText = "3. ВЗЛОМАТЬ БАНК (OPEN)";
-    }
-
-    function openV(k) {
-        sfx(600);
-        document.getElementById('viewer').style.display='flex';
-        document.getElementById('vtitle').innerText = items[k].name;
-        document.getElementById('vdesc').innerText = items[k].desc;
-        document.getElementById('vcode').innerText = items[k].data;
-    }
-
-    function closeV() { document.getElementById('viewer').style.display='none'; }
-
-    // Взлом
-    function startHack() {
-        document.getElementById('m-menu').style.display='none';
-        document.getElementById('h-screen').style.display='flex';
-        typed = 0; document.getElementById('console').innerText = "";
-    }
-
-    document.addEventListener('keydown', (e) => {
-        if(document.getElementById('h-screen').style.display !== 'flex') return;
-        typed += 25;
-        sfx(200 + Math.random()*100);
-        document.getElementById('p-fill').style.width = (typed/goal)*100 + "%";
+    let punchSide = true;
+    function punch() {
+        const hand = punchSide ? lHand : rHand;
+        hand.classList.add('punch');
+        setTimeout(() => hand.classList.remove('punch'), 150);
+        punchSide = !punchSide;
         
-        if(typed === 250) { inv.push('wifi'); document.getElementById('console').innerText += "\n[+] WIFI_DATA ACQUIRED"; }
-        if(typed === 500) { inv.push('diary'); document.getElementById('console').innerText += "\n[+] DIARY_SECRET UNLOCKED"; }
-        if(typed === 750) { inv.push('photo'); document.getElementById('console').innerText += "\n[+] MEDIA_FILES DOWNLOADED"; }
-        
-        if(typed >= goal) {
-            setTimeout(() => {
-                alert("ГОТОВО! ДАННЫЕ В ИНВЕНТАРЕ.");
-                back(); renderInv();
-            }, 500);
-        }
-    });
-
-    // Банк
-    function openBank() {
-        if(!inv.includes('diary')) return alert("Сначала найди ПИН-код в инвентаре (взломай соседа)!");
-        document.getElementById('m-menu').style.display='none';
-        document.getElementById('b-screen').style.display='flex';
+        // Звук удара
+        const a = new (window.AudioContext || window.webkitAudioContext)();
+        const o = a.createOscillator(); const g = a.createGain();
+        o.frequency.value = 100; g.gain.value = 0.1;
+        o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.1);
     }
 
-    function checkBank() {
-        const val = document.getElementById('bank-input').value;
-        if(val === "1984") {
-            sfx(1000);
-            alert("ДОСТУП РАЗРЕШЕН! Счёт соседа: $1,200,500. Перевод на ваш счёт...");
-            document.body.style.background = "#00ff41";
-            setTimeout(() => { location.reload(); }, 2000);
-        } else {
-            sfx(100);
-            alert("ОШИБКА: НЕВЕРНЫЙ ПИН-КОД!");
+    function update() {
+        // Вращение
+        if (keys['KeyA']) player.dir -= 0.05;
+        if (keys['KeyD']) player.dir += 0.05;
+
+        // Движение
+        let moveStep = 0;
+        if (keys['KeyW']) moveStep = 0.04;
+        if (keys['KeyS']) moveStep = -0.04;
+
+        let newX = player.x + Math.cos(player.dir) * moveStep;
+        let newY = player.y + Math.sin(player.dir) * moveStep;
+
+        // Простая коллизия
+        if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
+            player.x = newX;
+            player.y = newY;
         }
     }
+
+    function draw() {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Пол и потолок
+        ctx.fillStyle = '#051005';
+        ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
+
+        // Raycasting (рисуем стены)
+        const numRays = 300;
+        const fov = Math.PI / 3;
+        
+        for (let i = 0; i < numRays; i++) {
+            let rayAngle = (player.dir - fov/2) + (i / numRays) * fov;
+            let distanceToWall = 0;
+            let hitWall = false;
+
+            let eyeX = Math.cos(rayAngle);
+            let eyeY = Math.sin(rayAngle);
+
+            while (!hitWall && distanceToWall < 15) {
+                distanceToWall += 0.1;
+                let testX = Math.floor(player.x + eyeX * distanceToWall);
+                let testY = Math.floor(player.y + eyeY * distanceToWall);
+
+                if (testX < 0 || testX >= map[0].length || testY < 0 || testY >= map.length) {
+                    hitWall = true; distanceToWall = 15;
+                } else if (map[testY][testX] === 1) {
+                    hitWall = true;
+                }
+            }
+
+            // Коррекция эффекта рыбьего глаза
+            distanceToWall *= Math.cos(rayAngle - player.dir);
+
+            let ceiling = canvas.height / 2 - canvas.height / distanceToWall;
+            let floor = canvas.height - ceiling;
+            let wallHeight = floor - ceiling;
+
+            // Цвет стен в зависимости от дистанции
+            let brightness = Math.min(255, 2000 / distanceToWall);
+            ctx.fillStyle = `rgb(0, ${brightness}, 65)`;
+            ctx.fillRect(i * (canvas.width/numRays), ceiling, (canvas.width/numRays) + 1, wallHeight);
+        }
+    }
+
+    function loop() {
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    loop();
 </script>
 </body>
 </html>
