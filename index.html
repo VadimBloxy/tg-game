@@ -158,41 +158,44 @@
 </div>
 
 <script>
-
     const NARRATOR_IMAGE_URL = "file:///Users/vadim/Downloads/Narrator.jpg";
 
-    let state = {
+    // Начальное состояние
+    const initialState = {
         gold: 150, ammo: 30, sanity: 0, level: 1, xp: 0, xpNext: 100, sp: 0,
         baseAtk: 30, inventory: [], enemy: null, isNight: false,
         companion: null, hasCursedGun: false, gameEnded: false,
         skills: { doubleShot: false, ironWill: false }
     };
 
+    let state = JSON.parse(JSON.stringify(initialState));
+
     function log(msg, color = "#aaa") {
         const el = document.getElementById('event-log');
         el.innerHTML = `<div style="color:${color}">> ${msg}</div>` + el.innerHTML;
     }
 
+    // СОХРАНЕНИЕ В БАЗУ БРАУЗЕРА
     function save() {
-        localStorage.setItem('gh_final_ultimate', JSON.stringify(state));
-        log("Progress saved.", "var(--xp)");
+        // Убираем текущего врага из сохранения, чтобы не было багов при загрузке
+        const saveState = {...state, enemy: null, isNight: false}; 
+        localStorage.setItem('GHOST_HUNTER_DB', JSON.stringify(saveState));
+        log("DATABASE UPDATED: Progress locked in.", "var(--xp)");
     }
 
+    // ЗАГРУЗКА ИЗ БАЗЫ
     function load() {
-        const s = localStorage.getItem('gh_final_ultimate');
-        if(s) {
-            state = JSON.parse(s);
+        const savedData = localStorage.getItem('GHOST_HUNTER_DB');
+        if(savedData) {
+            state = JSON.parse(savedData);
             updateDisplay();
-            log("Progress restored.");
+            log("DATABASE LOADED: Welcome back, Hunter.", "var(--gold)");
+        } else {
+            log("No save file found in database.", "red");
         }
     }
 
-    function closeUI() {
-        document.getElementById('skill-menu').style.display = 'none';
-        document.getElementById('stable-menu').style.display = 'none';
-        updateDisplay();
-    }
-
+    // Покупаем питомца
     function buyPet(t) {
         if(state.gold >= 150) {
             state.gold -= 150;
@@ -202,6 +205,12 @@
         } else {
             log("Not enough gold!");
         }
+    }
+
+    function closeUI() {
+        document.getElementById('skill-menu').style.display = 'none';
+        document.getElementById('stable-menu').style.display = 'none';
+        updateDisplay();
     }
 
     function updateDisplay() {
@@ -243,7 +252,6 @@
         } else {
             ez.style.display = 'none';
         }
-
         renderButtons();
     }
 
@@ -261,6 +269,7 @@
                  <button onclick="shop('whiskey')">🥃 BUY WHISKEY ($40)</button>
                  <button onclick="document.getElementById('stable-menu').style.display='block'">🐕 STABLES</button>
                  <button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
+            // ЦЕНА ТУТ
             if(state.level >= 7 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 SOUL EATER ($750)</button>`;
             h += `<button onclick="startHunt()" style="background:#333; color:var(--ghost)">🌙 START HUNT</button>`;
         } else {
@@ -318,46 +327,36 @@
         updateDisplay();
     }
 
-
     function attack(t) {
         let d = state.baseAtk + (Math.random() * 20);
         if(state.companion === 'dog') d += 20;
- 
+
         if(t === 'shoot') {
-            if(state.ammo >= 1) {
-                state.ammo--;
-            } else {
-                log("Out of ammo!", "red");
-                return updateDisplay();
-            }
+            if(state.ammo >= 1) { state.ammo--; } 
+            else { log("Out of ammo!", "red"); return updateDisplay(); }
         } 
         else if(t === 'double') {
-            if(state.ammo >= 2) {
-                state.ammo -= 2;
-                d *= 2.5;
-            } else {
-                log("Not enough ammo for Double Shot!", "red");
-                return updateDisplay();
-            }
+            if(state.ammo >= 2) { state.ammo -= 2; d *= 2.5; } 
+            else { log("Not enough ammo!", "red"); return updateDisplay(); }
         } 
         else if(t === 'cursed') {
-            if(state.ammo >= 10) {
-                state.ammo -= 10;
+            // ИСПРАВЛЕННЫЙ РАСХОД: 5 патронов
+            if(state.ammo >= 5) {
+                state.ammo -= 5;
                 state.sanity += 10; 
                 d = 750; 
                 log("The Soul Eater screams as it fires!", "var(--blood)");
             } else {
-                log("Not enough ammo for Soul Blast! (Need 5)", "red");
+                log("Need 5 ammo for Soul Blast!", "red");
                 return updateDisplay();
             }
         } 
-        // УКЛОНЕНИЕ
         else if(t === 'dodge' && Math.random() > 0.5) {
             log("Safe!");
             return updateDisplay();
         }
 
-        if(d > 0) {
+        if(d > 0 && state.enemy) {
             state.enemy.hp -= d;
             if(state.enemy.hp <= 0) {
                 if(state.enemy.name === "NARRATOR") return doEnd();
@@ -366,10 +365,8 @@
                 state.xp += 50;
                 state.enemy = null;
                 if(state.xp >= state.xpNext) {
-                    state.level++;
-                    state.sp++;
-                    state.xp = 0;
-                    state.xpNext *= 1.5;
+                    state.level++; state.sp++;
+                    state.xp = 0; state.xpNext *= 1.5;
                 }
             } else {
                 enemyTurn();
@@ -381,11 +378,9 @@
     function enemyTurn() {
         document.getElementById('game-container').classList.add('shake');
         setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 200);
-        
         let dmg = 15 + (state.level * 2);
         if(state.skills.ironWill) dmg *= 0.6;
         state.sanity += Math.floor(dmg);
-
         if(state.sanity >= 100) {
             state.gameEnded = true;
             alert("The darkness took you. Game Over.");
@@ -397,6 +392,7 @@
         if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 20; }
         if(t === 'tnt' && state.gold >= 50) { state.gold -= 50; state.inventory.push('tnt'); }
         if(t === 'whiskey' && state.gold >= 40) { state.gold -= 40; state.inventory.push('whiskey'); }
+        // ЦЕНА ТУТ
         if(t === 'cursed' && state.gold >= 750) { state.gold -= 750; state.hasCursedGun = true; }
         updateDisplay();
     }
@@ -413,9 +409,10 @@
     function doEnd() {
         state.gameEnded = true;
         document.getElementById('ending').style.display = 'flex';
-        document.getElementById('ending-msg').innerText = "You have defeated the Narrator and freed your soul from the ink. The cycle is broken. The West is finally silent.";
+        document.getElementById('ending-msg').innerText = "You have defeated the Narrator and freed your soul from the ink. The West is finally silent.";
     }
 
+    window.onload = load;
     updateDisplay();
 </script>
 </body>
