@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOST HUNTER: THE COMPLETE SAGA (FINAL VERSION)</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>GHOST HUNTER: NARRATOR EDITION</title>
     <style>
         :root {
             --gold: #ffcc00; --blood: #af0000; --ghost: #8899cc;
@@ -40,9 +39,21 @@
             flex-grow: 1; display: none; flex-direction: column; align-items: center; justify-content: center;
             border: 2px dashed var(--blood); border-radius: 20px; margin: 20px 0; background: rgba(0,0,0,0.2);
         }
-        #enemy-sprite { font-size: 150px; margin: 20px 0; transition: 0.3s; }
-        .narrator-skin { animation: narrator-float 1s infinite alternate; text-shadow: 0 0 40px var(--gold); }
-        @keyframes narrator-float { from { transform: translateY(0); } to { transform: translateY(-20px); } }
+        
+        #enemy-sprite { font-size: 150px; margin: 20px 0; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+
+        .narrator-img {
+            width: 300px;
+            height: 300px; 
+            object-fit: contain;
+            animation: narrator-float 2s infinite alternate ease-in-out;
+            filter: drop-shadow(0 0 30px var(--gold));
+            border-radius: 20px;
+        }
+        @keyframes narrator-float { 
+            from { transform: translateY(0) rotate(-1deg); } 
+            to { transform: translateY(-25px) rotate(1deg); } 
+        }
 
         #event-log {
             height: 400px; overflow-y: auto; background: rgba(0,0,0,0.6);
@@ -109,7 +120,7 @@
 
     <div class="main-panel">
         <div id="enemy-zone">
-            <div id="enemy-sprite">👻</div>
+            <div id="enemy-sprite"></div>
             <h2 id="enemy-name" style="margin:0; font-size:32px;">GHOST</h2>
             <div class="bar-bg" style="width:80%; height:25px;"><div id="enemy-hp-fill"></div></div>
         </div>
@@ -147,6 +158,9 @@
 </div>
 
 <script>
+
+    const NARRATOR_IMAGE_URL = "file:///Users/vadim/Downloads/Narrator.jpg";
+
     let state = {
         gold: 150, ammo: 30, sanity: 0, level: 1, xp: 0, xpNext: 100, sp: 0,
         baseAtk: 30, inventory: [], enemy: null, isNight: false,
@@ -214,15 +228,17 @@
         });
 
         const ez = document.getElementById('enemy-zone');
+        const spriteCont = document.getElementById('enemy-sprite');
+        
         if (state.enemy) {
             ez.style.display = 'flex';
             document.getElementById('enemy-name').innerText = state.enemy.name;
-            document.getElementById('enemy-sprite').innerText = state.enemy.icon;
             document.getElementById('enemy-hp-fill').style.width = (state.enemy.hp / state.enemy.maxHp * 100) + '%';
+            
             if(state.enemy.name === "NARRATOR") {
-                document.getElementById('enemy-sprite').className = 'narrator-skin';
+                spriteCont.innerHTML = `<img src="${NARRATOR_IMAGE_URL}" class="narrator-img" alt="Narrator">`;
             } else {
-                document.getElementById('enemy-sprite').className = '';
+                spriteCont.innerHTML = state.enemy.icon;
             }
         } else {
             ez.style.display = 'none';
@@ -245,7 +261,7 @@
                  <button onclick="shop('whiskey')">🥃 BUY WHISKEY ($40)</button>
                  <button onclick="document.getElementById('stable-menu').style.display='block'">🐕 STABLES</button>
                  <button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
-            if(state.level >= 5 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 SOUL EATER ($300)</button>`;
+            if(state.level >= 7 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 SOUL EATER ($750)</button>`;
             h += `<button onclick="startHunt()" style="background:#333; color:var(--ghost)">🌙 START HUNT</button>`;
         } else {
             h = `<button onclick="scout()" style="padding:40px;">🔍 SCOUT AREA</button>
@@ -262,7 +278,7 @@
 
     function returnToTown() {
         state.isNight = false;
-        state.sanity = 0; // Механика лечения в городе
+        state.sanity = 0; 
         log("Returned to town. Restored sanity to 0%.", "var(--xp)");
         updateDisplay();
     }
@@ -286,7 +302,7 @@
         if(Math.random() > 0.4) {
             const isN = Math.random() > 0.9 && state.level >= 15;
             if(isN) {
-                state.enemy = { name: "NARRATOR", icon: "📖✨", hp: 2000, maxHp: 2000, atk: 50 };
+                state.enemy = { name: "NARRATOR", icon: "", hp: 2100, maxHp: 2100, atk: 40 };
                 log("THE AUTHOR HAS ARRIVED.", "var(--gold)");
             } else {
                 let h = 150 + (state.level * 20);
@@ -302,24 +318,43 @@
         updateDisplay();
     }
 
+
     function attack(t) {
         let d = state.baseAtk + (Math.random() * 20);
         if(state.companion === 'dog') d += 20;
-
-        if(t === 'shoot' && state.ammo >= 1) {
-            state.ammo--;
-        } else if(t === 'double' && state.ammo >= 2) {
-            state.ammo -= 2;
-            d *= 2.5;
-        } else if(t === 'cursed') {
-            state.sanity += 15;
-            d = 350;
-        } else if(t === 'dodge' && Math.random() > 0.5) {
+ 
+        if(t === 'shoot') {
+            if(state.ammo >= 1) {
+                state.ammo--;
+            } else {
+                log("Out of ammo!", "red");
+                return updateDisplay();
+            }
+        } 
+        else if(t === 'double') {
+            if(state.ammo >= 2) {
+                state.ammo -= 2;
+                d *= 2.5;
+            } else {
+                log("Not enough ammo for Double Shot!", "red");
+                return updateDisplay();
+            }
+        } 
+        else if(t === 'cursed') {
+            if(state.ammo >= 10) {
+                state.ammo -= 10;
+                state.sanity += 10; 
+                d = 750; 
+                log("The Soul Eater screams as it fires!", "var(--blood)");
+            } else {
+                log("Not enough ammo for Soul Blast! (Need 5)", "red");
+                return updateDisplay();
+            }
+        } 
+        // УКЛОНЕНИЕ
+        else if(t === 'dodge' && Math.random() > 0.5) {
             log("Safe!");
             return updateDisplay();
-        } else if(state.ammo <= 0 && t !== 'cursed') {
-            log("Out of ammo!", "red");
-            d = 0;
         }
 
         if(d > 0) {
@@ -362,7 +397,7 @@
         if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 20; }
         if(t === 'tnt' && state.gold >= 50) { state.gold -= 50; state.inventory.push('tnt'); }
         if(t === 'whiskey' && state.gold >= 40) { state.gold -= 40; state.inventory.push('whiskey'); }
-        if(t === 'cursed' && state.gold >= 300) { state.gold -= 300; state.hasCursedGun = true; }
+        if(t === 'cursed' && state.gold >= 750) { state.gold -= 750; state.hasCursedGun = true; }
         updateDisplay();
     }
 
