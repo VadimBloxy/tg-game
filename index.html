@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>HACKER_RPG_PART_2: THE_DATA_MINING // VADIMIVASH</title>
+    <title>HACKER_RPG_ULTIMATE // VADIMIVASH</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500;700&display=swap');
         
@@ -10,7 +10,7 @@
             --neon: #00ff41;
             --bg: #050505;
             --danger: #ff003c;
-            --window-dark: #0f0f0f;
+            --window: #0a0a0a;
         }
 
         body, html {
@@ -19,212 +19,199 @@
             font-family: 'Fira Code', monospace; overflow: hidden;
         }
 
-        /* --- СКРИН СЛОИ --- */
-        #main-menu, #game-screen, #inventory-screen {
+        /* Экраны */
+        .screen {
             position: fixed; inset: 0; display: none;
             flex-direction: column; align-items: center; justify-content: center;
-            background: #000; z-index: 10;
+            background: radial-gradient(circle, #111 0%, #000 100%);
         }
-        #main-menu { display: flex; }
 
-        /* --- ДИЗАЙН КНОПОК --- */
+        /* Кнопки */
         .btn {
             background: transparent; border: 1px solid var(--neon);
-            color: var(--neon); padding: 12px 30px; margin: 5px;
+            color: var(--neon); padding: 12px 30px; margin: 10px;
             font-family: inherit; cursor: pointer; text-transform: uppercase;
-            transition: 0.2s;
+            transition: 0.3s; z-index: 10;
         }
         .btn:hover { background: var(--neon); color: #000; box-shadow: 0 0 15px var(--neon); }
+        .btn:disabled { border-color: #333; color: #333; opacity: 0.5; }
 
-        /* --- ИНВЕНТАРЬ --- */
-        .inv-grid {
-            display: grid; grid-template-columns: repeat(3, 180px); gap: 20px;
-            perspective: 1000px;
-        }
+        /* Терминал */
+        #term-win { width: 80%; height: 60%; background: var(--window); border: 1px solid #333; position: relative; }
+        #console { padding: 20px; font-size: 14px; height: 80%; overflow-y: auto; white-space: pre-wrap; color: var(--neon); }
+        .p-bar { height: 5px; background: #111; width: 100%; }
+        .p-fill { height: 100%; background: var(--neon); width: 0%; transition: 0.1s; }
+
+        /* Инвентарь */
+        .inv-grid { display: grid; grid-template-columns: repeat(3, 180px); gap: 20px; }
         .inv-item {
-            width: 180px; height: 220px; border: 1px solid var(--neon);
-            background: rgba(0, 255, 65, 0.02); display: flex;
-            flex-direction: column; align-items: center; justify-content: center;
-            cursor: pointer; position: relative; transition: 0.3s;
+            width: 180px; height: 200px; border: 1px solid var(--neon);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            cursor: pointer; background: rgba(0,255,65,0.05); transition: 0.2s;
         }
-        .inv-item:hover { transform: translateY(-5px); background: rgba(0, 255, 65, 0.1); }
-        .inv-item b { font-size: 14px; margin-top: 10px; }
-        .inv-item span { font-size: 10px; opacity: 0.6; margin-top: 5px; text-align: center; }
-        .icon { font-size: 40px; }
+        .inv-item:hover { background: rgba(0,255,65,0.2); transform: scale(1.05); }
+        .icon { font-size: 40px; margin-bottom: 10px; }
 
-        /* --- ОКНО ПРОСМОТРА ДАННЫХ (DATA VIEWER) --- */
-        #data-viewer {
+        /* Окно данных */
+        #viewer {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 400px; background: var(--window-dark); border: 2px solid var(--neon);
-            z-index: 100; display: none; flex-direction: column;
-            box-shadow: 0 0 100px rgba(0, 255, 65, 0.3);
+            width: 400px; background: #000; border: 2px solid var(--neon);
+            display: none; flex-direction: column; z-index: 2000;
+            box-shadow: 0 0 50px rgba(0,255,65,0.4);
         }
-        .viewer-header { background: var(--neon); color: #000; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; }
-        .viewer-body { padding: 20px; color: #fff; font-size: 14px; line-height: 1.6; }
-        .secret-code { color: var(--neon); font-weight: bold; background: #1a1a1a; padding: 5px; display: block; margin-top: 10px; border: 1px dashed var(--neon); }
+        .v-head { background: var(--neon); color: #000; padding: 10px; font-weight: bold; }
+        .v-body { padding: 20px; }
 
-        /* --- ГРАФИКА ВЗЛОМА (КОПИРУЕМ ИЗ 1 ЧАСТИ) --- */
-        #terminal-win { width: 70%; height: 60%; background: #050505; border: 1px solid #333; position: relative; }
-        #console { padding: 15px; font-size: 12px; height: 300px; overflow-y: auto; white-space: pre-wrap; }
-        #prog-bar { height: 4px; background: #111; width: 100%; }
-        #prog-fill { height: 100%; background: var(--neon); width: 0%; }
+        /* Банк */
+        #bank-ui { display: none; text-align: center; }
+        #bank-input { background: #000; border: 1px solid var(--neon); color: var(--neon); padding: 10px; font-size: 20px; text-align: center; }
 
-        .hint { font-size: 10px; color: #555; margin-top: 20px; }
+        /* Эффект шума */
+        .crt::after {
+            content: ""; position: fixed; inset: 0;
+            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.1) 50%), linear-gradient(90deg,rgba(255,0,0,0.03),rgba(0,255,0,0.01),rgba(0,0,255,0.03));
+            z-index: 9999; pointer-events: none; background-size: 100% 3px, 3px 100%;
+        }
     </style>
 </head>
-<body>
+<body class="crt">
 
-    <div id="main-menu">
-        <h1 style="letter-spacing: 5px;">VADIM_HACK_OS 2.0</h1>
-        <p>ТЕКУЩАЯ ЦЕЛЬ: СОСЕД (ВЗЛОМ ЗАВЕРШЕН)</p>
-        <button class="btn" onclick="startHack()">ПОВТОРИТЬ ВЗЛОМ (ДЛЯ ТЕСТА)</button>
-        <button class="btn" onclick="openInventory()">ИНВЕНТАРЬ</button>
-        <p class="hint">*Собери все улики, чтобы открыть 3-ю часть (БАНК)</p>
+    <div id="m-menu" class="screen" style="display: flex;">
+        <h1 style="font-size: 3rem; text-shadow: 0 0 20px var(--neon);">VADIM_HACK_ULTIMATE</h1>
+        <button class="btn" onclick="startHack()">1. ВЗЛОМАТЬ СОСЕДА</button>
+        <button class="btn" onclick="openInv()">2. ИНВЕНТАРЬ (<span id="icount">0</span>)</button>
+        <button class="btn" id="bank-btn" onclick="openBank()">3. ВЗЛОМАТЬ БАНК (LOCK)</button>
+        <p style="font-size: 10px; color: #444;">*Сначала найди ПИН-код в дневнике соседа</p>
     </div>
 
-    <div id="inventory-screen">
-        <h2>СИСТЕМА ХРАНЕНИЯ УЛИК</h2>
-        <div class="inv-grid" id="inv-grid">
-            </div>
-        <button class="btn" style="margin-top: 40px;" onclick="toMenu()">ВЕРНУТЬСЯ В МЕНЮ</button>
-        <p class="hint" style="color: var(--neon);">[ СОВЕТ: Нажми дважды на предмет, чтобы извлечь данные ]</p>
-    </div>
-
-    <div id="data-viewer">
-        <div class="viewer-header">
-            <span id="v-title">FILE_ANALYSIS</span>
-            <span style="cursor:pointer" onclick="closeViewer()">[X]</span>
-        </div>
-        <div class="viewer-body">
-            <p id="v-desc"></p>
-            <div id="v-data"></div>
-        </div>
-        <button class="btn" style="margin: 10px;" onclick="closeViewer()">ЗАКРЫТЬ</button>
-    </div>
-
-    <div id="game-screen">
-        <div id="terminal-win">
-            <div id="prog-bar"><div id="prog-fill"></div></div>
+    <div id="h-screen" class="screen">
+        <div id="term-win">
+            <div class="v-head" style="background:#1a1a1a; color:var(--neon)">NEIGHBOR_EXPLOIT_v2.sh</div>
+            <div class="p-bar"><div id="p-fill" class="p-fill"></div></div>
             <div id="console"></div>
         </div>
+        <p>ПЕЧАТАЙ НА КЛАВИАТУРЕ ДЛЯ ВЗЛОМА...</p>
+    </div>
+
+    <div id="i-screen" class="screen">
+        <h2>АРХИВ ДАННЫХ</h2>
+        <div class="inv-grid" id="igrid"></div>
+        <button class="btn" onclick="back()">НАЗАД</button>
+    </div>
+
+    <div id="viewer">
+        <div class="v-head" id="vtitle">FILE</div>
+        <div class="v-body">
+            <p id="vdesc"></p>
+            <div id="vcode" style="border:1px dashed var(--neon); padding:10px; margin-top:10px;"></div>
+        </div>
+        <button class="btn" onclick="closeV()">ЗАКРЫТЬ</button>
+    </div>
+
+    <div id="b-screen" class="screen">
+        <h2 style="color:var(--danger)">ATM_ALPHA_BANK v4.0</h2>
+        <p>ВВЕДИТЕ 4-ЗНАЧНЫЙ ПИН-КОД ИЗ ДНЕВНИКА:</p>
+        <input type="text" id="bank-input" maxlength="4" placeholder="****">
+        <br>
+        <button class="btn" onclick="checkBank()">CONFIRM</button>
+        <button class="btn" onclick="back()">ОТМЕНА</button>
     </div>
 
 <script>
-    // --- ГЛОБАЛЬНЫЕ ДАННЫЕ ---
-    let inventory = JSON.parse(localStorage.getItem('hacker_inv')) || [];
+    let inv = [];
     let typed = 0;
     const goal = 1000;
-
-    const db = {
-        'wifi_pass': { 
-            name: 'WIFI_KEY', icon: '📶', 
-            desc: 'Расшифрованный протокол WPA2. Содержит логи доступа.', 
-            secret: 'ADMIN_HASH: 77a12_X88\nIP_ROUTER: 192.168.1.1' 
-        },
-        'diary': { 
-            name: 'DIARY.LOG', icon: '📔', 
-            desc: 'Личные записи соседа. Найдены упоминания банковской карты.', 
-            secret: 'ИМЯ: Пётр Сергеевич\nЗАМЕТКА: ПИН-код такой же как год рождения (1984)' 
-        },
-        'photo': { 
-            name: 'EXPOSE.IMG', icon: '🖼️', 
-            desc: 'Фото соседа. Метаданные содержат геопозицию банка.', 
-            secret: 'BANK_ID: ALPHA_CORE_01\nКОД_ОТКЛЮЧЕНИЯ: 990011' 
-        }
+    
+    const items = {
+        'wifi': { name: 'WIFI_PASS', icon: '📶', desc: 'Логи роутера соседа.', data: 'IP: 192.168.0.42 | PASS: neighbor123' },
+        'diary': { name: 'DIARY.txt', icon: '📔', desc: 'Личный дневник Петра.', data: 'СЕКРЕТ: "Мой ПИН-код это год моего рождения - 1984"' },
+        'photo': { name: 'COMPROMAT', icon: '🖼️', desc: 'Секретное фото.', data: 'ID_ОБЪЕКТА: NEIGHBOR_42 | СТАТУС: ШАНТАЖ' }
     };
 
-    function playSound(f, d) {
-        const a = new (window.AudioContext || window.webkitAudioContext)();
-        const o = a.createOscillator(); const g = a.createGain();
-        o.frequency.value = f; g.gain.setValueAtTime(0.05, a.currentTime);
-        o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + d);
+    // Звук
+    function sfx(f) {
+        try {
+            const a = new (window.AudioContext || window.webkitAudioContext)();
+            const o = a.createOscillator(); const g = a.createGain();
+            o.frequency.value = f; g.gain.value = 0.05;
+            o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.1);
+        } catch(e){}
     }
 
-    // --- ЛОГИКА МЕНЮ ---
-    function openInventory() {
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('inventory-screen').style.display = 'flex';
-        renderInventory();
+    // Навигация
+    function back() { document.querySelectorAll('.screen').forEach(s => s.style.display='none'); document.getElementById('m-menu').style.display='flex'; }
+    function openInv() { 
+        document.getElementById('m-menu').style.display='none'; 
+        document.getElementById('i-screen').style.display='flex'; 
+        renderInv();
     }
 
-    function toMenu() {
-        document.getElementById('inventory-screen').style.display = 'none';
-        document.getElementById('main-menu').style.display = 'flex';
-    }
-
-    // --- РЕНДЕР ИНВЕНТАРЯ ---
-    function renderInventory() {
-        const grid = document.getElementById('inv-grid');
-        grid.innerHTML = "";
-        
-        // Показываем только те предметы, которые мы реально "взломали"
-        // Если инвентарь пуст (первый запуск), даем кнопку "Взломать"
-        if(inventory.length === 0) {
-            grid.innerHTML = "<p>Инвентарь пуст. Сначала взломай соседа!</p>";
-            return;
-        }
-
-        inventory.forEach(key => {
-            const item = db[key];
-            const div = document.createElement('div');
-            div.className = 'inv-item';
-            div.innerHTML = `<div class="icon">${item.icon}</div><b>${item.name}</b><span>Нажми 2 раза</span>`;
-            
-            // ДВОЙНОЙ КЛИК
-            div.ondblclick = () => openViewer(key);
-            grid.appendChild(div);
+    function renderInv() {
+        const g = document.getElementById('igrid');
+        g.innerHTML = inv.length ? "" : "ПУСТО";
+        inv.forEach(k => {
+            const d = document.createElement('div'); d.className='inv-item';
+            d.innerHTML = `<div class="icon">${items[k].icon}</div><b>${items[k].name}</b>`;
+            d.onclick = () => openV(k); // Сделал обычный клик, чтобы не висло
+            g.appendChild(d);
         });
+        document.getElementById('icount').innerText = inv.length;
+        if(inv.includes('diary')) document.getElementById('bank-btn').innerText = "3. ВЗЛОМАТЬ БАНК (OPEN)";
     }
 
-    // --- ПРОСМОТР ПРЕДМЕТА ---
-    function openViewer(key) {
-        const item = db[key];
-        playSound(800, 0.1);
-        document.getElementById('data-viewer').style.display = 'flex';
-        document.getElementById('v-title').innerText = "ANALYSIS: " + item.name;
-        document.getElementById('v-desc').innerText = item.desc;
-        document.getElementById('v-data').innerHTML = `
-            <span style="font-size:10px; color:#555;">ИЗВЛЕЧЕННЫЕ ДАННЫЕ:</span>
-            <div class="secret-code">${item.secret.replace(/\n/g, '<br>')}</div>
-        `;
+    function openV(k) {
+        sfx(600);
+        document.getElementById('viewer').style.display='flex';
+        document.getElementById('vtitle').innerText = items[k].name;
+        document.getElementById('vdesc').innerText = items[k].desc;
+        document.getElementById('vcode').innerText = items[k].data;
     }
 
-    function closeViewer() {
-        document.getElementById('data-viewer').style.display = 'none';
-    }
+    function closeV() { document.getElementById('viewer').style.display='none'; }
 
-    // --- СИСТЕМА ВЗЛОМА (УПРОЩЕННО ДЛЯ 2 ЧАСТИ) ---
+    // Взлом
     function startHack() {
-        document.getElementById('main-menu').style.display = 'none';
-        document.getElementById('game-screen').style.display = 'flex';
-        inventory = []; // Сброс для теста
-        typed = 0;
-        document.getElementById('console').textContent = "INITIALIZING ATTACK...";
+        document.getElementById('m-menu').style.display='none';
+        document.getElementById('h-screen').style.display='flex';
+        typed = 0; document.getElementById('console').innerText = "";
     }
 
     document.addEventListener('keydown', (e) => {
-        if(document.getElementById('game-screen').style.display !== 'flex') return;
+        if(document.getElementById('h-screen').style.display !== 'flex') return;
+        typed += 25;
+        sfx(200 + Math.random()*100);
+        document.getElementById('p-fill').style.width = (typed/goal)*100 + "%";
         
-        typed += 20;
-        playSound(100 + Math.random()*100, 0.05);
-        document.getElementById('prog-fill').style.width = (typed/goal)*100 + "%";
-        
-        if(typed === 200) { addInv('wifi_pass'); document.getElementById('console').textContent += "\n[+] WIFI_KEY EXTRACTED"; }
-        if(typed === 600) { addInv('diary'); document.getElementById('console').textContent += "\n[+] DIARY_LOG DECRYPTED"; }
-        if(typed === 900) { addInv('photo'); document.getElementById('console').textContent += "\n[+] EXPOSE_IMG DOWNLOADED"; }
+        if(typed === 250) { inv.push('wifi'); document.getElementById('console').innerText += "\n[+] WIFI_DATA ACQUIRED"; }
+        if(typed === 500) { inv.push('diary'); document.getElementById('console').innerText += "\n[+] DIARY_SECRET UNLOCKED"; }
+        if(typed === 750) { inv.push('photo'); document.getElementById('console').innerText += "\n[+] MEDIA_FILES DOWNLOADED"; }
         
         if(typed >= goal) {
             setTimeout(() => {
-                document.getElementById('game-screen').style.display = 'none';
-                document.getElementById('main-menu').style.display = 'flex';
-                localStorage.setItem('hacker_inv', JSON.stringify(inventory));
-                alert("ВЗЛОМ ЗАВЕРШЕН. ПРОВЕРЬ ИНВЕНТАРЬ!");
-            }, 1000);
+                alert("ГОТОВО! ДАННЫЕ В ИНВЕНТАРЕ.");
+                back(); renderInv();
+            }, 500);
         }
     });
 
-    function addInv(key) {
-        if(!inventory.includes(key)) inventory.push(key);
+    // Банк
+    function openBank() {
+        if(!inv.includes('diary')) return alert("Сначала найди ПИН-код в инвентаре (взломай соседа)!");
+        document.getElementById('m-menu').style.display='none';
+        document.getElementById('b-screen').style.display='flex';
+    }
+
+    function checkBank() {
+        const val = document.getElementById('bank-input').value;
+        if(val === "1984") {
+            sfx(1000);
+            alert("ДОСТУП РАЗРЕШЕН! Счёт соседа: $1,200,500. Перевод на ваш счёт...");
+            document.body.style.background = "#00ff41";
+            setTimeout(() => { location.reload(); }, 2000);
+        } else {
+            sfx(100);
+            alert("ОШИБКА: НЕВЕРНЫЙ ПИН-КОД!");
+        }
     }
 </script>
 </body>
