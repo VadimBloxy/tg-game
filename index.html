@@ -2,163 +2,153 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>TEXT_PARKOUR // VADIMIVASH</title>
+    <title>TEXT_PARKOUR_V2</title>
     <style>
         body { 
-            margin: 0; padding: 0; background: #f0f0f0; 
-            font-family: 'Segoe UI', sans-serif; overflow: hidden; 
+            margin: 0; background: #0a0a0a; color: #fff;
+            font-family: 'Consolas', monospace; overflow: hidden; 
         }
         
-        /* Твой персонаж */
         #player {
-            position: absolute; width: 30px; height: 30px;
-            background: #ff4757; border-radius: 5px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            z-index: 1000;
+            position: absolute; width: 25px; height: 25px;
+            background: #0077ff; box-shadow: 0 0 15px #0077ff;
+            z-index: 1000; border-radius: 3px;
         }
 
-        /* Золотой финиш */
         #exit {
-            position: absolute; top: 50px; left: 50%; transform: translateX(-50%);
-            padding: 20px 40px; background: gold; border: 4px solid #000;
-            font-weight: bold; font-size: 24px; color: #000;
+            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+            padding: 15px 30px; border: 2px solid gold; color: gold;
+            font-size: 20px; text-shadow: 0 0 10px gold;
         }
 
-        /* Платформы из текста */
         .word {
-            position: absolute; background: #2f3542; color: #fff;
-            padding: 10px 15px; border-radius: 4px; font-size: 18px;
-            white-space: nowrap; box-shadow: 0 5px 0 #1e2124;
+            position: absolute; background: rgba(255,255,255,0.1); 
+            color: #00ff41; padding: 8px 15px; border: 1px solid #00ff41;
+            white-space: nowrap; pointer-events: none;
         }
 
-        /* Поле ввода */
+        /* УМНОЕ ПОЛЕ ВВОДА */
         #input-container {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            padding: 20px; background: #fff; border-top: 2px solid #ccc;
-            display: flex; justify-content: center; z-index: 2000;
+            position: fixed; bottom: -100px; left: 50%; transform: translateX(-50%);
+            transition: 0.3s; z-index: 2000;
         }
+        #input-container.active { bottom: 50px; }
+
         input {
-            width: 400px; padding: 15px; font-size: 18px;
-            border: 2px solid #2f3542; outline: none;
+            background: rgba(0,0,0,0.8); border: 2px solid #0077ff;
+            color: #fff; padding: 15px; width: 300px; font-family: inherit;
+            outline: none; text-align: center; font-size: 18px;
         }
 
-        #ui-hint {
-            position: fixed; top: 20px; left: 20px;
-            background: rgba(255,255,255,0.8); padding: 10px; border-radius: 5px;
+        #hint {
+            position: fixed; top: 20px; left: 20px; color: #555; font-size: 12px;
         }
     </style>
 </head>
 <body>
 
-    <div id="ui-hint">
-        <b>WASD / Стрелки</b> - Движение<br>
-        <b>Пиши текст вниз + Enter</b> - Создать мост
-    </div>
-
-    <div id="exit">EXIT (ФИНИШ)</div>
+    <div id="hint">СТРЕЛКИ - ХОДИТЬ | ENTER - ПИСАТЬ ПЛАТФОРМУ</div>
+    <div id="exit">--- СИСТЕМА ВЫХОДА ---</div>
     <div id="player"></div>
 
-    <div class="word" style="bottom: 150px; left: 100px;">Платформа 1</div>
-    <div class="word" style="bottom: 250px; right: 200px;">Прыгай выше!</div>
+    <div class="word" style="bottom: 120px; left: 20%;">СТАРТ</div>
+    <div class="word" style="bottom: 250px; left: 40%;">ПРЫЖОК</div>
 
     <div id="input-container">
-        <input type="text" id="text-input" placeholder="Напиши что-нибудь и нажми Enter...">
+        <input type="text" id="text-input" placeholder="Пиши слово...">
     </div>
 
 <script>
     const player = {
         el: document.getElementById('player'),
-        x: window.innerWidth / 2,
-        y: window.innerHeight - 150,
-        vx: 0, vy: 0, w: 30, h: 30,
-        onGround: false
+        x: window.innerWidth / 2, y: window.innerHeight - 150,
+        vx: 0, vy: 0, w: 25, h: 25, onGround: false
     };
 
+    const inputCont = document.getElementById('input-container');
     const input = document.getElementById('text-input');
     const words = [];
     const keys = {};
 
-    // Собираем все стартовые слова
     document.querySelectorAll('.word').forEach(el => words.push(el));
 
-    // Управление
-    window.onkeydown = (e) => keys[e.code] = true;
+    window.onkeydown = (e) => {
+        if(e.code === 'Enter') {
+            if(!inputCont.classList.contains('active')) {
+                inputCont.classList.add('active');
+                input.focus();
+            } else if(input.value.trim() !== "") {
+                createPlatform(input.value);
+                input.value = "";
+                inputCont.classList.remove('active');
+                input.blur();
+            } else {
+                inputCont.classList.remove('active');
+                input.blur();
+            }
+        }
+        keys[e.code] = true;
+    };
     window.onkeyup = (e) => keys[e.code] = false;
 
-    // Создание новых слов
-    input.onkeydown = (e) => {
-        if(e.code === 'Enter' && input.value.trim() !== "") {
-            const newWord = document.createElement('div');
-            newWord.className = 'word';
-            newWord.innerText = input.value;
-            // Ставим слово там, где игрок, но чуть ниже
-            newWord.style.left = (player.x - 50) + 'px';
-            newWord.style.top = (player.y + 100) + 'px';
-            document.body.appendChild(newWord);
-            words.push(newWord);
-            input.value = "";
-            input.blur(); // Убрать фокус, чтобы можно было бегать
-        }
-    };
+    function createPlatform(txt) {
+        const div = document.createElement('div');
+        div.className = 'word';
+        div.innerText = txt;
+        div.style.left = (player.x - 50) + 'px';
+        div.style.top = (player.y + 60) + 'px'; // Чуть ниже игрока
+        document.body.appendChild(div);
+        words.push(div);
+    }
 
     function loop() {
-        // Движение влево/вправо
-        if (keys['ArrowLeft'] || keys['KeyA']) player.vx = -7;
-        else if (keys['ArrowRight'] || keys['KeyD']) player.vx = 7;
-        else player.vx *= 0.8;
+        // Управление (только если не печатаем)
+        if(!inputCont.classList.contains('active')) {
+            if (keys['ArrowLeft']) player.vx = -6;
+            else if (keys['ArrowRight']) player.vx = 6;
+            else player.vx *= 0.8;
 
-        // Прыжок
-        if ((keys['ArrowUp'] || keys['KeyW'] || keys['Space']) && player.onGround) {
-            player.vy = -18;
-            player.onGround = false;
+            if (keys['ArrowUp'] && player.onGround) {
+                player.vy = -16;
+                player.onGround = false;
+            }
+        } else {
+            player.vx = 0;
         }
 
-        // Физика
-        player.vy += 0.8; // Гравитация
+        player.vy += 0.7; 
         player.x += player.vx;
         player.y += player.vy;
 
-        // Пол экрана (чтобы не падать бесконечно)
-        if (player.y > window.innerHeight - 100) {
-            player.y = window.innerHeight - 100;
-            player.vy = 0;
-            player.onGround = true;
+        // Пол
+        if (player.y > window.innerHeight - 50) {
+            player.y = window.innerHeight - 50;
+            player.vy = 0; player.onGround = true;
         }
 
-        // КРАЯ ЭКРАНА
-        if (player.x < 0) player.x = 0;
-        if (player.x > window.innerWidth - player.w) player.x = window.innerWidth - player.w;
-
-        // ПРОВЕРКА СЛОВ (Коллизия)
+        // Коллизии со словами
         player.onGround = false;
-        words.forEach(word => {
-            const r = word.getBoundingClientRect();
-            if (player.x + player.w > r.left && 
-                player.x < r.right && 
-                player.y + player.h > r.top && 
-                player.y + player.h < r.top + 30 && // Наступаем только сверху
+        words.forEach(w => {
+            const r = w.getBoundingClientRect();
+            if (player.x + player.w > r.left && player.x < r.right && 
+                player.y + player.h > r.top && player.y + player.h < r.top + 20 && 
                 player.vy >= 0) {
                 player.y = r.top - player.h;
-                player.vy = 0;
-                player.onGround = true;
+                player.vy = 0; player.onGround = true;
             }
         });
 
-        // ПРОВЕРКА ФИНИША
-        const exit = document.getElementById('exit').getBoundingClientRect();
-        if (player.x < exit.right && player.x + player.w > exit.left &&
-            player.y < exit.bottom && player.y + player.h > exit.top) {
-            alert("ПОБЕДА! Ты выбрался из текста!");
-            location.reload();
+        // Победа
+        const ex = document.getElementById('exit').getBoundingClientRect();
+        if (player.x < ex.right && player.x + player.w > ex.left &&
+            player.y < ex.bottom && player.y + player.h > ex.top) {
+            alert("ВЫХОД НАЙДЕН!"); location.reload();
         }
 
-        // Отрисовка
         player.el.style.left = player.x + 'px';
         player.el.style.top = player.y + 'px';
-
         requestAnimationFrame(loop);
     }
-
     loop();
 </script>
 </body>
