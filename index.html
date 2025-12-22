@@ -2,451 +2,140 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>CYBER WESTERN: OMEGA PROTOCOL</title>
+    <title>Hack It</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        body { margin: 0; background: #010a01; color: #00ff41; font-family: 'Press Start 2P', cursive; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        #game-container { position: relative; width: 1100px; height: 850px; background: #000; border: 4px solid #111; display: grid; grid-template-rows: 80px 1fr 250px; box-shadow: 0 0 80px rgba(0,255,65,0.2); }
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;700&display=swap');
         
-        /* HEADER UI */
-        header { background: #050505; border-bottom: 2px solid #00ff41; display: flex; justify-content: space-around; align-items: center; padding: 0 20px; text-shadow: 0 0 10px #00ff41; }
-        .stat-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .bar-bg { width: 120px; height: 10px; background: #222; border: 1px solid #444; }
-        .bar-fill { height: 100%; transition: 0.3s; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow: hidden; font-family: 'Fira Code', monospace; }
 
-        /* VIEWPORT */
-        #viewport { display: flex; position: relative; overflow: hidden; }
-        canvas { background: radial-gradient(circle, #0a1a0a 0%, #000 100%); width: 750px; image-rendering: pixelated; }
+        /* ИНТРО */
+        #intro { position: fixed; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 100; transition: opacity 1.5s; }
+        #intro-text { font-size: 2.5rem; color: white; opacity: 0; transition: opacity 1s; }
         
-        /* SIDEBAR / INVENTORY */
-        aside { width: 350px; background: #080808; border-left: 2px solid #1a1a1a; padding: 15px; display: flex; flex-direction: column; gap: 10px; overflow-y: auto; }
-        .inv-slot { background: #000; border: 1px solid #333; padding: 10px; display: flex; justify-content: space-between; align-items: center; font-size: 10px; transition: 0.2s; }
-        .inv-slot:hover { border-color: #00ff41; background: #050505; }
-        .rarity-3 { color: #ff00ff; text-shadow: 0 0 8px; } /* Legendary */
-        .rarity-2 { color: #00ccff; } /* Rare */
+        /* МОНИТОР */
+        #pc-case {
+            display: none; width: 90%; height: 85%; margin: 2% auto;
+            background: #1a1a1b; border: 15px solid #333; border-radius: 10px;
+            box-shadow: 0 0 50px rgba(0,255,65,0.1); position: relative;
+        }
 
-        /* BOTTOM PANEL */
-        #bottom-panel { display: grid; grid-template-columns: 1fr 380px; background: #030303; border-top: 2px solid #00ff41; }
-        #terminal { padding: 15px; font-family: 'Courier New', monospace; font-size: 15px; overflow-y: scroll; line-height: 1.4; color: #00ff41; }
-        #controls { padding: 15px; display: flex; flex-direction: column; gap: 10px; background: #080808; }
-        
-        .btn { padding: 14px; background: #000; border: 2px solid #00ff41; color: #00ff41; font-family: inherit; cursor: pointer; font-size: 12px; transition: 0.1s; position: relative; overflow: hidden; }
-        .btn:hover:not(:disabled) { background: #00ff41; color: #000; box-shadow: 0 0 20px #00ff41; }
-        .btn:active { transform: scale(0.98); }
-        .btn:disabled { border-color: #222; color: #222; cursor: not-allowed; }
-        .btn-skill { border-color: #00ccff; color: #00ccff; }
-        .btn-skill:hover:not(:disabled) { background: #00ccff; color: #000; box-shadow: 0 0 20px #00ccff; }
+        /* ОКНО HACK WEBP */
+        #window {
+            width: 95%; height: 90%; margin: 20px auto; background: #0c0c0c;
+            border: 1px solid #444; display: flex; flex-direction: column;
+        }
+        #window-header {
+            background: #222; padding: 10px; color: #aaa; font-size: 14px;
+            border-bottom: 1px solid #444; display: flex; justify-content: space-between;
+        }
 
-        /* NOTIFICATIONS */
-        #toast { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); pointer-events: none; color: #fff; font-size: 20px; text-shadow: 2px 2px #000; opacity: 0; transition: 0.5s; }
+        /* РЕДАКТОР КОДА */
+        #editor { flex: 1; padding: 20px; font-size: 18px; line-height: 1.5; overflow-y: auto; }
+        .code-template { color: #444; white-space: pre-wrap; margin-bottom: 10px; }
+        .user-code { color: #00ff41; white-space: pre-wrap; outline: none; caret-color: #00ff41; }
+
+        /* ЭФФЕКТЫ */
+        .scanline {
+            width: 100%; height: 100%; position: absolute; top: 0; left: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            background-size: 100% 4px, 3px 100%; pointer-events: none;
+        }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <header>
-        <div class="stat-group">
-            <span>HEALTH</span>
-            <div class="bar-bg"><div id="hp-bar" class="bar-fill" style="background: #ff3333; width: 100%;"></div></div>
-        </div>
-        <div class="stat-group">
-            <span>ENERGY</span>
-            <div class="bar-bg"><div id="sp-bar" class="bar-fill" style="background: #00ccff; width: 100%;"></div></div>
-        </div>
-        <div class="stat-group">LEVEL <span id="ui-lvl">1</span></div>
-        <div class="stat-group">CREDITS <span id="ui-cash">100</span></div>
-        <div class="stat-group">SCRAP <span id="ui-scrap">0</span></div>
-    </header>
-
-    <div id="viewport">
-        <canvas id="gameCanvas" width="750" height="520"></canvas>
-        <div id="toast">LEVEL UP!</div>
-        <aside id="sidebar">
-            <h4 style="margin:0; color:#ffcc00; text-align:center;">--- DATA-BANK ---</h4>
-            <div id="drone-status" style="font-size: 10px; text-align:center; color:#00ccff;">DRONE: OFFLINE</div>
-            <div id="inv-container">
-                </div>
-        </aside>
+    <div id="intro">
+        <div id="intro-text">VadimIvash Games</div>
     </div>
 
-    <div id="bottom-panel">
-        <div id="terminal"></div>
-        <div id="controls">
-            <button id="btn-explore" class="btn" onclick="game.action('explore')">SCAN SECTOR</button>
-            <div style="display:flex; gap:10px;">
-                <button id="btn-atk" class="btn" style="flex:1" onclick="game.combat('attack')" disabled>FIRE REVOLVER</button>
-                <button id="btn-deadeye" class="btn btn-skill" style="flex:1" onclick="game.combat('deadeye')" disabled>DEADEYE (40 SP)</button>
+    <div id="pc-case">
+        <div id="window">
+            <div id="window-header">
+                <span>Hack Webp</span>
+                <span>[ - ] [ □ ] [ X ]</span>
             </div>
-            <div style="display:flex; gap:10px;">
-                <button id="btn-heal" class="btn" style="flex:1" onclick="game.action('heal')">STIM-INJECTION (0)</button>
-                <button id="btn-craft" class="btn" style="flex:1" onclick="game.action('craft')">CRAFT DRONE (15)</button>
+            <div id="editor">
+                <div class="code-template">&lt;!DOCTYPE html&gt;
+&lt;html lang="en"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;Hack Webp&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;hack user&lt;/h1&gt;
+&lt;/body&gt;
+&lt;/html&gt;</div>
+                <div id="typing-area" class="user-code"></div>
             </div>
         </div>
+        <div class="scanline"></div>
     </div>
-</div>
 
 <script>
-/**
- * GRAPHICS ASSET SYSTEM (Часть 1 из 2)
- */
-const Sprites = {
-    // Многоцветный детализированный ковбой
-    Player: [
-        [0,0,0,0,1,1,1,1,1,1,1,0,0,0,0],
-        [0,0,1,1,1,1,1,1,1,1,1,1,1,0,0], // Шляпа
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
-        [0,0,0,1,1,2,2,2,2,2,1,1,0,0,0], // Лицо
-        [0,0,0,1,2,5,2,2,2,5,2,1,0,0,0], // Глаза
-        [0,0,0,1,2,2,2,2,2,2,2,1,0,0,0],
-        [0,0,1,1,1,1,4,1,1,4,1,1,1,0,0], // Шарф
-        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,0], // Плащ
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1], 
-        [1,3,3,1,1,1,1,1,1,1,1,1,3,3,1], // Руки и Пушки
-        [1,1,3,1,1,1,1,1,1,1,1,1,3,1,1], 
-        [0,0,1,1,1,1,1,4,1,1,1,1,1,0,0], 
-        [0,0,1,1,1,5,5,5,5,5,1,1,1,0,0], // Пояс
-        [0,0,1,1,5,0,0,0,0,0,5,1,1,0,0],
-        [0,0,5,5,5,0,0,0,0,0,5,5,5,0,0], // Сапоги
-        [0,4,5,5,5,0,0,0,0,0,5,5,5,4,0]  // Шпоры
-    ],
-    // Враги и Дроны
-    Bot: [[0,1,1,1,0],[1,0,1,0,1],[1,1,1,1,1],[0,1,1,1,0],[0,1,0,1,0]],
-    MK3: [[3,0,3,0,3],[0,3,4,3,0],[3,4,4,4,3],[0,3,4,3,0],[3,0,3,0,3]],
-    Duck: [[0,1,1,0],[1,1,0,1],[1,1,1,1],[0,1,1,0]]
-};
+    const intro = document.getElementById('intro');
+    const introText = document.getElementById('intro-text');
+    const pcCase = document.getElementById('pc-case');
+    const typingArea = document.getElementById('typing-area');
 
-const Palette = {
-    1: "#4E342E", // Коричневый плащ
-    2: "#FFCCBC", // Кожа
-    3: "#90A4AE", // Сталь
-    4: "#FFD600", // Золото
-    5: "#121212"  // Черный/Тени
-};
-
-class Renderer {
-    constructor(ctx) {
-        this.ctx = ctx;
-        this.particles = [];
-        this.shake = 0;
+    // Хакерский скрипт, который будет печататься при нажатии кнопок
+    const fullCode = `
+[SUCCESS] Target IP: 192.168.1.104
+[SYSTEM] Creating Skeleton Frame...
+<script>
+    window.onload = function() {
+        let payload = "EXPLOIT_EXECUTED";
+        inject(payload);
+        console.log("User Data Intercepted...");
+        document.querySelector('h1').innerText = "OWNED BY VADIMIVASH";
     }
+<\/script>
+[!] DATABASE_LINK_ESTABLISHED
+[!] BYPASSING FIREWALL... 100%
+[!] STEALING SESSION TOKENS...`;
 
-    drawSprite(matrix, x, y, size, isEnemy = false) {
-        matrix.forEach((row, r) => {
-            row.forEach((pixel, c) => {
-                if (pixel !== 0) {
-                    this.ctx.fillStyle = isEnemy ? "#ff3333" : (Palette[pixel] || "#00ff41");
-                    this.ctx.fillRect(x + c * size, y + r * size, size, size);
-                }
-            });
-        });
-    }
+    let charIndex = 0;
 
-    addParticles(x, y, color, count = 10) {
-        for (let i = 0; i < count; i++) {
-            this.particles.push({
-                x, y, color,
-                vx: (Math.random() - 0.5) * 8,
-                vy: (Math.random() - 0.5) * 8,
-                life: 25
-            });
-        }
-    }
-
-    update() {
-        if (this.shake > 0) {
-            this.ctx.translate((Math.random()-0.5)*this.shake, (Math.random()-0.5)*this.shake);
-            this.shake *= 0.9;
-        }
-        
-        this.particles.forEach((p, i) => {
-            p.x += p.vx; p.y += p.vy; p.life--;
-            this.ctx.fillStyle = p.color;
-            this.ctx.globalAlpha = p.life / 25;
-            this.ctx.fillRect(p.x, p.y, 3, 3);
-            if (p.life <= 0) this.particles.splice(i, 1);
-        });
-        this.ctx.globalAlpha = 1;
-    }
-}
-
-console.log("ENGINE PART 1: LOADED.");
-/**
- * ENGINE PART 2: CORE LOGIC & COMBAT SYSTEM
- */
-class CyberGame {
-    constructor() {
-        this.canvas = document.getElementById('gameCanvas');
-        this.ctx = this.canvas.getContext('2d');
-        this.renderer = new Renderer(this.ctx);
-        
-        // Характеристики игрока
-        this.p = {
-            hp: 100, maxHp: 100, sp: 100, maxSp: 100,
-            lvl: 1, xp: 0, cash: 100, scrap: 0,
-            stims: 2, drone: null, inv: []
-        };
-        
-        this.enemy = null;
-        this.state = 'IDLE'; // IDLE, COMBAT, LOOTING
-        this.init();
-    }
-
-    init() {
-        this.log("SYSTEM: Neural link established. Welcome back, Outlaw.", "#00ccff");
-        this.updateUI();
-        this.loop();
-    }
-
-    log(msg, color = "#00ff41") {
-        const t = document.getElementById('terminal');
-        t.innerHTML += `<div style="color:${color}">> ${msg}</div>`;
-        t.scrollTop = t.scrollHeight;
-    }
-
-    updateUI() {
-        document.getElementById('hp-bar').style.width = (this.p.hp / this.p.maxHp * 100) + "%";
-        document.getElementById('sp-bar').style.width = (this.p.sp / this.p.maxSp * 100) + "%";
-        document.getElementById('ui-lvl').innerText = this.p.lvl;
-        document.getElementById('ui-cash').innerText = this.p.cash;
-        document.getElementById('ui-scrap').innerText = this.p.scrap;
-        document.getElementById('btn-heal').innerText = `STIM-INJECTION (${this.p.stims})`;
-        
-        // Отрисовка инвентаря
-        const invCont = document.getElementById('inv-container');
-        invCont.innerHTML = "";
-        this.p.inv.forEach((item, i) => {
-            const div = document.createElement('div');
-            div.className = `inv-slot rarity-${item.rarityTier}`;
-            div.innerHTML = `<span>${item.name}</span>`;
-            if (item.type === 'drone') {
-                const btn = document.createElement('button');
-                btn.className = "btn-tiny";
-                btn.innerText = "EQUIP";
-                btn.onclick = () => this.equipDrone(i);
-                div.appendChild(btn);
-            }
-            invCont.appendChild(div);
-        });
-
-        if (this.p.drone) {
-            document.getElementById('drone-status').innerText = `DRONE: ${this.p.drone.name} [ONLINE]`;
-        }
-    }
-
-    // --- КРАФТ С ТВОИМИ ШАНСАМИ ---
-    craftDrone() {
-        if (this.p.scrap < 15) {
-            this.log("ERROR: Not enough scrap (15 required).", "#ff3333");
-            return;
-        }
-        this.p.scrap -= 15;
-        this.renderer.shake = 15;
-        
-        let roll = Math.random() * 100;
-        let d = null;
-
-        if (roll < 10) { // 10% шанс
-            d = { name: "MK-III EXECUTIONER", dmg: 45, rarityTier: 3, type: 'drone', model: 'MK3' };
-            this.log("!!! LEGENDARY CRAFT !!! MK-III Drone assembled!", "#ff00ff");
-        } else if (roll < 35) { // 25% шанс (10 + 25)
-            d = { name: "MK-II STALKER", dmg: 22, rarityTier: 2, type: 'drone', model: 'Bot' };
-            this.log("RARE: MK-II Drone online.", "#00ccff");
-        } else if (roll < 85) { // 50% шанс (35 + 50)
-            d = { name: "MK-I SCRAPPY", dmg: 10, rarityTier: 1, type: 'drone', model: 'Bot' };
-            this.log("COMMON: MK-I Drone ready for service.");
-        } else {
-            this.log("CRAFT FAILURE: The components melted into a pile of junk.", "#ff3333");
-            this.p.scrap += 2; // Возврат части мусора
-        }
-
-        if (d) this.p.inv.push(d);
-        this.updateUI();
-    }
-
-    equipDrone(index) {
-        this.p.drone = this.p.inv[index];
-        this.log(`System: Drone ${this.p.drone.name} activated.`);
-        this.updateUI();
-    }
-
-    // --- ГЕЙМПЛЕЙНЫЕ ДЕЙСТВИЯ ---
-    action(type) {
-        if (type === 'explore') {
-            if (this.state === 'COMBAT') return;
-            this.renderer.shake = 5;
-            this.p.sp = Math.min(this.p.maxSp, this.p.sp + 5);
-            
-            let event = Math.random();
-            if (event < 0.5) {
-                this.startCombat();
-            } else if (event < 0.8) {
-                let s = Math.floor(Math.random() * 5) + 2;
-                this.p.scrap += s;
-                this.log(`Scavenged sector. Found +${s} scrap.`);
-            } else {
-                this.weirdEvent();
-            }
-        } else if (type === 'heal') {
-            if (this.p.stims > 0 && this.p.hp < this.p.maxHp) {
-                this.p.stims--;
-                this.p.hp = Math.min(this.p.maxHp, this.p.hp + 50);
-                this.log("Stim-injection successful. +50 HP.", "#00ff41");
-            }
-        } else if (type === 'craft') {
-            this.craftDrone();
-        }
-        this.updateUI();
-    }
-
-    weirdEvent() {
-        const events = [
-            { n: "Found a Golden Rubber Duck. It squeaks... menacingly.", s: 1, color: "#ffff00" },
-            { n: "Found an old Floppy Disk labeled 'DOOM'. Nostalgia hits hard.", s: 3, color: "#00ccff" },
-            { n: "A mysterious robot gave you 50 credits and then exploded.", c: 50, color: "#ffcc00" }
-        ];
-        let e = events[Math.floor(Math.random() * events.length)];
-        this.log(`WEIRD: ${e.n}`, e.color);
-        if (e.s) this.p.scrap += e.s;
-        if (e.c) this.p.cash += e.c;
-    }
-
-    // --- БОЕВАЯ СИСТЕМА ---
-    startCombat() {
-        this.state = 'COMBAT';
-        let isBoss = Math.random() > 0.85;
-        this.enemy = {
-            name: isBoss ? "OMEGA SENTINEL" : "SCRAP RAIDER",
-            hp: isBoss ? 250 : 50 + (this.p.lvl * 15),
-            maxHp: isBoss ? 250 : 50 + (this.p.lvl * 15),
-            dmg: isBoss ? 25 : 10 + (this.p.lvl * 2),
-            isBoss: isBoss
-        };
-        this.log(`WARNING: ${this.enemy.name} approaching!`, "#ff3333");
-        this.toggleButtons(true);
-    }
-
-    combat(type) {
-        if (!this.enemy) return;
-        let dmg = 0;
-        
-        if (type === 'attack') {
-            dmg = 12 + Math.floor(Math.random() * 10) + (this.p.lvl * 2);
-            this.renderer.addParticles(550, 350, "#ffaa00", 15);
-        } else if (type === 'deadeye') {
-            if (this.p.sp < 40) return;
-            this.p.sp -= 40;
-            dmg = 45 + (this.p.lvl * 5);
-            this.renderer.shake = 20;
-            this.renderer.addParticles(550, 350, "#00ccff", 30);
-        }
-
-        this.enemy.hp -= dmg;
-        this.log(`You hit ${this.enemy.name} for ${dmg} DMG.`);
-
-        // Урон от дрона
-        if (this.p.drone) {
-            this.enemy.hp -= this.p.drone.dmg;
-            this.log(`Drone strike: -${this.p.drone.dmg} DMG`, "#00ccff");
-        }
-
-        if (this.enemy.hp <= 0) {
-            this.win();
-        } else {
-            this.enemyTurn();
-        }
-        this.updateUI();
-    }
-
-    enemyTurn() {
+    // --- 1. ЛОГИКА ИНТРО ---
+    window.onload = () => {
+        // Появление "VadimIvash Games"
         setTimeout(() => {
-            if (!this.enemy) return;
-            let eDmg = Math.floor(Math.random() * this.enemy.dmg);
-            this.p.hp -= eDmg;
-            this.renderer.shake = 10;
-            this.renderer.addParticles(150, 350, "#ff3333", 10);
-            this.log(`${this.enemy.name} attacks you: -${eDmg} HP`, "#ff3333");
+            introText.style.opacity = 1;
+        }, 500);
+
+        // Смена на "Hack It"
+        setTimeout(() => {
+            introText.style.opacity = 0;
+            setTimeout(() => {
+                introText.innerText = "Hack It";
+                introText.style.color = "#00ff41";
+                introText.style.opacity = 1;
+            }, 1000);
+        }, 3000);
+
+        // Появление монитора
+        setTimeout(() => {
+            intro.style.opacity = 0;
+            setTimeout(() => {
+                intro.style.display = "none";
+                pcCase.style.display = "block";
+            }, 1500);
+        }, 6000);
+    };
+
+    // --- 2. ЛОГИКА ХАКЕРСКОЙ ПЕЧАТИ ---
+    document.addEventListener('keydown', (e) => {
+        // Если монитор открыт, печатаем по 3 символа за раз при любом нажатии
+        if (pcCase.style.display === "block" && charIndex < fullCode.length) {
+            const slice = fullCode.slice(charIndex, charIndex + 3);
+            typingArea.innerText += slice;
+            charIndex += 3;
             
-            if (this.p.hp <= 0) {
-                alert("GAME OVER. REBOOTING SYSTEM...");
-                location.reload();
-            }
-            this.updateUI();
-        }, 600);
-    }
-
-    win() {
-        let loot = this.enemy.isBoss ? 200 : 30;
-        let xp = this.enemy.isBoss ? 100 : 25;
-        this.p.cash += loot;
-        this.p.xp += xp;
-        this.p.scrap += Math.floor(Math.random() * 5);
-        this.log(`Target neutralized. Received ${loot} CR and ${xp} XP.`, "#ffcc00");
-        
-        if (this.p.xp >= 100) {
-            this.p.lvl++;
-            this.p.xp = 0;
-            this.p.maxHp += 20;
-            this.p.hp = this.p.maxHp;
-            this.log("SYSTEM UPDATE: Level Up! Health restored.", "#ff00ff");
+            // Авто-скролл вниз
+            const editor = document.getElementById('editor');
+            editor.scrollTop = editor.scrollHeight;
         }
-        
-        this.enemy = null;
-        this.state = 'IDLE';
-        this.toggleButtons(false);
-    }
-
-    toggleButtons(inCombat) {
-        document.getElementById('btn-explore').disabled = inCombat;
-        document.getElementById('btn-atk').disabled = !inCombat;
-        document.getElementById('btn-deadeye').disabled = !inCombat;
-    }
-
-    // --- ГЛАВНЫЙ ЦИКЛ ОТРИСОВКИ ---
-    loop() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.save();
-        
-        this.renderer.update();
-
-        // Земля/Сетка
-        this.ctx.strokeStyle = "#002200";
-        for(let i=0; i<800; i+=40) {
-            this.ctx.beginPath();
-            this.ctx.moveTo(i, 400); this.ctx.lineTo(i-150, 550);
-            this.ctx.stroke();
-        }
-
-        // Рисуем Игрока (Ковбой из части 1)
-        this.renderer.drawSprite(Sprites.Player, 120, 300, 9);
-
-        // Рисуем Дрона
-        if (this.p.drone) {
-            let hover = Math.sin(Date.now() / 200) * 15;
-            this.ctx.shadowBlur = 20;
-            this.ctx.shadowColor = "#00ccff";
-            this.renderer.drawSprite(Sprites[this.p.drone.model], 70, 240 + hover, 7);
-            this.ctx.shadowBlur = 0;
-        }
-
-        // Рисуем Врага
-        if (this.enemy) {
-            let eSize = this.enemy.isBoss ? 18 : 12;
-            this.renderer.drawSprite(Sprites.Bot, 500, 320, eSize, true);
-            
-            // HP Bar врага
-            this.ctx.fillStyle = "#222";
-            this.ctx.fillRect(500, 290, 150, 10);
-            this.ctx.fillStyle = "#ff3333";
-            this.ctx.fillRect(500, 290, (this.enemy.hp / this.enemy.maxHp) * 150, 10);
-        }
-
-        this.ctx.restore();
-        requestAnimationFrame(() => this.loop());
-    }
-}
-
-// Запуск
-const game = new CyberGame();
+    });
 </script>
 </body>
 </html>
