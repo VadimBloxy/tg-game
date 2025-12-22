@@ -6,43 +6,35 @@
     <title>HACK_WEBP // VADIMIVASH</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;500;700&display=swap');
-
         :root {
             --neon-green: #00ff41;
             --dark-bg: #050505;
             --crt-red: rgba(255, 0, 0, 0.06);
             --crt-blue: rgba(0, 0, 255, 0.06);
         }
-
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
             background: #000; overflow: hidden;
             font-family: 'Fira Code', monospace;
             color: var(--neon-green);
         }
-
-        /* --- INTRO SEQUENCE --- */
         #intro-layer {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999;
             display: flex; justify-content: center; align-items: center;
             transition: opacity 2s ease-in-out;
         }
-
         #intro-msg {
             font-size: 3rem; color: #fff; opacity: 0;
             transition: all 1.5s ease-in-out;
             text-transform: uppercase; letter-spacing: 10px;
             text-align: center;
         }
-
-        /* --- PC HARDWARE FRAME --- */
         #desktop-environment {
             display: none; width: 100vw; height: 100vh;
             background: radial-gradient(circle, #1a1a1b 0%, #000 100%);
             perspective: 1000px;
         }
-
         #monitor-bezel {
             position: absolute; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -50,14 +42,10 @@
             background: #2a2a2a;
             border-radius: 40px;
             border: 12px solid #3a3a3a;
-            box-shadow: 
-                0 0 0 4px #111,
-                inset 0 0 100px rgba(0,0,0,0.8);
+            box-shadow: 0 0 0 4px #111, inset 0 0 100px rgba(0,0,0,0.8);
             overflow: hidden;
             display: flex; justify-content: center; align-items: center;
         }
-
-        /* --- SCREEN GLOW & CRT EFFECTS --- */
         #screen {
             width: 98%; height: 96%;
             background: var(--dark-bg);
@@ -66,7 +54,6 @@
             overflow: hidden;
             box-shadow: inset 0 0 60px rgba(0, 255, 65, 0.2);
         }
-
         .crt-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             pointer-events: none; z-index: 10;
@@ -74,25 +61,18 @@
                         linear-gradient(90deg, var(--crt-red), rgba(0, 255, 0, 0.02), var(--crt-blue));
             background-size: 100% 3px, 3px 100%;
         }
-
         .scanline {
             position: absolute; top: 0; width: 100%; height: 100px;
             background: linear-gradient(to bottom, transparent, rgba(0, 255, 65, 0.05), transparent);
             animation: scan 8s linear infinite;
         }
-
-        @keyframes scan {
-            from { top: -100px; } to { top: 100%; }
-        }
-
-        /* --- WINDOWS SYSTEM --- */
+        @keyframes scan { from { top: -100px; } to { top: 100%; } }
         #taskbar {
             position: absolute; bottom: 0; width: 100%; height: 40px;
             background: #111; border-top: 1px solid #333;
             display: flex; align-items: center; padding: 0 20px;
             font-size: 12px; color: #666;
         }
-
         .window-app {
             width: 90%; height: 80%;
             background: #080808;
@@ -101,39 +81,40 @@
             display: flex; flex-direction: column;
             position: relative; top: 5%; left: 5%;
         }
-
         .title-bar {
             height: 35px; background: #1a1a1a;
             display: flex; justify-content: space-between; align-items: center;
             padding: 0 15px; border-bottom: 1px solid #333;
             font-size: 14px; letter-spacing: 1px;
         }
-
-        .controls span { margin-left: 10px; cursor: pointer; color: #555; }
-        .controls span:hover { color: var(--neon-green); }
-
-        /* --- DATA OUTPUT --- */
-        #editor-core {
-            flex: 1; padding: 30px; overflow-y: auto;
-            scrollbar-width: none;
-        }
-
+        #editor-core { flex: 1; padding: 30px; overflow-y: auto; scrollbar-width: none; }
         .gray-template { color: #333; white-space: pre-wrap; margin-bottom: 20px; font-weight: 300; }
         .green-input { color: var(--neon-green); white-space: pre-wrap; font-weight: 500; text-shadow: 0 0 5px var(--neon-green); }
-
-        #progress-container {
-            position: absolute; top: 35px; left: 0; width: 100%; height: 2px;
-            background: #111;
-        }
+        #progress-container { position: absolute; top: 35px; left: 0; width: 100%; height: 2px; background: #111; }
         #progress-fill { width: 0%; height: 100%; background: var(--neon-green); box-shadow: 0 0 10px var(--neon-green); transition: width 0.1s; }
 
+        /* FINAL PHASE STYLES */
+        .hacked-window {
+            position: absolute; background: #050505; border: 2px solid #ff3333;
+            box-shadow: 0 0 40px rgba(255, 0, 0, 0.4); z-index: 1000;
+            display: none; flex-direction: column; overflow: hidden;
+            animation: windowAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        @keyframes windowAppear { from { transform: scale(0.5) translateY(100px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+        .webcam-box { width: 300px; height: 220px; top: 15%; right: 8%; }
+        .files-box { width: 400px; height: 320px; bottom: 15%; left: 8%; }
+        .window-content { padding: 15px; color: #ff3333; font-size: 13px; line-height: 1.6; }
+        .file-row { padding: 8px; border: 1px solid #220000; margin-bottom: 5px; cursor: pointer; display: flex; align-items: center; }
+        .file-row:hover { background: #ff3333; color: #000; }
+        .victim-stream { width: 100%; height: 100%; background: #111; position: relative; overflow: hidden; }
+        .pixel-ghost { position: absolute; width: 60px; height: 80px; background: #333; top: 50%; left: 50%; transform: translate(-50%, -50%); border-radius: 20px 20px 0 0; }
+        #final-lock-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 0, 0, 0.1); backdrop-filter: blur(5px); display: none; justify-content: center; align-items: center; z-index: 9999; }
+        .lock-card { background: #000; border: 5px solid #ff3333; padding: 40px; text-align: center; color: #ff3333; font-size: 24px; box-shadow: 0 0 100px #ff3333; }
     </style>
 </head>
 <body>
 
-    <div id="intro-layer">
-        <div id="intro-msg">VadimIvash Games</div>
-    </div>
+    <div id="intro-layer"><div id="intro-msg">VadimIvash Games</div></div>
 
     <div id="desktop-environment">
         <div id="monitor-bezel">
@@ -144,19 +125,14 @@
                 <div class="window-app">
                     <div class="title-bar">
                         <div class="title">HACK_WEBP_v1.0.4.exe</div>
-                        <div class="controls">
-                            <span>_</span><span>[ ]</span><span style="color: #ff3333;">X</span>
-                        </div>
+                        <div class="controls"><span>_</span><span>[ ]</span><span style="color: #ff3333;">X</span></div>
                     </div>
-                    <div id="progress-container">
-                        <div id="progress-fill"></div>
-                    </div>
+                    <div id="progress-container"><div id="progress-fill"></div></div>
                     <div id="editor-core">
                         <div class="gray-template">&lt;!DOCTYPE html&gt;
 &lt;html lang="en"&gt;
 &lt;head&gt;
     &lt;meta charset="UTF-8"&gt;
-    &lt;meta name="viewport" content="width=device-width, initial-scale=1.0"&gt;
     &lt;title&gt;Hack Webp&lt;/title&gt;
 &lt;/head&gt;
 &lt;body&gt;
@@ -167,259 +143,21 @@
                     </div>
                 </div>
 
-                <div id="taskbar">
-                    <span>SYS_OS: V_STATION // CPU_USAGE: 12% // STATUS: SECURE</span>
+                <div id="cam-window" class="hacked-window webcam-box">
+                    <div class="title-bar" style="background: #ff3333; color: #000;"><b>LIVE_STREAM</b></div>
+                    <div class="victim-stream"><div class="pixel-ghost"></div></div>
                 </div>
-            </div>
-        </div>
-    </div>
 
-<script>
-    // --- PART 1 LOGIC: INTRO & INITIALIZATION ---
-    const introLayer = document.getElementById('intro-layer');
-    const introMsg = document.getElementById('intro-msg');
-    const desktop = document.getElementById('desktop-environment');
+                <div id="files-window" class="hacked-window files-box">
+                    <div class="title-bar" style="background: #ff3333; color: #000;"><b>FILE_EXPLORER</b></div>
+                    <div class="window-content">
+                        <div class="file-row" onclick="game.download('passwords')">credentials_leaked.db</div>
+                        <div class="file-row" onclick="game.download('bank')">crypto_vault.private</div>
+                        <div class="file-row" onclick="game.download('history')">history_incognito.log</div>
+                    </div>
+                </div>
 
-    window.onload = () => {
-        // Step 1: VadimIvash Games
-        setTimeout(() => {
-            introMsg.style.opacity = '1';
-        }, 1000);
-
-        // Step 2: Hack It
-        setTimeout(() => {
-            introMsg.style.opacity = '0';
-            setTimeout(() => {
-                introMsg.innerText = "Hack It";
-                introMsg.style.color = "#00ff41";
-                introMsg.style.opacity = '1';
-                introMsg.style.textShadow = "0 0 20px #00ff41";
-            }, 1500);
-        }, 3500);
-
-        // Step 3: Launch OS
-        setTimeout(() => {
-            introLayer.style.opacity = '0';
-            setTimeout(() => {
-                introLayer.style.display = 'none';
-                desktop.style.display = 'block';
-            }, 2000);
-        }, 7000);
-    };
-
-// --- PART 2: HACKING LOGIC, SOUNDS & PROGRESS ---
-
-const output = document.getElementById('hack-output');
-const progressFill = document.getElementById('progress-fill');
-const editor = document.getElementById('editor-core');
-
-// Массив кода для "слепой" печати (около 300 строк логики в сжатом виде)
-const hackLibrary = [
-    "[INFO] Initializing handshake with remote host: 192.168.0.1...",
-    "[WARN] Firewall detected: Sophos XG v18. Blocking packet 0x44...",
-    "Using exploit: CVE-2023-3482 (Buffer Overflow)...",
-    "void inject_payload() {",
-    "  char *buffer = malloc(1024);",
-    "  memset(buffer, 0x90, 1024);",
-    "  memcpy(buffer + 512, shellcode, sizeof(shellcode));",
-    "  execute_remote(buffer);",
-    "}",
-    "[OK] Port 443 opened. Injecting backdoor...",
-    "Connecting to SQL Database... Bypass authentication [TRUE]",
-    "SELECT * FROM users WHERE status = 'admin';",
-    "Hash found: $2a$12$R9h/cIPz0gi.URrXRYKLY.w9..",
-    "Starting Rainbow Table attack... [|||||||---]",
-    "[SUCCESS] Password decrypted: 'VadimIvash_GodMode_2025'",
-    "Downloading user_profile.json...",
-    "System.Security.Credentials.Bypass(true);",
-    "Fetching browser history... Hidden files detected.",
-    "Accessing webcam driver... Stream initialized.",
-    "Network Map: node_01: WebServer, node_02: Database, node_03: Gateway",
-    "Deleting system logs to hide tracks...",
-    "rm -rf /var/log/auth.log && touch /var/log/auth.log",
-    "Exploit sequence completed. Finalizing root shell...",
-    "[!] WARNING: Trace detected at hop 4 (ISP Level)",
-    "Counter-trace active. Routing through Proxy-List: RU, CN, DE, NL",
-    "Status: STABLE. System owned."
-];
-
-let currentLine = 0;
-let charIdx = 0;
-let totalCharsTyped = 0;
-const targetChars = 1500; // Сколько символов нужно для 100% взлома
-
-// --- AUDIO ENGINE (Mechanical Keyboard Clicks) ---
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-
-function playClick() {
-    const osc = audioCtx.createOscillator();
-    const gain = audioCtx.createGain();
-    
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(150 + Math.random() * 50, audioCtx.currentTime);
-    
-    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
-    
-    osc.connect(gain);
-    gain.connect(audioCtx.destination);
-    
-    osc.start();
-    osc.stop(audioCtx.currentTime + 0.05);
-}
-
-// --- CORE INPUT HANDLER ---
-document.addEventListener('keydown', (e) => {
-    // Проверка, что интро закончилось
-    if (document.getElementById('desktop-environment').style.display !== 'block') return;
-    if (totalCharsTyped >= targetChars) return;
-
-    // Проигрываем звук
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    playClick();
-
-    // Логика печати: за одно нажатие выводим несколько символов
-    let speed = 4;
-    for (let i = 0; i < speed; i++) {
-        if (currentLine >= hackLibrary.length) currentLine = 0;
-        
-        let line = hackLibrary[currentLine];
-        let char = line[charIdx];
-        
-        output.textContent += char;
-        charIdx++;
-        totalCharsTyped++;
-
-        if (charIdx >= line.length) {
-            output.textContent += "\n";
-            charIdx = 0;
-            currentLine++;
-        }
-    }
-
-    // Обновляем прогресс
-    let progress = (totalCharsTyped / targetChars) * 100;
-    progressFill.style.width = progress + "%";
-
-    // Эффект встряски при прогрессе
-    if (Math.floor(progress) % 25 === 0) {
-        document.getElementById('screen').style.filter = "contrast(2) brightness(1.5)";
-        setTimeout(() => {
-            document.getElementById('screen').style.filter = "none";
-        }, 100);
-    }
-
-    // Авто-скролл
-    editor.scrollTop = editor.scrollHeight;
-
-    // Проверка финала (переход к Part 3)
-    if (totalCharsTyped >= targetChars) {
-        finishHacking();
-    }
-});
-
-function finishHacking() {
-    progressFill.style.background = "#ff3333"; // Полоска краснеет
-    output.style.color = "#ff3333"; // Текст краснеет
-    output.textContent += "\n\n[!!!] ACCESS GRANTED. EXFILTRATING DATA...";
-    
-    // ПРОВЕРЬ ЭТУ СТРОЧКУ:
-    if (typeof window.startFinalPhase === 'function') {
-        window.startFinalPhase(); // Запуск появления окон из Part 3
-    }
-}
-
-console.log("PART 2: Hacking Engine Online. Systems Ready.");
-
-
-// --- PART 3: THE PAYOFF - DATA EXFILTRATION & FINAL PHASE ---
-
-/**
- * Расширенная система стилей для финальных окон и визуальных эффектов.
- * Создает атмосферу взломанной системы с красными тонами тревоги.
- */
-const finalStyles = document.createElement('style');
-finalStyles.innerHTML = `
-    .hacked-window {
-        position: absolute; background: #050505; border: 2px solid #ff3333;
-        box-shadow: 0 0 40px rgba(255, 0, 0, 0.4); z-index: 1000;
-        display: none; flex-direction: column; overflow: hidden;
-        animation: windowAppear 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    @keyframes windowAppear {
-        from { transform: scale(0.5) translateY(100px); opacity: 0; }
-        to { transform: scale(1) translateY(0); opacity: 1; }
-    }
-
-    .webcam-box { width: 300px; height: 220px; top: 15%; right: 8%; }
-    .files-box { width: 400px; height: 320px; bottom: 15%; left: 8%; }
-    
-    .window-content { padding: 15px; color: #ff3333; font-size: 13px; line-height: 1.6; }
-    
-    .file-row { 
-        padding: 8px; border: 1px solid #220000; margin-bottom: 5px; 
-        cursor: pointer; transition: 0.2s; display: flex; align-items: center;
-    }
-    .file-row:hover { background: #ff3333; color: #000; }
-    .file-row::before { content: "📄"; margin-right: 10px; }
-
-    /* Визуализация лица жертвы (пиксель-арт на JS) */
-    .victim-stream {
-        width: 100%; height: 100%; background: #111; 
-        position: relative; overflow: hidden;
-    }
-    .noise-bg {
-        position: absolute; width: 200%; height: 200%;
-        background-image: url('https://media.giphy.com/media/oEI9uWU6EBhba/giphy.gif');
-        opacity: 0.1; pointer-events: none;
-    }
-    .pixel-ghost {
-        position: absolute; width: 60px; height: 80px; background: #333;
-        top: 50%; left: 50%; transform: translate(-50%, -50%);
-        border-radius: 20px 20px 0 0; box-shadow: 0 0 20px #000;
-    }
-
-    #final-lock-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(255, 0, 0, 0.1); backdrop-filter: blur(5px);
-        display: none; justify-content: center; align-items: center; z-index: 9999;
-    }
-    .lock-card {
-        background: #000; border: 5px solid #ff3333; padding: 40px;
-        text-align: center; color: #ff3333; font-size: 24px;
-        box-shadow: 0 0 100px #ff3333;
-    }
-`;
-document.head.appendChild(finalStyles);
-
-/**
- * Внедрение HTML элементов финала в структуру экрана.
- */
-const gameScreen = document.getElementById('screen');
-gameScreen.insertAdjacentHTML('beforeend', `
-    <div id="cam-window" class="hacked-window webcam-box">
-        <div class="title-bar" style="background: #ff3333; color: #000;">
-            <b>LIVE_STREAM: AREA_51_USER</b>
-        </div>
-        <div class="victim-stream">
-            <div class="noise-bg"></div>
-            <div class="pixel-ghost"></div>
-            <div style="position:absolute; bottom:5px; left:5px; font-size:10px;">REC ● 00:14:22</div>
-        </div>
-    </div>
-
-    <div id="files-window" class="hacked-window files-box">
-        <div class="title-bar" style="background: #ff3333; color: #000;">
-            <b>ENCRYPTED_FILES_EXPLORER</b>
-        </div>
-        <div class="window-content">
-            <div class="file-row" onclick="game.download('passwords')">credentials_leaked.db</div>
-            <div class="file-row" onclick="game.download('bank')">crypto_vault_keys.private</div>
-            <div class="file-row" onclick="game.download('history')">browser_history_incognito.log</div>
-            <div class="file-row" onclick="game.download('root')">kernel_exploit_v3.sh</div>
-            <div style="margin-top:20px; border-top:1px solid #300; padding-top:10px; font-size:10px; opacity:0.6;">
-                TOTAL SIZE: 1.42 GB // ENCRYPTION: NONE
+                <div id="taskbar"><span>SYS_OS: V_STATION // CPU_USAGE: 12% // STATUS: SECURE</span></div>
             </div>
         </div>
     </div>
@@ -427,81 +165,128 @@ gameScreen.insertAdjacentHTML('beforeend', `
     <div id="final-lock-overlay">
         <div class="lock-card">
             <h1 style="margin:0;">SYSTEM OWNED</h1>
-            <p style="font-size: 14px; letter-spacing: 2px;">VADIMIVASH GAMES - HACK_WEBP SUCCESSFUL</p>
-            <button onclick="location.reload()" style="background:#ff3333; border:none; color:#000; padding:10px 20px; font-family:inherit; cursor:pointer;">REBOOT SYSTEM</button>
+            <p style="font-size: 14px;">VADIMIVASH GAMES - SUCCESS</p>
+            <button onclick="location.reload()" style="background:#ff3333; border:none; color:#000; padding:10px 20px; cursor:pointer; font-family:inherit;">REBOOT</button>
         </div>
     </div>
-`);
 
-/**
- * Главная функция завершения хакинга.
- * Вызывается, когда прогресс-бар достигает 100%.
- */
-window.startFinalPhase = function() {
-    // 1. Изменение состояния основного окна
-    const mainApp = document.querySelector('.window-app');
-    mainApp.style.borderColor = "#ff3333";
-    mainApp.style.transition = "all 0.5s";
-    
-    // 2. Звуковая сирена (AudioContext из Part 2)
-    const siren = audioCtx.createOscillator();
-    const sGain = audioCtx.createGain();
-    siren.type = 'sine';
-    siren.frequency.setValueAtTime(300, audioCtx.currentTime);
-    siren.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.5);
-    siren.frequency.linearRampToValueAtTime(300, audioCtx.currentTime + 1.0);
-    siren.loop = true;
-    sGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
-    siren.connect(sGain);
-    sGain.connect(audioCtx.destination);
-    siren.start();
+<script>
+    // --- GLOBAL VARIABLES ---
+    const introLayer = document.getElementById('intro-layer');
+    const introMsg = document.getElementById('intro-msg');
+    const desktop = document.getElementById('desktop-environment');
+    const output = document.getElementById('hack-output');
+    const progressFill = document.getElementById('progress-fill');
+    const editor = document.getElementById('editor-core');
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 
-    // 3. Последовательное открытие окон
-    setTimeout(() => { 
-        document.getElementById('cam-window').style.display = 'flex';
-        playSystemSound(800, 0.1); 
-    }, 600);
+    const hackLibrary = [
+        "[INFO] Initializing handshake...", "[WARN] Firewall detected...", "Using exploit: CVE-2023-3482...",
+        "void inject_payload() {", " char *buffer = malloc(1024);", " execute_remote(buffer);", "}",
+        "[OK] Port 443 opened...", "Connecting to SQL Database...", "Bypass authentication [TRUE]",
+        "SELECT * FROM users;", "Hash found: $2a$12$R9h...", "Downloading profile.json...",
+        "Deleting system logs...", "Status: STABLE. System owned."
+    ];
 
-    setTimeout(() => { 
-        document.getElementById('files-window').style.display = 'flex'; 
-        playSystemSound(1000, 0.1);
-    }, 1400);
+    let currentLine = 0, charIdx = 0, totalCharsTyped = 0;
+    const targetChars = 1000; // Сделал чуть меньше, чтобы быстрее проверить
 
-    // 4. Финальный локскрин через 8 секунд после успеха
-    setTimeout(() => {
-        siren.stop();
-        document.getElementById('final-lock-overlay').style.display = 'flex';
-        playSystemSound(200, 0.5);
-    }, 9000);
-};
-
-/**
- * Дополнительная функция для системных уведомлений.
- */
-function playSystemSound(freq, dur) {
-    const o = audioCtx.createOscillator();
-    const g = audioCtx.createGain();
-    o.frequency.value = freq;
-    g.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
-    o.connect(g);
-    g.connect(audioCtx.destination);
-    o.start();
-    o.stop(audioCtx.currentTime + dur);
-}
-
-// Объект для обработки кликов по файлам (для интерактивности)
-window.game = {
-    download: (type) => {
-        playSystemSound(1200, 0.05);
-        alert(`EXFILTRATING: ${type}... Data sent to remote server.`);
+    // --- FUNCTIONS ---
+    function playClick() {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(150 + Math.random() * 50, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + 0.05);
     }
-};
 
-console.log("FINAL PHASE ENGINE: COMPLETED. ALL MODULES STANDBY.");
+    function playSystemSound(freq, dur) {
+        const o = audioCtx.createOscillator();
+        const g = audioCtx.createGain();
+        o.frequency.value = freq;
+        g.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + dur);
+        o.connect(g); g.connect(audioCtx.destination);
+        o.start(); o.stop(audioCtx.currentTime + dur);
+    }
+
+    window.onload = () => {
+        setTimeout(() => { introMsg.style.opacity = '1'; }, 1000);
+        setTimeout(() => {
+            introMsg.style.opacity = '0';
+            setTimeout(() => {
+                introMsg.innerText = "Hack It";
+                introMsg.style.color = "#00ff41";
+                introMsg.style.opacity = '1';
+            }, 1000);
+        }, 3000);
+        setTimeout(() => {
+            introLayer.style.opacity = '0';
+            setTimeout(() => { 
+                introLayer.style.display = 'none'; 
+                desktop.style.display = 'block'; 
+            }, 1500);
+        }, 6000);
+    };
+
+    document.addEventListener('keydown', () => {
+        if (desktop.style.display !== 'block' || totalCharsTyped >= targetChars) return;
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        playClick();
+
+        for (let i = 0; i < 4; i++) {
+            let line = hackLibrary[currentLine % hackLibrary.length];
+            output.textContent += line[charIdx];
+            charIdx++; totalCharsTyped++;
+            if (charIdx >= line.length) {
+                output.textContent += "\n";
+                charIdx = 0; currentLine++;
+            }
+        }
+        let progress = (totalCharsTyped / targetChars) * 100;
+        progressFill.style.width = progress + "%";
+        editor.scrollTop = editor.scrollHeight;
+
+        if (totalCharsTyped >= targetChars) finishHacking();
+    });
+
+    function finishHacking() {
+        progressFill.style.background = "#ff3333";
+        output.style.color = "#ff3333";
+        output.textContent += "\n\n[!!!] ACCESS GRANTED. SYSTEM COMPROMISED.";
+        startFinalPhase();
+    }
+
+    function startFinalPhase() {
+        const mainApp = document.querySelector('.window-app');
+        mainApp.style.borderColor = "#ff3333";
+        
+        // Siren sound
+        const siren = audioCtx.createOscillator();
+        const sGain = audioCtx.createGain();
+        siren.frequency.setValueAtTime(400, audioCtx.currentTime);
+        siren.frequency.exponentialRampToValueAtTime(800, audioCtx.currentTime + 0.5);
+        sGain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+        siren.connect(sGain); sGain.connect(audioCtx.destination);
+        siren.start(); siren.stop(audioCtx.currentTime + 1);
+
+        setTimeout(() => { 
+            document.getElementById('cam-window').style.display = 'flex'; 
+            playSystemSound(800, 0.2);
+        }, 600);
+        setTimeout(() => { 
+            document.getElementById('files-window').style.display = 'flex'; 
+            playSystemSound(1000, 0.2);
+        }, 1400);
+        setTimeout(() => { 
+            document.getElementById('final-lock-overlay').style.display = 'flex'; 
+        }, 7000);
+    }
+
+    window.game = { download: (t) => alert("Downloading: " + t + "...") };
 </script>
-
-
-
 </body>
 </html>
