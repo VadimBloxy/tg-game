@@ -1,106 +1,1913 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Pixel 2D Game Interactive</title>
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
-<style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background: #000;
-  }
-  canvas {
-    display: block;
-    image-rendering: pixelated;
-    background: #87ceeb;
-  }
-</style>
+    <meta charset="UTF-8">
+    <title>CYBER WESTERN: DUST & DATA</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #0a0a0a;
+            color: #00ff41; /* Classic Matrix/Cyber Green */
+            font-family: 'Courier New', monospace;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-screen {
+            width: 1440px;
+            height: 900px;
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
+            border: 3px solid #555;
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.2);
+            position: relative;
+            display: grid;
+            grid-template-columns: 350px 1fr 300px;
+            grid-template-rows: 80px 1fr 220px;
+        }
+
+        /* HEADER */
+        header {
+            grid-column: 1 / span 3;
+            background: #111;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 40px;
+            border-bottom: 2px solid #00ff41;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        /* CHARACTER SIDEBAR */
+        #char-sidebar {
+            grid-column: 1;
+            padding: 30px;
+            border-right: 1px solid #333;
+            background: rgba(10, 10, 10, 0.8);
+        }
+
+        .avatar {
+            width: 250px;
+            height: 300px;
+            border: 1px solid #00ff41;
+            background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 100px;
+            margin-bottom: 20px;
+            box-shadow: 0 0 15px #00ff41;
+        }
+
+        .stat-label { margin-top: 15px; font-size: 14px; color: #888; }
+        .bar-container { background: #222; height: 15px; width: 100%; border: 1px solid #444; }
+        .bar-fill { height: 100%; background: #00ff41; width: 100%; transition: 0.4s; }
+
+        /* MAIN GAME LOG */
+        #main-display {
+            grid-column: 2;
+            padding: 40px;
+            overflow-y: auto;
+            border-right: 1px solid #333;
+            background: url('https://www.transparenttextures.com/patterns/carbon-fibre.png');
+        }
+
+        #main-display p { margin-bottom: 15px; font-size: 18px; animation: fadeIn 0.5s; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* INVENTORY/ENEMY SIDEBAR */
+        #enemy-sidebar { grid-column: 3; padding: 20px; background: rgba(20, 0, 0, 0.3); }
+
+        /* CONTROLS */
+        #controls {
+            grid-column: 1 / span 3;
+            background: #000;
+            border-top: 2px solid #00ff41;
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .action-btn {
+            background: transparent;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            padding: 20px 50px;
+            font-size: 18px;
+            font-family: 'Courier New', monospace;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .action-btn:hover { background: #00ff41; color: #000; box-shadow: 0 0 20px #00ff41; }
+        .action-btn:disabled { border-color: #333; color: #333; cursor: not-allowed; }
+
+    </style>
 </head>
 <body>
 
-<canvas id="gameCanvas"></canvas>
+<div id="game-screen">
+    <header>
+        <div>Sector: <span id="loc">Silicon Wasteland</span></div>
+        <div>Credits: <span id="money">50</span>$</div>
+        <div>Level: <span id="lvl">1</span></div>
+    </header>
+
+    <aside id="char-sidebar">
+        <div class="avatar" id="player-img">🤠</div>
+        <div class="stat-label">SYSTEM INTEGRITY (HP)</div>
+        <div class="bar-container"><div id="hp-bar" class="bar-fill"></div></div>
+        
+        <div class="stat-label">DATA OVERLOAD (XP)</div>
+        <div class="bar-container"><div id="xp-bar" class="bar-fill" style="width: 0%; background: #00ccff;"></div></div>
+        
+        <div style="margin-top: 40px;">
+            <strong>GEAR:</strong><br>
+            - Rusty Revolver<br>
+            - Neural Link v1.0
+        </div>
+    </aside>
+
+    <main id="main-display" id="log-window">
+        <p>> Booting Cyber-Sheriff OS...</p>
+        <p>> Sensors detected: Dust, Heat, and Malicious Code.</p>
+        <p>> Welcome to the Frontier, Ranger.</p>
+    </main>
+
+    <aside id="enemy-sidebar">
+        <h3 id="enemy-title" style="color: #ff4400;">NO THREAT</h3>
+        <div id="enemy-sprite" style="font-size: 60px; text-align: center; margin: 20px 0;"></div>
+        <div id="enemy-hp-container" style="display:none;">
+            <div class="stat-label">TARGET INTEGRITY</div>
+            <div class="bar-container"><div id="enemy-hp-bar" class="bar-fill" style="background: #ff4400;"></div></div>
+        </div>
+    </aside>
+
+    <footer id="controls">
+        <button id="btn-explore" class="action-btn" onclick="explore()">EXPLORE WASTES</button>
+        <button id="btn-attack" class="action-btn" onclick="attack()" disabled>SHOOT</button>
+        <button id="btn-rest" class="action-btn" onclick="rest()">REPAIR SYSTEMS</button>
+    </footer>
+</div>
 
 <script>
-const tg = window.Telegram.WebApp;
-tg.expand();
+    let player = { hp: 100, maxHp: 100, money: 50, xp: 0, lvl: 1 };
+    let currentEnemy = null;
 
-const canvas = document.getElementById("gameCanvas");
-const ctx = canvas.getContext("2d");
-function resize() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-}
-window.addEventListener("resize", resize);
-resize();
+    const enemies = [
+        { name: "Scrap-Vulture", hp: 30, damage: 10, icon: "🦅", loot: 20 },
+        { name: "Binary Bandit", hp: 50, damage: 15, icon: "🤖", loot: 45 },
+        { name: "Glitch-Coyote", hp: 40, damage: 12, icon: "🐕", loot: 30 }
+    ];
 
-const TILE_SIZE = 32;
-const MAP_WIDTH = 20;
-const MAP_HEIGHT = 15;
-
-// карта блоков (0 = воздух, 1 = земля)
-let map = [];
-for(let y=0;y<MAP_HEIGHT;y++){
-    map[y] = [];
-    for(let x=0;x<MAP_WIDTH;x++){
-        map[y][x] = (y > MAP_HEIGHT/2) ? 1 : 0;
+    function log(msg, color = "#00ff41") {
+        const display = document.getElementById('main-display');
+        display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+        display.scrollTop = display.scrollHeight;
     }
-}
 
-// игрок
-let player = {x: 5, y: 5, color: "#ff0"};
-
-// клавиши
-let keys = {};
-document.addEventListener("keydown", e => keys[e.key] = true);
-document.addEventListener("keyup", e => keys[e.key] = false);
-
-// интерактивность мышью
-canvas.addEventListener("click", e => {
-    const rect = canvas.getBoundingClientRect();
-    const mx = e.clientX - rect.left;
-    const my = e.clientY - rect.top;
-    const tx = Math.floor(mx / TILE_SIZE);
-    const ty = Math.floor(my / TILE_SIZE);
-    
-    // смена блока: если был земля -> воздух, если воздух -> земля
-    if(map[ty] && map[ty][tx] !== undefined){
-        map[ty][tx] = map[ty][tx] === 1 ? 0 : 1;
-    }
-});
-
-// игровой цикл
-function gameLoop(){
-    // движение игрока
-    if(keys["ArrowLeft"]) player.x -= 0.1;
-    if(keys["ArrowRight"]) player.x += 0.1;
-    if(keys["ArrowUp"]) player.y -= 0.1;
-    if(keys["ArrowDown"]) player.y += 0.1;
-
-    // очистка экрана
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-
-    // рисуем карту
-    for(let y=0;y<MAP_HEIGHT;y++){
-        for(let x=0;x<MAP_WIDTH;x++){
-            if(map[y][x] === 1){
-                ctx.fillStyle = "#654321"; // земля
-                ctx.fillRect(x*TILE_SIZE, y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
-            }
+    function explore() {
+        if (currentEnemy) return;
+        
+        const chance = Math.random();
+        if (chance > 0.6) {
+            spawnEnemy();
+        } else {
+            const found = Math.floor(Math.random() * 15);
+            player.money += found;
+            document.getElementById('money').innerText = player.money;
+            log(`Found ${found} credits in a rusted circuit board.`);
         }
     }
 
-    // рисуем игрока
-    ctx.fillStyle = player.color;
-    ctx.fillRect(player.x*TILE_SIZE, player.y*TILE_SIZE, TILE_SIZE, TILE_SIZE);
+    function spawnEnemy() {
+        currentEnemy = { ...enemies[Math.floor(Math.random() * enemies.length)] };
+        currentEnemy.maxHp = currentEnemy.hp;
+        
+        document.getElementById('enemy-title').innerText = currentEnemy.name;
+        document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+        document.getElementById('enemy-hp-container').style.display = 'block';
+        document.getElementById('enemy-hp-bar').style.width = '100%';
+        
+        document.getElementById('btn-explore').disabled = true;
+        document.getElementById('btn-attack').disabled = false;
+        
+        log(`WARNING: ${currentEnemy.name} detected!`, "#ff4400");
+    }
 
-    requestAnimationFrame(gameLoop);
-}
-gameLoop();
+    function attack() {
+        if (!currentEnemy) return;
+
+        // Player attacks
+        let damage = 10 + Math.floor(Math.random() * 10);
+        currentEnemy.hp -= damage;
+        log(`You shot ${currentEnemy.name} for ${damage} damage.`);
+        
+        let enemyHpPercent = (currentEnemy.hp / currentEnemy.maxHp) * 100;
+        document.getElementById('enemy-hp-bar').style.width = enemyHpPercent + "%";
+
+        if (currentEnemy.hp <= 0) {
+            winBattle();
+            return;
+        }
+
+        // Enemy attacks
+        setTimeout(() => {
+            let eDamage = Math.floor(Math.random() * currentEnemy.damage);
+            player.hp -= eDamage;
+            updateUI();
+            log(`${currentEnemy.name} strikes back for ${eDamage} damage!`, "#ff4400");
+            
+            if (player.hp <= 0) {
+                log("CRITICAL FAILURE. SYSTEM SHUTDOWN.", "red");
+                location.reload(); 
+            }
+        }, 500);
+    }
+
+    function winBattle() {
+        log(`VICTORY. ${currentEnemy.name} decommissioned. Gained ${currentEnemy.loot}$`, "gold");
+        player.money += currentEnemy.loot;
+        player.xp += 40;
+        
+        currentEnemy = null;
+        document.getElementById('enemy-title').innerText = "NO THREAT";
+        document.getElementById('enemy-sprite').innerText = "";
+        document.getElementById('enemy-hp-container').style.display = 'none';
+        
+        document.getElementById('btn-explore').disabled = false;
+        document.getElementById('btn-attack').disabled = true;
+        
+        if (player.xp >= 100) levelUp();
+        updateUI();
+    }
+
+    function rest() {
+        if (currentEnemy) {
+            log("Cannot repair systems during combat!");
+            return;
+        }
+        player.hp = player.maxHp;
+        log("Maintenance complete. All systems green.");
+        updateUI();
+    }
+
+    function levelUp() {
+        player.lvl++;
+        player.xp = 0;
+        player.maxHp += 20;
+        player.hp = player.maxHp;
+        log(`LEVEL UP! You are now Level ${player.lvl}. Integrity increased.`, "#00ccff");
+    }
+
+    function updateUI() {
+        document.getElementById('money').innerText = player.money;
+        document.getElementById('lvl').innerText = player.lvl;
+        document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+        document.getElementById('xp-bar').style.width = player.xp + "%";
+    }
 </script>
 
+let player = { 
+    hp: 100, 
+    maxHp: 100, 
+    money: 50, 
+    xp: 0, 
+    lvl: 1, 
+    minDmg: 10, 
+    maxDmg: 20,
+    karma: 0 
+};
+
+let currentEnemy = null;
+let shopOpen = false;
+
+// Expanded World Data
+const locations = [
+    "Silicon Wasteland", 
+    "Neon Canyon", 
+    "Rusty Junction", 
+    "Chrome Desert"
+];
+
+const randomEvents = [
+    {
+        text: "You find a broken robot whispering '010101'.",
+        options: [
+            { btn: "Scrap it", effect: () => { player.money += 40; return "You gained 40 credits but felt bad. Karma -1"; } },
+            { btn: "Repair it", effect: () => { player.xp += 30; return "The robot thanked you and shared data. XP +30"; } }
+        ]
+    },
+    {
+        text: "A mysterious nomad offers you a 'Lucky Stim'.",
+        options: [
+            { btn: "Take it", effect: () => { player.maxHp += 10; player.hp = player.maxHp; return "Your health increased permanently!"; } },
+            { btn: "Refuse", effect: () => { return "You don't trust strangers. Nothing happened."; } }
+        ]
+    }
+];
+
+const enemies = [
+    { name: "Scrap-Vulture", hp: 35, damage: 12, icon: "🦅", loot: 30 },
+    { name: "Binary Bandit", hp: 60, damage: 18, icon: "🤖", loot: 60 },
+    { name: "Glitch-Coyote", hp: 45, damage: 14, icon: "🐕", loot: 40 }
+];
+
+function log(msg, color = "#00ff41") {
+    const display = document.getElementById('main-display');
+    display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+    display.scrollTop = display.scrollHeight;
+}
+
+// THE EXPLORATION LOGIC
+function explore() {
+    if (currentEnemy || shopOpen) return;
+
+    let roll = Math.random();
+
+    if (roll > 0.7) {
+        // Trigger Combat
+        spawnEnemy();
+    } else if (roll > 0.4) {
+        // Trigger Random Event
+        triggerEvent();
+    } else {
+        // Found Loot
+        const found = Math.floor(Math.random() * 20) + 5;
+        player.money += found;
+        log(`Found a discarded memory drive. Sold it for ${found}$.`);
+        updateUI();
+    }
+}
+
+function triggerEvent() {
+    const event = randomEvents[Math.floor(Math.random() * randomEvents.length)];
+    log("EVENT: " + event.text, "cyan");
+    
+    // Change buttons temporarily for the event
+    const controls = document.getElementById('controls');
+    const oldButtons = controls.innerHTML;
+    
+    controls.innerHTML = "";
+    event.options.forEach((opt, index) => {
+        let btn = document.createElement('button');
+        btn.className = "action-btn";
+        btn.innerText = opt.btn;
+        btn.onclick = () => {
+            const result = opt.effect();
+            log(result, "yellow");
+            controls.innerHTML = oldButtons; // Restore original buttons
+            updateUI();
+        };
+        controls.appendChild(btn);
+    });
+}
+
+function spawnEnemy() {
+    let rand = enemies[Math.floor(Math.random() * enemies.length)];
+    currentEnemy = { ...rand, hp: rand.hp + (player.lvl * 10), damage: rand.damage + player.lvl };
+    currentEnemy.maxHp = currentEnemy.hp;
+    
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('enemy-hp-bar').style.width = '100%';
+    
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+    log(`DANGER: ${currentEnemy.name} appeared!`, "#ff4400");
+}
+
+function attack() {
+    if (!currentEnemy) return;
+    let dmg = Math.floor(Math.random() * (player.maxDmg - player.minDmg)) + player.minDmg;
+    currentEnemy.hp -= dmg;
+    log(`You shot ${currentEnemy.name} for ${dmg} damage.`);
+    document.getElementById('enemy-hp-bar').style.width = (currentEnemy.hp / currentEnemy.maxHp * 100) + "%";
+
+    if (currentEnemy.hp <= 0) return winBattle();
+
+    document.getElementById('btn-attack').disabled = true;
+    setTimeout(() => {
+        if (!currentEnemy) return;
+        let eDmg = Math.floor(Math.random() * currentEnemy.damage) + 5;
+        player.hp -= eDmg;
+        log(`${currentEnemy.name} counters! Integrity -${eDmg}`, "#ff4400");
+        updateUI();
+        if (player.hp <= 0) {
+            alert("WASTELAND JUSTICE: You died.");
+            location.reload();
+        }
+        document.getElementById('btn-attack').disabled = false;
+    }, 500);
+}
+
+function winBattle() {
+    log(`Enemy destroyed! Loot: ${currentEnemy.loot}$. XP: +50`, "gold");
+    player.money += currentEnemy.loot;
+    player.xp += 50;
+    currentEnemy = null;
+    document.getElementById('enemy-title').innerText = "NO TARGET";
+    document.getElementById('enemy-sprite').innerText = "";
+    document.getElementById('enemy-hp-container').style.display = 'none';
+    document.getElementById('btn-explore').disabled = false;
+    document.getElementById('btn-attack').disabled = true;
+    if (player.xp >= 100) levelUp();
+    updateUI();
+}
+
+function levelUp() {
+    player.lvl++;
+    player.xp = 0;
+    player.minDmg += 2;
+    player.maxDmg += 4;
+    log(`UPGRADED: You are now Level ${player.lvl}. Damage increased!`, "#00ccff");
+    // Change location when leveling up
+    player.location = locations[player.lvl % locations.length];
+    document.getElementById('loc').innerText = player.location;
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = player.money;
+    document.getElementById('lvl').innerText = player.lvl;
+    document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+    document.getElementById('xp-bar').style.width = player.xp + "%";
+}
+<div class="stat-label">INVENTORY</div>
+<div id="inventory-list" style="margin-top: 10px; border: 1px solid #333; height: 150px; overflow-y: auto; font-size: 12px; padding: 5px; background: #000;">
+    </div>
+
+
+let player = { 
+    hp: 100, 
+    maxHp: 100, 
+    money: 50, 
+    xp: 0, 
+    lvl: 1, 
+    baseMinDmg: 10, 
+    baseMaxDmg: 20,
+    armor: 0,
+    inventory: [] 
+};
+
+let currentEnemy = null;
+let shopOpen = false;
+
+// Item Database
+const itemDB = [
+    { id: 'laser_sight', name: "Laser Sight", type: "weapon", bonus: 8, price: 80, icon: "🎯" },
+    { id: 'kevlar_vest', name: "Energy Vest", type: "armor", bonus: 5, price: 120, icon: "🛡️" },
+    { id: 'titan_barrel', name: "Titan Barrel", type: "weapon", bonus: 15, price: 250, icon: "🔫" },
+    { id: 'nano_repair', name: "Nano-Bots", type: "armor", bonus: 12, price: 300, icon: "🧪" }
+];
+
+const enemies = [
+    { name: "Scrap-Vulture", hp: 35, damage: 12, icon: "🦅", loot: 30, dropChance: 0.2 },
+    { name: "Binary Bandit", hp: 60, damage: 18, icon: "🤖", loot: 60, dropChance: 0.4 },
+    { name: "Glitch-Coyote", hp: 45, damage: 14, icon: "🐕", loot: 40, dropChance: 0.3 }
+];
+
+function log(msg, color = "#00ff41") {
+    const display = document.getElementById('main-display');
+    display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+    display.scrollTop = display.scrollHeight;
+}
+
+// INVENTORY LOGIC
+function addItem(itemId) {
+    const item = itemDB.find(i => i.id === itemId);
+    player.inventory.push(item);
+    log(`NEW ITEM: ${item.name} added to inventory!`, "#00ccff");
+    updateUI();
+}
+
+function updateInventoryUI() {
+    const list = document.getElementById('inventory-list');
+    list.innerHTML = "";
+    player.inventory.forEach((item, index) => {
+        const itemEl = document.createElement('div');
+        itemEl.style.padding = "5px";
+        itemEl.style.borderBottom = "1px solid #222";
+        itemEl.style.display = "flex";
+        itemEl.style.justifyContent = "space-between";
+        itemEl.innerHTML = `<span>${item.icon} ${item.name}</span> <span style="color:#888">+${item.bonus}</span>`;
+        list.appendChild(itemEl);
+    });
+}
+
+// COMBAT WITH LOOT
+function attack() {
+    if (!currentEnemy) return;
+    
+    // Calculate total damage (Base + Inventory Weapons)
+    let weaponBonus = player.inventory.filter(i => i.type === "weapon").reduce((sum, i) => sum + i.bonus, 0);
+    let dmg = Math.floor(Math.random() * (player.baseMaxDmg - player.baseMinDmg)) + player.baseMinDmg + weaponBonus;
+    
+    currentEnemy.hp -= dmg;
+    log(`You shot for ${dmg} damage (Bonus: +${weaponBonus}).`);
+    document.getElementById('enemy-hp-bar').style.width = (currentEnemy.hp / currentEnemy.maxHp * 100) + "%";
+
+    if (currentEnemy.hp <= 0) return winBattle();
+
+    document.getElementById('btn-attack').disabled = true;
+    setTimeout(() => {
+        if (!currentEnemy) return;
+        
+        // Calculate defense (Inventory Armor)
+        let armorBonus = player.inventory.filter(i => i.type === "armor").reduce((sum, i) => sum + i.bonus, 0);
+        let rawDmg = Math.floor(Math.random() * currentEnemy.damage) + 5;
+        let finalDmg = Math.max(1, rawDmg - armorBonus);
+        
+        player.hp -= finalDmg;
+        log(`${currentEnemy.name} hits back! -${finalDmg} HP (Blocked: ${armorBonus})`, "#ff4400");
+        updateUI();
+        
+        if (player.hp <= 0) {
+            alert("FATAL ERROR: System scrapped.");
+            location.reload();
+        }
+        document.getElementById('btn-attack').disabled = false;
+    }, 500);
+}
+
+function winBattle() {
+    log(`Target neutralized. Loot: ${currentEnemy.loot}$.`, "gold");
+    player.money += currentEnemy.loot;
+    player.xp += 50;
+
+    // RANDOM DROP LOGIC
+    if (Math.random() < currentEnemy.dropChance) {
+        const randomItem = itemDB[Math.floor(Math.random() * itemDB.length)];
+        addItem(randomItem.id);
+    }
+
+    currentEnemy = null;
+    document.getElementById('enemy-hp-container').style.display = 'none';
+    document.getElementById('btn-explore').disabled = false;
+    document.getElementById('btn-attack').disabled = true;
+    if (player.xp >= 100) levelUp();
+    updateUI();
+}
+
+function explore() {
+    if (currentEnemy || shopOpen) return;
+    if (Math.random() > 0.6) {
+        spawnEnemy();
+    } else {
+        const found = Math.floor(Math.random() * 20) + 5;
+        player.money += found;
+        log(`Scavenged ${found}$ from a pile of old wires.`);
+        updateUI();
+    }
+}
+
+function spawnEnemy() {
+    let rand = enemies[Math.floor(Math.random() * enemies.length)];
+    currentEnemy = { ...rand, hp: rand.hp + (player.lvl * 15), damage: rand.damage + (player.lvl * 2) };
+    currentEnemy.maxHp = currentEnemy.hp;
+    
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('enemy-hp-bar').style.width = '100%';
+    
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+    log(`SIGNAL DETECTED: ${currentEnemy.name} approach!`, "#ff4400");
+}
+
+function levelUp() {
+    player.lvl++;
+    player.xp = 0;
+    player.baseMaxDmg += 5;
+    log(`RANK UP: You are now Level ${player.lvl}. Core damage increased.`, "#00ccff");
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = player.money;
+    document.getElementById('lvl').innerText = player.lvl;
+    document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+    document.getElementById('xp-bar').style.width = player.xp + "%";
+    updateInventoryUI();
+}
+
+function rest() {
+    if (currentEnemy) return;
+    player.hp = player.maxHp;
+    log("Maintenance cycle complete.");
+    updateUI();
+}
+
+// Initialize
+updateUI();
+
+
+// --- FULL PART 4: BOSSES & CRITICAL SYSTEMS ---
+
+let player = { 
+    hp: 100, 
+    maxHp: 100, 
+    money: 50, 
+    xp: 0, 
+    lvl: 1, 
+    baseMinDmg: 10, 
+    baseMaxDmg: 20,
+    critChance: 0.1, // 10% base chance
+    inventory: [] 
+};
+
+let currentEnemy = null;
+let shopOpen = false;
+let bossCounter = 0; // Tracks progress toward boss
+
+const enemies = [
+    { name: "Scrap-Vulture", hp: 35, damage: 12, icon: "🦅", loot: 30, dropChance: 0.2 },
+    { name: "Binary Bandit", hp: 60, damage: 18, icon: "🤖", loot: 60, dropChance: 0.4 },
+    { name: "Glitch-Coyote", hp: 45, damage: 14, icon: "🐕", loot: 40, dropChance: 0.3 }
+];
+
+const bosses = [
+    { name: "MECHA-GULCH", hp: 300, damage: 35, icon: "🦖", loot: 500, dropChance: 1.0 },
+    { name: "OVERSEER PRIME", hp: 600, damage: 55, icon: "👁️", loot: 1200, dropChance: 1.0 }
+];
+
+const itemDB = [
+    { id: 'laser_sight', name: "Laser Sight", type: "weapon", bonus: 8, price: 80, icon: "🎯" },
+    { id: 'kevlar_vest', name: "Energy Vest", type: "armor", bonus: 5, price: 120, icon: "🛡️" },
+    { id: 'titan_barrel', name: "Titan Barrel", type: "weapon", bonus: 15, price: 250, icon: "🔫" },
+    { id: 'nano_repair', name: "Nano-Bots", type: "armor", bonus: 12, price: 300, icon: "🧪" }
+];
+
+function log(msg, color = "#00ff41") {
+    const display = document.getElementById('main-display');
+    display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+    display.scrollTop = display.scrollHeight;
+}
+
+function spawnEnemy(isBoss = false) {
+    let source = isBoss ? bosses : enemies;
+    let rand = source[Math.floor(Math.random() * source.length)];
+    
+    currentEnemy = { 
+        ...rand, 
+        hp: rand.hp + (player.lvl * 15), 
+        damage: rand.damage + (player.lvl * 2),
+        isBoss: isBoss
+    };
+    currentEnemy.maxHp = currentEnemy.hp;
+    
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-title').style.color = isBoss ? "#ff0000" : "#ff4400";
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('enemy-hp-bar').style.width = '100%';
+    
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+
+    if(isBoss) {
+        log(`!!! CRITICAL ALERT: ${currentEnemy.name} HAS ENTERED THE SECTOR !!!`, "red");
+        document.getElementById('game-screen').style.borderColor = "red";
+    } else {
+        log(`HOSTILE DETECTED: ${currentEnemy.name}`, "#ff4400");
+    }
+}
+
+function attack() {
+    if (!currentEnemy) return;
+    
+    let weaponBonus = player.inventory.filter(i => i.type === "weapon").reduce((sum, i) => sum + i.bonus, 0);
+    let dmg = Math.floor(Math.random() * (player.baseMaxDmg - player.baseMinDmg)) + player.baseMinDmg + weaponBonus;
+    
+    // Critical Hit Logic
+    let isCrit = Math.random() < player.critChance;
+    if (isCrit) {
+        dmg *= 2;
+        log(`CRITICAL HIT! Dealt ${dmg} damage!`, "yellow");
+    } else {
+        log(`You hit for ${dmg} damage.`);
+    }
+    
+    currentEnemy.hp -= dmg;
+    document.getElementById('enemy-hp-bar').style.width = (currentEnemy.hp / currentEnemy.maxHp * 100) + "%";
+
+    if (currentEnemy.hp <= 0) return winBattle();
+
+    document.getElementById('btn-attack').disabled = true;
+    setTimeout(() => {
+        if (!currentEnemy) return;
+        let armorBonus = player.inventory.filter(i => i.type === "armor").reduce((sum, i) => sum + i.bonus, 0);
+        let rawDmg = Math.floor(Math.random() * currentEnemy.damage) + 5;
+        let finalDmg = Math.max(1, rawDmg - armorBonus);
+        
+        player.hp -= finalDmg;
+        log(`${currentEnemy.name} strikes! -${finalDmg} HP`, "#ff4400");
+        updateUI();
+        
+        if (player.hp <= 0) {
+            alert("WASTELAND RECLAIMED YOUR PARTS. GAME OVER.");
+            location.reload();
+        }
+        document.getElementById('btn-attack').disabled = false;
+    }, 500);
+}
+
+function winBattle() {
+    log(`VICTORY: ${currentEnemy.name} defeated. Reward: ${currentEnemy.loot}$.`, "gold");
+    player.money += currentEnemy.loot;
+    player.xp += currentEnemy.isBoss ? 200 : 50;
+    
+    if(currentEnemy.isBoss) {
+        document.getElementById('game-screen').style.borderColor = "#00ff41";
+        log("Sector secured. Boss loot collected.", "gold");
+    }
+
+    // Drop Logic
+    if (Math.random() < currentEnemy.dropChance) {
+        const randomItem = itemDB[Math.floor(Math.random() * itemDB.length)];
+        player.inventory.push(randomItem);
+        log(`LOOTED: ${randomItem.name}`, "#00ccff");
+    }
+
+    currentEnemy = null;
+    bossCounter++;
+    document.getElementById('enemy-hp-container').style.display = 'none';
+    document.getElementById('btn-explore').disabled = false;
+    document.getElementById('btn-attack').disabled = true;
+    
+    if (player.xp >= 100) levelUp();
+    updateUI();
+}
+
+function explore() {
+    if (currentEnemy || shopOpen) return;
+    
+    // Boss trigger every 5 encounters
+    if (bossCounter >= 5) {
+        bossCounter = 0;
+        spawnEnemy(true);
+        return;
+    }
+
+    if (Math.random() > 0.6) {
+        spawnEnemy();
+    } else {
+        const found = Math.floor(Math.random() * 30);
+        player.money += found;
+        log(`Scavenged ${found}$ from a rusted crate.`);
+        updateUI();
+    }
+}
+
+function levelUp() {
+    player.lvl++;
+    player.xp = 0;
+    player.baseMaxDmg += 5;
+    player.maxHp += 20;
+    player.critChance += 0.02; // +2% crit per level
+    log(`RANK UP: You are now Level ${player.lvl}. Integrity and Crit improved.`, "#00ccff");
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = player.money;
+    document.getElementById('lvl').innerText = player.lvl;
+    document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+    document.getElementById('xp-bar').style.width = player.xp + "%";
+    
+    // Inventory List update
+    const list = document.getElementById('inventory-list');
+    list.innerHTML = "";
+    player.inventory.forEach(item => {
+        list.innerHTML += `<div style="padding:2px; border-bottom:1px solid #111">${item.icon} ${item.name} (+${item.bonus})</div>`;
+    });
+}
+
+function rest() {
+    if (currentEnemy) return;
+    player.hp = player.maxHp;
+    log("Maintenance complete. HP restored.");
+    updateUI();
+}
+
+function toggleShop() {
+    if (currentEnemy) return log("Shop closed during combat!", "red");
+    shopOpen = !shopOpen;
+    document.getElementById('shop-overlay').style.display = shopOpen ? 'block' : 'none';
+}
+
+function buyItem(type) {
+    if (type === 'dmg' && player.money >= 100) {
+        player.money -= 100; player.baseMinDmg += 5; player.baseMaxDmg += 5;
+        log("Weapon calibrated. Damage up!");
+    } else if (type === 'hp' && player.money >= 150) {
+        player.money -= 150; player.maxHp += 50; player.hp = player.maxHp;
+        log("Armor reinforced. HP up!");
+    } else {
+        log("Insufficient credits!", "red");
+    }
+    updateUI();
+}
+
+updateUI();
+
+<button id="btn-heal" class="action-btn" onclick="useItem('heal')" style="border-color: #00ffcc; color: #00ffcc;">HEAL (0)</button>
+<button id="btn-grenade" class="action-btn" onclick="useItem('grenade')" style="border-color: #ffaa00; color: #ffaa00;">GRENADE (0)</button>
+
+
+let player = { 
+    hp: 100, 
+    maxHp: 100, 
+    money: 50, 
+    xp: 0, 
+    lvl: 1, 
+    baseMinDmg: 10, 
+    baseMaxDmg: 20,
+    critChance: 0.1,
+    inventory: [],
+    // Новое:
+    supplies: {
+        heal: 2,
+        grenade: 1
+    }
+};
+function useItem(type) {
+    if (type === 'heal' && player.supplies.heal > 0) {
+        player.hp = Math.min(player.maxHp, player.hp + 50);
+        player.supplies.heal--;
+        log("Used Nano-Stim. Recovered 50 HP!", "#00ffcc");
+    } else if (type === 'grenade' && player.supplies.grenade > 0 && currentEnemy) {
+        let gDmg = 50 + (player.lvl * 10);
+        currentEnemy.hp -= gDmg;
+        player.supplies.grenade--;
+        log(`BOOM! Grenade dealt ${gDmg} damage to ${currentEnemy.name}!`, "#ffaa00");
+        if (currentEnemy.hp <= 0) winBattle();
+    } else {
+        log("Out of supplies or no target!", "red");
+    }
+    updateUI();
+}
+
+// В функцию updateUI() добавь обновление текста на кнопках:
+function updateUI() {
+    // ... весь старый код обновления UI ...
+    document.getElementById('btn-heal').innerText = `HEAL (${player.supplies.heal})`;
+    document.getElementById('btn-grenade').innerText = `GRENADE (${player.supplies.grenade})`;
+}
+// Добавь эти условия в функцию buyItem:
+if (type === 'buy_heal' && player.money >= 30) {
+    player.money -= 30;
+    player.supplies.heal++;
+    log("Bought Nano-Stim.");
+} else if (type === 'buy_grenade' && player.money >= 60) {
+    player.money -= 60;
+    player.supplies.grenade++;
+    log("Bought EMP Grenade.");
+}
+// --- FULL PART 6: STATUS EFFECTS & TIME CYCLE ---
+
+let player = { 
+    hp: 100, maxHp: 100, money: 50, xp: 0, lvl: 1, 
+    baseMinDmg: 10, baseMaxDmg: 20, critChance: 0.1,
+    inventory: [],
+    supplies: { heal: 2, grenade: 1 },
+    status: null, // "burning", "glitched", or null
+    statusTimer: 0
+};
+
+let currentEnemy = null;
+let shopOpen = false;
+let bossCounter = 0;
+let turnCounter = 0; // Tracks Day/Night
+let isNight = false;
+
+const enemies = [
+    { name: "Scrap-Vulture", hp: 35, damage: 12, icon: "🦅", loot: 30, dropChance: 0.2, effect: "burning" },
+    { name: "Binary Bandit", hp: 60, damage: 18, icon: "🤖", loot: 60, dropChance: 0.4, effect: "glitched" },
+    { name: "Glitch-Coyote", hp: 45, damage: 14, icon: "🐕", loot: 40, dropChance: 0.3, effect: null }
+];
+
+const bosses = [
+    { name: "MECHA-GULCH", hp: 350, damage: 40, icon: "🦖", loot: 500, dropChance: 1.0, effect: "burning" }
+];
+
+const itemDB = [
+    { id: 'laser_sight', name: "Laser Sight", type: "weapon", bonus: 8, price: 80, icon: "🎯" },
+    { id: 'kevlar_vest', name: "Energy Vest", type: "armor", bonus: 5, price: 120, icon: "🛡️" },
+    { id: 'titan_barrel', name: "Titan Barrel", type: "weapon", bonus: 15, price: 250, icon: "🔫" }
+];
+
+function log(msg, color = "#00ff41") {
+    const display = document.getElementById('main-display');
+    display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+    display.scrollTop = display.scrollHeight;
+}
+
+function updateWorldCycle() {
+    turnCounter++;
+    if (turnCounter % 5 === 0) {
+        isNight = !isNight;
+        document.getElementById('game-screen').style.background = isNight ? 
+            "radial-gradient(circle, #001 0%, #000 100%)" : 
+            "radial-gradient(circle, #151515 0%, #000 100%)";
+        log(isNight ? "NIGHT FALLS. Enemies are evasive but carry more loot." : "SUNRISE. Visuals normalized.", "violet");
+    }
+}
+
+function processStatus() {
+    if (!player.status) return;
+    
+    if (player.status === "burning") {
+        let burnDmg = 5;
+        player.hp -= burnDmg;
+        log(`SYSTEM OVERHEAT: You lost ${burnDmg} HP from fire!`, "orange");
+    }
+    
+    player.statusTimer--;
+    if (player.statusTimer <= 0) {
+        log(`Status effect [${player.status.toUpperCase()}] cleared.`, "#00ffcc");
+        player.status = null;
+    }
+    updateUI();
+}
+
+function attack() {
+    if (!currentEnemy) return;
+    if (player.status === "glitched") return log("ERROR: Systems glitched! Cannot fire!", "red");
+
+    updateWorldCycle();
+
+    // Night penalty: 30% chance to miss
+    if (isNight && Math.random() < 0.3) {
+        log("MISS! The darkness made you lose sight of the target.", "gray");
+    } else {
+        let weaponBonus = player.inventory.filter(i => i.type === "weapon").reduce((sum, i) => sum + i.bonus, 0);
+        let dmg = Math.floor(Math.random() * (player.baseMaxDmg - player.baseMinDmg)) + player.baseMinDmg + weaponBonus;
+        
+        if (Math.random() < player.critChance) {
+            dmg *= 2; log(`CRITICAL HIT! Dealt ${dmg} damage!`, "yellow");
+        } else {
+            log(`You hit for ${dmg} damage.`);
+        }
+        currentEnemy.hp -= dmg;
+    }
+
+    document.getElementById('enemy-hp-bar').style.width = (currentEnemy.hp / Math.max(1, currentEnemy.maxHp) * 100) + "%";
+    if (currentEnemy.hp <= 0) return winBattle();
+
+    // Enemy Turn
+    document.getElementById('btn-attack').disabled = true;
+    setTimeout(() => {
+        if (!currentEnemy) return;
+        
+        // Status effect chance
+        if (currentEnemy.effect && Math.random() < 0.25) {
+            player.status = currentEnemy.effect;
+            player.statusTimer = 3;
+            log(`CRITICAL HIT BY ENEMY: You are now [${player.status.toUpperCase()}]!`, "red");
+        }
+
+        let armorBonus = player.inventory.filter(i => i.type === "armor").reduce((sum, i) => sum + i.bonus, 0);
+        let rawDmg = Math.floor(Math.random() * currentEnemy.damage) + 5;
+        let finalDmg = Math.max(1, rawDmg - armorBonus);
+        
+        player.hp -= finalDmg;
+        log(`${currentEnemy.name} attacks! -${finalDmg} HP`, "#ff4400");
+        
+        processStatus(); // Take burn damage or tick down status
+        
+        if (player.hp <= 0) { alert("HARDWARE DESTROYED."); location.reload(); }
+        document.getElementById('btn-attack').disabled = false;
+        updateUI();
+    }, 600);
+}
+
+function useItem(type) {
+    if (type === 'heal' && player.supplies.heal > 0) {
+        player.hp = Math.min(player.maxHp, player.hp + 50);
+        player.supplies.heal--;
+        player.status = null; // Healing clears status
+        log("Applied Nano-Repair. HP restored and status cleared!", "#00ffcc");
+    } else if (type === 'grenade' && player.supplies.grenade > 0 && currentEnemy) {
+        let gDmg = 60 + (player.lvl * 10);
+        currentEnemy.hp -= gDmg;
+        player.supplies.grenade--;
+        log(`GRENADE DETONATED! ${currentEnemy.name} took ${gDmg} damage!`, "#ffaa00");
+        if (currentEnemy.hp <= 0) winBattle();
+    } else {
+        log("Supply depletion or no target!", "red");
+    }
+    updateUI();
+}
+
+function winBattle() {
+    let lootBonus = isNight ? 1.5 : 1;
+    let finalLoot = Math.floor(currentEnemy.loot * lootBonus);
+    
+    log(`VICTORY: ${currentEnemy.name} destroyed. Received ${finalLoot}$.`, "gold");
+    player.money += finalLoot;
+    player.xp += currentEnemy.isBoss ? 200 : 50;
+    
+    if (Math.random() < currentEnemy.dropChance) {
+        const randomItem = itemDB[Math.floor(Math.random() * itemDB.length)];
+        player.inventory.push(randomItem);
+        log(`LOOTED: ${randomItem.name}`, "#00ccff");
+    }
+
+    currentEnemy = null;
+    bossCounter++;
+    document.getElementById('enemy-hp-container').style.display = 'none';
+    document.getElementById('btn-explore').disabled = false;
+    document.getElementById('btn-attack').disabled = true;
+    
+    if (player.xp >= 100) levelUp();
+    updateUI();
+}
+
+function explore() {
+    if (currentEnemy || shopOpen) return;
+    updateWorldCycle();
+    if (bossCounter >= 5) { bossCounter = 0; spawnEnemy(true); return; }
+
+    if (Math.random() > 0.6) {
+        spawnEnemy();
+    } else {
+        const found = Math.floor(Math.random() * 30);
+        player.money += found;
+        log(`Found ${found}$ in a rusted terminal.`);
+        updateUI();
+    }
+}
+
+function spawnEnemy(isBoss = false) {
+    let source = isBoss ? bosses : enemies;
+    let rand = source[Math.floor(Math.random() * source.length)];
+    currentEnemy = { ...rand, hp: rand.hp + (player.lvl * 20), damage: rand.damage + (player.lvl * 3), isBoss: isBoss };
+    currentEnemy.maxHp = currentEnemy.hp;
+    
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-title').style.color = isBoss ? "red" : "#ff4400";
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('enemy-hp-bar').style.width = '100%';
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+    log(`WARNING: ${currentEnemy.name} has appeared!`, isBoss ? "red" : "#ff4400");
+}
+
+function levelUp() {
+    player.lvl++; player.xp = 0; player.baseMaxDmg += 5; player.maxHp += 20; player.critChance += 0.02;
+    log(`RANK UP: Sector Security Rank ${player.lvl} reached!`, "#00ccff");
+}
+
+function toggleShop() {
+    if (currentEnemy) return;
+    shopOpen = !shopOpen;
+    document.getElementById('shop-overlay').style.display = shopOpen ? 'block' : 'none';
+}
+
+function buyItem(type) {
+    let prices = { dmg: 100, hp: 150, heal: 30, grenade: 60 };
+    if (player.money >= prices[type]) {
+        player.money -= prices[type];
+        if (type === 'dmg') { player.baseMinDmg += 5; player.baseMaxDmg += 5; log("Weapon Upgraded."); }
+        if (type === 'hp') { player.maxHp += 50; player.hp = player.maxHp; log("Armor Reinforced."); }
+        if (type === 'heal') { player.supplies.heal++; log("Bought Heal."); }
+        if (type === 'grenade') { player.supplies.grenade++; log("Bought Grenade."); }
+    } else { log("Low Credits!", "red"); }
+    updateUI();
+}
+
+function rest() {
+    if (currentEnemy) return;
+    player.hp = player.maxHp;
+    player.status = null;
+    log("Systems Refreshed. All Status Cleared.");
+    updateUI();
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = player.money;
+    document.getElementById('lvl').innerText = player.lvl;
+    document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+    document.getElementById('xp-bar').style.width = player.xp + "%";
+    document.getElementById('btn-heal').innerText = `HEAL (${player.supplies.heal})`;
+    document.getElementById('btn-grenade').innerText = `GRENADE (${player.supplies.grenade})`;
+    
+    const list = document.getElementById('inventory-list');
+    list.innerHTML = "";
+    player.inventory.forEach(item => {
+        list.innerHTML += `<div style="padding:2px; border-bottom:1px solid #111">${item.icon} ${item.name}</div>`;
+    });
+
+    // Visual indicator for Status
+    const avatar = document.querySelector('.avatar');
+    if (player.status === "burning") avatar.style.boxShadow = "0 0 30px orange";
+    else if (player.status === "glitched") avatar.style.boxShadow = "0 0 30px violet";
+    else avatar.style.boxShadow = "inset 0 0 20px #00ff41";
+}
+
+updateUI();
+<div class="stat-label">SYSTEM POWER (SP)</div>
+<div class="bar-container"><div id="sp-bar" class="bar-fill" style="background: #00ccff; width: 100%;"></div></div>
+<button id="btn-deadeye" class="action-btn" onclick="useSkill('deadeye')" style="border-color: #00ccff; color: #00ccff;">DEADEYE (40 SP)</button>
+<button id="btn-shield" class="action-btn" onclick="useSkill('shield')" style="border-color: #00ccff; color: #00ccff;">SHIELD (30 SP)</button>
+// --- FULL PART 7: NEURAL SKILLS & ENERGY SYSTEM ---
+
+let player = { 
+    hp: 100, maxHp: 100, 
+    sp: 100, maxSp: 100, // New Energy System
+    money: 50, xp: 0, lvl: 1, 
+    baseMinDmg: 10, baseMaxDmg: 20, critChance: 0.1,
+    inventory: [],
+    supplies: { heal: 2, grenade: 1 },
+    status: null, statusTimer: 0,
+    shieldActive: 0, // Shield turns counter
+    deadeyeActive: false // Guaranteed crit flag
+};
+
+let currentEnemy = null;
+let shopOpen = false;
+let bossCounter = 0;
+let turnCounter = 0;
+let isNight = false;
+
+const enemies = [
+    { name: "Scrap-Vulture", hp: 35, damage: 12, icon: "🦅", loot: 30, dropChance: 0.2, effect: "burning" },
+    { name: "Binary Bandit", hp: 60, damage: 18, icon: "🤖", loot: 60, dropChance: 0.4, effect: "glitched" },
+    { name: "Glitch-Coyote", hp: 45, damage: 14, icon: "🐕", loot: 40, dropChance: 0.3, effect: null }
+];
+
+const bosses = [
+    { name: "MECHA-GULCH", hp: 400, damage: 45, icon: "🦖", loot: 600, dropChance: 1.0, effect: "burning" }
+];
+
+function log(msg, color = "#00ff41") {
+    const display = document.getElementById('main-display');
+    display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+    display.scrollTop = display.scrollHeight;
+}
+
+function updateWorldCycle() {
+    turnCounter++;
+    player.sp = Math.min(player.maxSp, player.sp + 10); // Regenerate 10 SP per turn
+    if (turnCounter % 5 === 0) {
+        isNight = !isNight;
+        document.getElementById('game-screen').style.background = isNight ? 
+            "radial-gradient(circle, #001 0%, #000 100%)" : 
+            "radial-gradient(circle, #151515 0%, #000 100%)";
+        log(isNight ? "NIGHT FALLS. SP regeneration increased." : "SUNRISE. Visuals normalized.", "violet");
+    }
+}
+
+function useSkill(skill) {
+    if (!currentEnemy) return log("No targets to use skills on!", "gray");
+    
+    if (skill === 'deadeye' && player.sp >= 40) {
+        player.sp -= 40;
+        player.deadeyeActive = true;
+        log("DEADEYE PROTOCOL: Targeted Weak Spot. Next shot will CRIT.", "#00ccff");
+    } else if (skill === 'shield' && player.sp >= 30) {
+        player.sp -= 30;
+        player.shieldActive = 3;
+        log("SHIELD OVERLOAD: Reducing incoming damage for 3 turns.", "#00ccff");
+    } else {
+        log("NOT ENOUGH SP!", "red");
+    }
+    updateUI();
+}
+
+function attack() {
+    if (!currentEnemy) return;
+    if (player.status === "glitched") return log("ERROR: Systems glitched! Cannot fire!", "red");
+
+    updateWorldCycle();
+
+    if (isNight && Math.random() < 0.3 && !player.deadeyeActive) {
+        log("MISS! It's too dark.", "gray");
+    } else {
+        let weaponBonus = player.inventory.filter(i => i.type === "weapon").reduce((sum, i) => sum + i.bonus, 0);
+        let dmg = Math.floor(Math.random() * (player.baseMaxDmg - player.baseMinDmg)) + player.baseMinDmg + weaponBonus;
+        
+        if (player.deadeyeActive || Math.random() < player.critChance) {
+            dmg *= 2; 
+            log(`CRITICAL HIT! Dealt ${dmg} damage!`, "yellow");
+            player.deadeyeActive = false; // Reset deadeye
+        } else {
+            log(`You hit for ${dmg} damage.`);
+        }
+        currentEnemy.hp -= dmg;
+    }
+
+    document.getElementById('enemy-hp-bar').style.width = (currentEnemy.hp / Math.max(1, currentEnemy.maxHp) * 100) + "%";
+    if (currentEnemy.hp <= 0) return winBattle();
+
+    // Enemy Turn
+    document.getElementById('btn-attack').disabled = true;
+    setTimeout(() => {
+        if (!currentEnemy) return;
+        
+        if (currentEnemy.effect && Math.random() < 0.25) {
+            player.status = currentEnemy.effect;
+            player.statusTimer = 3;
+            log(`SYSTEM FAILURE: You are now [${player.status.toUpperCase()}]!`, "red");
+        }
+
+        let armorBonus = player.inventory.filter(i => i.type === "armor").reduce((sum, i) => sum + i.bonus, 0);
+        let rawDmg = Math.floor(Math.random() * currentEnemy.damage) + 5;
+        
+        // Shield logic
+        let finalDmg = Math.max(1, rawDmg - armorBonus);
+        if (player.shieldActive > 0) {
+            finalDmg = Math.floor(finalDmg / 2);
+            player.shieldActive--;
+            log(`Shield absorbed damage! Turns left: ${player.shieldActive}`, "#00ccff");
+        }
+        
+        player.hp -= finalDmg;
+        log(`${currentEnemy.name} attacks! -${finalDmg} HP`, "#ff4400");
+        
+        // Handle Burn Status
+        if (player.status === "burning") {
+            player.hp -= 5;
+            log("System Heat: -5 HP", "orange");
+            player.statusTimer--;
+            if (player.statusTimer <= 0) player.status = null;
+        } else if (player.status === "glitched") {
+            player.statusTimer--;
+            if (player.statusTimer <= 0) player.status = null;
+        }
+        
+        if (player.hp <= 0) { alert("PERMANENT DATA LOSS."); location.reload(); }
+        document.getElementById('btn-attack').disabled = false;
+        updateUI();
+    }, 600);
+}
+
+// ... Keep useItem(), winBattle(), explore(), spawnEnemy(), levelUp() from Part 6 ...
+// (I am only showing changed parts to keep it scannable, but all logic still works)
+
+function winBattle() {
+    log(`VICTORY: ${currentEnemy.name} destroyed. Reward: ${currentEnemy.loot}$.`, "gold");
+    player.money += currentEnemy.loot;
+    player.xp += currentEnemy.isBoss ? 200 : 50;
+    currentEnemy = null;
+    bossCounter++;
+    document.getElementById('enemy-hp-container').style.display = 'none';
+    document.getElementById('btn-explore').disabled = false;
+    document.getElementById('btn-attack').disabled = true;
+    if (player.xp >= 100) levelUp();
+    updateUI();
+}
+
+function explore() {
+    if (currentEnemy || shopOpen) return;
+    updateWorldCycle();
+    if (bossCounter >= 5) { bossCounter = 0; spawnEnemy(true); return; }
+    if (Math.random() > 0.6) { spawnEnemy(); } else {
+        const found = Math.floor(Math.random() * 30);
+        player.money += found;
+        log(`Found ${found}$ hidden in a rusted pipe.`);
+        updateUI();
+    }
+}
+
+function spawnEnemy(isBoss = false) {
+    let source = isBoss ? bosses : enemies;
+    let rand = source[Math.floor(Math.random() * source.length)];
+    currentEnemy = { ...rand, hp: rand.hp + (player.lvl * 25), damage: rand.damage + (player.lvl * 4), isBoss: isBoss };
+    currentEnemy.maxHp = currentEnemy.hp;
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-title').style.color = isBoss ? "red" : "#ff4400";
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('enemy-hp-bar').style.width = '100%';
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+    log(`DANGER: ${currentEnemy.name} approach!`, isBoss ? "red" : "#ff4400");
+}
+
+function levelUp() {
+    player.lvl++; player.xp = 0; player.maxHp += 20; player.hp = player.maxHp;
+    player.maxSp += 10; player.sp = player.maxSp;
+    log(`LEVEL UP: System Version ${player.lvl}.0 installed!`, "#00ccff");
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = player.money;
+    document.getElementById('lvl').innerText = player.lvl;
+    document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+    document.getElementById('xp-bar').style.width = player.xp + "%";
+    document.getElementById('sp-bar').style.width = (player.sp / player.maxSp * 100) + "%";
+    
+    document.getElementById('btn-heal').innerText = `HEAL (${player.supplies.heal})`;
+    document.getElementById('btn-grenade').innerText = `GRENADE (${player.supplies.grenade})`;
+    
+    // Skill Visuals
+    const avatar = document.querySelector('.avatar');
+    if (player.shieldActive > 0) avatar.style.border = "4px solid #00ccff";
+    else if (player.deadeyeActive) avatar.style.border = "4px solid yellow";
+    else avatar.style.border = "2px solid #00ff41";
+}
+
+updateUI();
+<div>PARTS: <span id="parts">0</span>⚙️</div>
+<div id="craft-overlay" style="display:none; position:absolute; top:15%; left:25%; width:700px; height:500px; background:#000; border:4px double #ffcc00; z-index:1001; padding:30px; box-shadow: 0 0 100px #000;">
+    <h2 style="text-align:center; color:#ffcc00; letter-spacing: 5px;">WEAPON FORGE</h2>
+    <hr style="border-color: #ffcc00;">
+    <div style="display:flex; justify-content: space-around; margin-top:60px;">
+        <div style="text-align:center; border:1px solid #444; padding:20px; width:220px;">
+            <h3>TESLA COIL</h3>
+            <p>+30 Damage</p>
+            <p style="color: #ffcc00;">Cost: 5 Scrap Parts</p>
+            <button class="action-btn" onclick="craftItem('tesla')">FORGE</button>
+        </div>
+    </div>
+    <button class="action-btn" style="margin-top:140px; width:100%; border-color: #ffcc00; color: #ffcc00;" onclick="toggleCraft()">EXIT FORGE</button>
+</div>      
+<button class="action-btn" onclick="toggleCraft()" style="border-color: #ffcc00; color: #ffcc00;">FORGE</button>
+// --- FULL PART 8: SALVAGING & CRAFTING ---
+
+let player = { 
+    hp: 100, maxHp: 100, sp: 100, maxSp: 100,
+    money: 50, parts: 0, xp: 0, lvl: 1, 
+    baseMinDmg: 10, baseMaxDmg: 20, critChance: 0.1,
+    inventory: [],
+    supplies: { heal: 2, grenade: 1 },
+    status: null, statusTimer: 0,
+    shieldActive: 0, deadeyeActive: false
+};
+
+let currentEnemy = null;
+let shopOpen = false;
+let craftOpen = false;
+let bossCounter = 0;
+
+// Items can now have a "scrapValue"
+const itemDB = [
+    { id: 'laser_sight', name: "Laser Sight", type: "weapon", bonus: 8, price: 80, icon: "🎯", scrap: 1 },
+    { id: 'kevlar_vest', name: "Energy Vest", type: "armor", bonus: 5, price: 120, icon: "🛡️", scrap: 1 },
+    { id: 'titan_barrel', name: "Titan Barrel", type: "weapon", bonus: 15, price: 250, icon: "🔫", scrap: 2 }
+];
+
+function log(msg, color = "#00ff41") {
+    const display = document.getElementById('main-display');
+    display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+    display.scrollTop = display.scrollHeight;
+}
+
+// --- NEW CRAFTING & SALVAGE FUNCTIONS ---
+
+function toggleCraft() {
+    if (currentEnemy) return;
+    craftOpen = !craftOpen;
+    document.getElementById('craft-overlay').style.display = craftOpen ? 'block' : 'none';
+}
+
+function salvageItem(index) {
+    const item = player.inventory[index];
+    player.parts += item.scrap || 1;
+    player.inventory.splice(index, 1);
+    log(`SALVAGED: ${item.name} converted to ${item.scrap || 1} scrap parts.`, "#ffcc00");
+    updateUI();
+}
+
+function craftItem(recipe) {
+    if (recipe === 'tesla' && player.parts >= 5) {
+        player.parts -= 5;
+        const tesla = { id: 'tesla', name: "Tesla Coil", type: "weapon", bonus: 30, icon: "⚡", scrap: 3 };
+        player.inventory.push(tesla);
+        log("FORGED: Tesla Coil integrated into your systems!", "gold");
+    } else {
+        log("NOT ENOUGH SCRAP PARTS!", "red");
+    }
+    updateUI();
+}
+
+// --- UPDATED UI FOR SALVAGING ---
+
+function updateUI() {
+    document.getElementById('money').innerText = player.money;
+    document.getElementById('parts').innerText = player.parts;
+    document.getElementById('lvl').innerText = player.lvl;
+    document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+    document.getElementById('sp-bar').style.width = (player.sp / player.maxSp * 100) + "%";
+    document.getElementById('xp-bar').style.width = player.xp + "%";
+    
+    document.getElementById('btn-heal').innerText = `HEAL (${player.supplies.heal})`;
+    document.getElementById('btn-grenade').innerText = `GRENADE (${player.supplies.grenade})`;
+    
+    // Inventory update with Salvage Button
+    const list = document.getElementById('inventory-list');
+    list.innerHTML = "";
+    player.inventory.forEach((item, index) => {
+        let div = document.createElement('div');
+        div.style.cssText = "padding:5px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;";
+        div.innerHTML = `<span>${item.icon} ${item.name}</span> 
+                         <button onclick="salvageItem(${index})" style="background:red; color:white; border:none; font-size:10px; cursor:pointer;">SCRAP</button>`;
+        list.appendChild(div);
+    });
+}
+
+// --- RE-USE PREVIOUS COMBAT/EXPLORE LOGIC ---
+
+function explore() {
+    if (currentEnemy || shopOpen || craftOpen) return;
+    if (bossCounter >= 5) { bossCounter = 0; spawnEnemy(true); return; }
+    if (Math.random() > 0.6) { spawnEnemy(); } else {
+        const found = Math.floor(Math.random() * 30);
+        player.money += found;
+        log(`Scavenged ${found}$ from the wreckage.`);
+        updateUI();
+    }
+}
+
+function spawnEnemy(isBoss = false) {
+    const rand = (isBoss) ? { name: "MECHA-GULCH", hp: 400, damage: 45, icon: "🦖", loot: 600, dropChance: 1.0 } : 
+                 enemies[Math.floor(Math.random() * enemies.length)];
+    
+    currentEnemy = { ...rand, hp: rand.hp + (player.lvl * 25), damage: rand.damage + (player.lvl * 4), isBoss: isBoss };
+    currentEnemy.maxHp = currentEnemy.hp;
+    
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('enemy-hp-bar').style.width = '100%';
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+    log(`WARNING: ${currentEnemy.name} detected!`, isBoss ? "red" : "#ff4400");
+}
+
+function attack() {
+    if (!currentEnemy) return;
+    let weaponBonus = player.inventory.filter(i => i.type === "weapon").reduce((sum, i) => sum + i.bonus, 0);
+    let dmg = Math.floor(Math.random() * (player.baseMaxDmg - player.baseMinDmg)) + player.baseMinDmg + weaponBonus;
+    
+    if (player.deadeyeActive) { dmg *= 2; player.deadeyeActive = false; log("DEADEYE HIT!", "yellow"); }
+    
+    currentEnemy.hp -= dmg;
+    log(`You hit for ${dmg} damage.`);
+    document.getElementById('enemy-hp-bar').style.width = (currentEnemy.hp / currentEnemy.maxHp * 100) + "%";
+
+    if (currentEnemy.hp <= 0) return winBattle();
+
+    document.getElementById('btn-attack').disabled = true;
+    setTimeout(() => {
+        if (!currentEnemy) return;
+        let armorBonus = player.inventory.filter(i => i.type === "armor").reduce((sum, i) => sum + i.bonus, 0);
+        let finalDmg = Math.max(1, (Math.floor(Math.random() * currentEnemy.damage) + 5) - armorBonus);
+        if (player.shieldActive > 0) { finalDmg = Math.floor(finalDmg/2); player.shieldActive--; }
+        player.hp -= finalDmg;
+        log(`${currentEnemy.name} attacks! -${finalDmg} HP`, "red");
+        if (player.hp <= 0) location.reload();
+        document.getElementById('btn-attack').disabled = false;
+        updateUI();
+    }, 500);
+}
+
+const enemies = [
+    { name: "Scrap-Vulture", hp: 35, damage: 12, icon: "🦅", loot: 30, dropChance: 0.3 },
+    { name: "Binary Bandit", hp: 60, damage: 18, icon: "🤖", loot: 60, dropChance: 0.5 }
+];
+
+function winBattle() {
+    player.money += currentEnemy.loot; player.xp += 50;
+    if (Math.random() < currentEnemy.dropChance) {
+        player.inventory.push(itemDB[Math.floor(Math.random() * itemDB.length)]);
+    }
+    currentEnemy = null; bossCounter++;
+    document.getElementById('enemy-hp-container').style.display = 'none';
+    document.getElementById('btn-explore').disabled = false;
+    document.getElementById('btn-attack').disabled = true;
+    if (player.xp >= 100) { player.lvl++; player.xp = 0; log("LEVEL UP!"); }
+    updateUI();
+}
+
+function rest() { player.hp = player.maxHp; log("Systems Restored."); updateUI(); }
+function toggleShop() { shopOpen = !shopOpen; document.getElementById('shop-overlay').style.display = shopOpen ? 'block' : 'none'; }
+function buyItem(t) { /* Same shop logic as before */ }
+
+updateUI();
+<div class="stat-label">COMBAT DRONE</div>
+<div id="drone-status" style="border: 1px dashed #00ccff; padding: 10px; text-align: center; color: #00ccff;">
+    NONE ACTIVE
+</div>
+
+// --- FULL PART 9: DRONES & COMPANIONS ---
+
+let player = { 
+    hp: 100, maxHp: 100, sp: 100, maxSp: 100,
+    money: 100, parts: 0, xp: 0, lvl: 1, 
+    baseMinDmg: 10, baseMaxDmg: 20, critChance: 0.1,
+    inventory: [],
+    supplies: { heal: 2, grenade: 1 },
+    status: null, statusTimer: 0,
+    shieldActive: 0, deadeyeActive: false,
+    // НОВОЕ: Система дрона
+    drone: null // { name: "Buzz-Bot", damage: 10, icon: "🛸" }
+};
+
+let currentEnemy = null;
+let shopOpen = false;
+let craftOpen = false;
+let bossCounter = 0;
+
+const enemies = [
+    { name: "Scrap-Vulture", hp: 35, damage: 12, icon: "🦅", loot: 30, dropChance: 0.3 },
+    { name: "Binary Bandit", hp: 60, damage: 18, icon: "🤖", loot: 60, dropChance: 0.5 },
+    { name: "Cyber-Hyena", hp: 50, damage: 15, icon: "🐕‍🦺", loot: 45, dropChance: 0.4 }
+];
+
+const itemDB = [
+    { id: 'laser_sight', name: "Laser Sight", type: "weapon", bonus: 8, price: 80, icon: "🎯", scrap: 1 },
+    { id: 'kevlar_vest', name: "Energy Vest", type: "armor", bonus: 5, price: 120, icon: "🛡️", scrap: 1 },
+    { id: 'drone_mk1', name: "Drone 'Hornet'", type: "drone", damage: 12, price: 300, icon: "🛸", scrap: 5 }
+];
+
+function log(msg, color = "#00ff41") {
+    const display = document.getElementById('main-display');
+    display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+    display.scrollTop = display.scrollHeight;
+}
+
+// --- АТАКА С УЧЕТОМ ДРОНА ---
+
+function attack() {
+    if (!currentEnemy) return;
+    
+    // 1. Атака игрока
+    let weaponBonus = player.inventory.filter(i => i.type === "weapon").reduce((sum, i) => sum + i.bonus, 0);
+    let dmg = Math.floor(Math.random() * (player.baseMaxDmg - player.baseMinDmg)) + player.baseMinDmg + weaponBonus;
+    
+    if (player.deadeyeActive) { dmg *= 2; player.deadeyeActive = false; log("CRITICAL HIT!", "yellow"); }
+    
+    currentEnemy.hp -= dmg;
+    log(`Вы нанесли ${dmg} урона.`);
+
+    // 2. Атака дрона (Автоматически)
+    if (player.drone) {
+        let droneDmg = player.drone.damage;
+        currentEnemy.hp -= droneDmg;
+        log(`Дрон ${player.drone.name} атакует: +${droneDmg} урона!`, "#00ccff");
+    }
+    
+    document.getElementById('enemy-hp-bar').style.width = (currentEnemy.hp / Math.max(1, currentEnemy.maxHp) * 100) + "%";
+
+    if (currentEnemy.hp <= 0) return winBattle();
+
+    // 3. Ответ врага
+    document.getElementById('btn-attack').disabled = true;
+    setTimeout(() => {
+        if (!currentEnemy) return;
+        let armorBonus = player.inventory.filter(i => i.type === "armor").reduce((sum, i) => sum + i.bonus, 0);
+        let finalDmg = Math.max(1, (Math.floor(Math.random() * currentEnemy.damage) + 5) - armorBonus);
+        
+        if (player.shieldActive > 0) { finalDmg = Math.floor(finalDmg/2); player.shieldActive--; }
+        
+        player.hp -= finalDmg;
+        log(`${currentEnemy.name} атакует: -${finalDmg} HP`, "red");
+        
+        if (player.hp <= 0) {
+            alert("СИСТЕМА УНИЧТОЖЕНА. ВАС РАЗОБРАЛИ НА ЗАПЧАСТИ.");
+            location.reload();
+        }
+        document.getElementById('btn-attack').disabled = false;
+        updateUI();
+    }, 500);
+}
+
+// --- КРАФТ И ПОКУПКА ДРОНА ---
+
+function buyItem(type) {
+    if (type === 'drone' && player.money >= 300) {
+        player.money -= 300;
+        player.drone = { name: "Hornet MK1", damage: 15, icon: "🛸" };
+        log("Дрон Hornet MK1 активирован и готов к бою!", "#00ccff");
+    }
+    // Здесь можно добавить другие покупки
+    updateUI();
+}
+
+function craftItem(recipe) {
+    if (recipe === 'war_drone' && player.parts >= 10) {
+        player.parts -= 10;
+        player.drone = { name: "REAPER", damage: 35, icon: "🛰️" };
+        log("ВЫ КОВАЛИ БОЕВОЙ СПУТНИК 'REAPER'!", "gold");
+    } else {
+        log("НЕДОСТАТОЧНО ДЕТАЛЕЙ!", "red");
+    }
+    updateUI();
+}
+
+// --- ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ---
+
+function updateUI() {
+    document.getElementById('money').innerText = player.money;
+    document.getElementById('parts').innerText = player.parts;
+    document.getElementById('lvl').innerText = player.lvl;
+    document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+    document.getElementById('sp-bar').style.width = (player.sp / player.maxSp * 100) + "%";
+    document.getElementById('xp-bar').style.width = player.xp + "%";
+    
+    // Обновление дрона в сайдбаре
+    const droneBox = document.getElementById('drone-status');
+    if (player.drone) {
+        droneBox.innerHTML = `<span style="font-size:30px;">${player.drone.icon}</span><br>
+                              <strong>${player.drone.name}</strong><br>
+                              DMG: ${player.drone.damage}`;
+        droneBox.style.borderColor = "#00ccff";
+    }
+
+    // Инвентарь
+    const list = document.getElementById('inventory-list');
+    list.innerHTML = "";
+    player.inventory.forEach((item, index) => {
+        let div = document.createElement('div');
+        div.style.cssText = "padding:5px; border-bottom:1px solid #222; display:flex; justify-content:space-between; align-items:center;";
+        div.innerHTML = `<span>${item.icon} ${item.name}</span> 
+                         <button onclick="salvageItem(${index})" style="background:#440000; color:white; border:none; padding:2px 5px; cursor:pointer;">SCRAP</button>`;
+        list.appendChild(div);
+    });
+}
+
+// --- ОСТАЛЬНАЯ ЛОГИКА (БЕЗ ИЗМЕНЕНИЙ) ---
+
+function explore() {
+    if (currentEnemy || shopOpen || craftOpen) return;
+    if (bossCounter >= 5) { bossCounter = 0; spawnEnemy(true); return; }
+    if (Math.random() > 0.6) { spawnEnemy(); } else {
+        const found = Math.floor(Math.random() * 30) + 10;
+        player.money += found;
+        log(`Найдено ${found}$ в старом терминале.`);
+        updateUI();
+    }
+}
+
+function spawnEnemy(isBoss = false) {
+    let rand = isBoss ? { name: "MECHA-GULCH", hp: 500, damage: 50, icon: "🦖", loot: 1000, dropChance: 1.0 } : 
+                 enemies[Math.floor(Math.random() * enemies.length)];
+    
+    currentEnemy = { ...rand, hp: rand.hp + (player.lvl * 25), damage: rand.damage + (player.lvl * 5), isBoss: isBoss };
+    currentEnemy.maxHp = currentEnemy.hp;
+    
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('enemy-hp-bar').style.width = '100%';
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+    log(`ВНИМАНИЕ: Обнаружен ${currentEnemy.name}!`, isBoss ? "red" : "#ff4400");
+}
+
+function winBattle() {
+    log(`ПОБЕДА: ${currentEnemy.name} уничтожен. Награда: ${currentEnemy.loot}$.`, "gold");
+    player.money += currentEnemy.loot;
+    player.xp += currentEnemy.isBoss ? 200 : 50;
+    
+    if (Math.random() < 0.4) {
+        player.parts += 1;
+        log("Вы извлекли ценную деталь из обломков!", "gold");
+    }
+
+    currentEnemy = null; bossCounter++;
+    document.getElementById('enemy-hp-container').style.display = 'none';
+    document.getElementById('btn-explore').disabled = false;
+    document.getElementById('btn-attack').disabled = true;
+    if (player.xp >= 100) { player.lvl++; player.xp = 0; log("НОВЫЙ УРОВЕНЬ СИСТЕМЫ!"); }
+    updateUI();
+}
+
+function salvageItem(index) {
+    player.parts += 1;
+    player.inventory.splice(index, 1);
+    updateUI();
+}
+
+function toggleShop() { shopOpen = !shopOpen; document.getElementById('shop-overlay').style.display = shopOpen ? 'block' : 'none'; }
+function toggleCraft() { craftOpen = !craftOpen; document.getElementById('craft-overlay').style.display = craftOpen ? 'block' : 'none'; }
+function rest() { player.hp = player.maxHp; player.sp = player.maxSp; log("Перезагрузка завершена."); updateUI(); }
+
+updateUI();
+<div id="end-screen" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:#000; z-index:9999; flex-direction:column; justify-content:center; align-items:center; color:#00ff41; text-align:center; font-family:'Courier New';">
+    <h1 style="font-size:50px; text-shadow: 0 0 20px #00ff41;">SYSTEM REBOOT SUCCESSFUL</h1>
+    <p style="font-size:20px; width:600px;">The Architect has been purged. The Silicon Wasteland is offline. You are finally free from the loop, Cowboy.</p>
+    <button class="action-btn" onclick="location.reload()" style="margin-top:50px;">RESTART SIMULATION</button>
+</div>
+// --- FULL PART 10: THE ARCHITECT (FINAL) ---
+
+let player = { 
+    hp: 120, maxHp: 120, sp: 100, maxSp: 100,
+    money: 100, parts: 0, xp: 0, lvl: 1, 
+    baseMinDmg: 15, baseMaxDmg: 25, critChance: 0.12,
+    inventory: [],
+    supplies: { heal: 3, grenade: 2 },
+    status: null, statusTimer: 0,
+    shieldActive: 0, deadeyeActive: false,
+    drone: null
+};
+
+let currentEnemy = null;
+let isEnding = false;
+let shopOpen = false;
+let craftOpen = false;
+let bossCounter = 0;
+
+const enemies = [
+    { name: "Scrap-Vulture", hp: 40, damage: 15, icon: "🦅", loot: 40, dropChance: 0.3 },
+    { name: "Binary Bandit", hp: 70, damage: 20, icon: "🤖", loot: 75, dropChance: 0.5 },
+    { name: "Data-Hunter", hp: 100, damage: 25, icon: "👤", loot: 120, dropChance: 0.6 }
+];
+
+const itemDB = [
+    { id: 'laser_sight', name: "Laser Sight", type: "weapon", bonus: 10, icon: "🎯", scrap: 1 },
+    { id: 'shield_mod', name: "Ion Shield", type: "armor", bonus: 8, icon: "🛡️", scrap: 2 }
+];
+
+function log(msg, color = "#00ff41") {
+    const display = document.getElementById('main-display');
+    display.innerHTML += `<p style="color: ${color}">> ${msg}</p>`;
+    display.scrollTop = display.scrollHeight;
+}
+
+// --- EXPLORE & FINAL TRIGGER ---
+
+function explore() {
+    if (currentEnemy || shopOpen || craftOpen || isEnding) return;
+
+    if (player.lvl >= 10) {
+        startFinalBattle();
+        return;
+    }
+
+    if (bossCounter >= 5) { bossCounter = 0; spawnEnemy(true); return; }
+
+    if (Math.random() > 0.6) {
+        spawnEnemy();
+    } else {
+        const found = Math.floor(Math.random() * 50) + 20;
+        player.money += found;
+        log(`Found a hidden cache: +${found}$`);
+        updateUI();
+    }
+}
+
+function startFinalBattle() {
+    isEnding = true;
+    log("SYSTEM CRITICAL: THE ARCHITECT HAS FOUND YOU.", "red");
+    log("Architect: 'You are an error in my code. I will delete you.'", "#fff");
+    
+    currentEnemy = { 
+        name: "THE ARCHITECT [PHASE 1]", 
+        hp: 2000, maxHp: 2000, 
+        damage: 60, icon: "👁️", 
+        isBoss: true, loot: 0 
+    };
+    
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('game-screen').style.borderColor = "red";
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+    updateUI();
+}
+
+// --- ATTACK & WIN LOGIC ---
+
+function attack() {
+    if (!currentEnemy) return;
+    
+    // Player + Drone Damage
+    let weaponBonus = player.inventory.filter(i => i.type === "weapon").reduce((sum, i) => sum + i.bonus, 0);
+    let dmg = Math.floor(Math.random() * (player.baseMaxDmg - player.baseMinDmg)) + player.baseMinDmg + weaponBonus;
+    if (player.deadeyeActive) { dmg *= 2; player.deadeyeActive = false; log("CRITICAL!!", "yellow"); }
+    
+    currentEnemy.hp -= dmg;
+    log(`Dealt ${dmg} damage.`);
+    if (player.drone) { currentEnemy.hp -= player.drone.damage; log(`Drone strike: +${player.drone.damage}`, "#00ccff"); }
+
+    document.getElementById('enemy-hp-bar').style.width = (currentEnemy.hp / currentEnemy.maxHp * 100) + "%";
+
+    if (currentEnemy.hp <= 0) {
+        if (isEnding) triggerEnd();
+        else winBattle();
+        return;
+    }
+
+    // Enemy Turn
+    document.getElementById('btn-attack').disabled = true;
+    setTimeout(() => {
+        if (!currentEnemy) return;
+        let armorBonus = player.inventory.filter(i => i.type === "armor").reduce((sum, i) => sum + i.bonus, 0);
+        let finalDmg = Math.max(5, (Math.floor(Math.random() * currentEnemy.damage) + 10) - armorBonus);
+        if (player.shieldActive > 0) { finalDmg = Math.floor(finalDmg/2); player.shieldActive--; }
+        
+        player.hp -= finalDmg;
+        log(`${currentEnemy.name} hits: -${finalDmg} HP`, "red");
+        
+        if (player.hp <= 0) {
+            alert("DELETED FROM SERVER.");
+            location.reload();
+        }
+        document.getElementById('btn-attack').disabled = false;
+        updateUI();
+    }, 600);
+}
+
+function triggerEnd() {
+    document.getElementById('end-screen').style.display = 'flex';
+}
+
+function winBattle() {
+    log(`Neutralized ${currentEnemy.name}.`, "gold");
+    player.money += currentEnemy.loot;
+    player.xp += currentEnemy.isBoss ? 200 : 50;
+    if (Math.random() < 0.5) player.parts++;
+
+    currentEnemy = null; bossCounter++;
+    document.getElementById('enemy-hp-container').style.display = 'none';
+    document.getElementById('btn-explore').disabled = false;
+    document.getElementById('btn-attack').disabled = true;
+    if (player.xp >= 100) levelUp();
+    updateUI();
+}
+
+function spawnEnemy(isBoss = false) {
+    let rand = isBoss ? { name: "MECHA-SENTINEL", hp: 600, damage: 45, icon: "👾", loot: 400, isBoss: true } : 
+                 enemies[Math.floor(Math.random() * enemies.length)];
+    
+    currentEnemy = { ...rand, hp: rand.hp + (player.lvl * 30), damage: rand.damage + (player.lvl * 6), maxHp: 0 };
+    currentEnemy.maxHp = currentEnemy.hp;
+    
+    document.getElementById('enemy-title').innerText = currentEnemy.name;
+    document.getElementById('enemy-sprite').innerText = currentEnemy.icon;
+    document.getElementById('enemy-hp-container').style.display = 'block';
+    document.getElementById('enemy-hp-bar').style.width = '100%';
+    document.getElementById('btn-explore').disabled = true;
+    document.getElementById('btn-attack').disabled = false;
+    log(`WARNING: Hostile detected.`, isBoss ? "red" : "#ff4400");
+}
+
+function levelUp() {
+    player.lvl++; player.xp = 0; player.maxHp += 30; player.hp = player.maxHp;
+    log(`SYSTEM RANK UP: ${player.lvl}`, "#00ccff");
+}
+
+// --- TOOLS & UI ---
+
+function useItem(type) {
+    if (type === 'heal' && player.supplies.heal > 0) {
+        player.hp = Math.min(player.maxHp, player.hp + 60);
+        player.supplies.heal--;
+        log("HP Repaired.");
+    } else if (type === 'grenade' && player.supplies.grenade > 0 && currentEnemy) {
+        currentEnemy.hp -= 100;
+        player.supplies.grenade--;
+        log("GRENADE BLAST!");
+        if (currentEnemy.hp <= 0) winBattle();
+    }
+    updateUI();
+}
+
+function useSkill(skill) {
+    if (skill === 'deadeye' && player.sp >= 40) { player.sp -= 40; player.deadeyeActive = true; log("Target Locked."); }
+    else if (skill === 'shield' && player.sp >= 30) { player.sp -= 30; player.shieldActive = 3; log("Shields Up."); }
+    updateUI();
+}
+
+function updateUI() {
+    document.getElementById('money').innerText = player.money;
+    document.getElementById('parts').innerText = player.parts;
+    document.getElementById('lvl').innerText = player.lvl;
+    document.getElementById('hp-bar').style.width = (player.hp / player.maxHp * 100) + "%";
+    document.getElementById('sp-bar').style.width = (player.sp / player.maxSp * 100) + "%";
+    document.getElementById('xp-bar').style.width = player.xp + "%";
+    document.getElementById('btn-heal').innerText = `HEAL (${player.supplies.heal})`;
+    document.getElementById('btn-grenade').innerText = `GRENADE (${player.supplies.grenade})`;
+    
+    const list = document.getElementById('inventory-list');
+    list.innerHTML = "";
+    player.inventory.forEach((item, i) => {
+        list.innerHTML += `<div style="font-size:12px;">${item.icon} ${item.name} <button onclick="salvageItem(${i})" style="font-size:8px;">X</button></div>`;
+    });
+}
+
+function salvageItem(i) { player.parts++; player.inventory.splice(i, 1); updateUI(); }
+function rest() { player.hp = player.maxHp; player.sp = player.maxSp; log("Systems Restored."); updateUI(); }
+function toggleShop() { shopOpen = !shopOpen; document.getElementById('shop-overlay').style.display = shopOpen?'block':'none'; }
+function toggleCraft() { craftOpen = !craftOpen; document.getElementById('craft-overlay').style.display = craftOpen?'block':'none'; }
+
+updateUI();
+
+
+
+
+
+          
 </body>
 </html>
+
