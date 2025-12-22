@@ -284,9 +284,9 @@
     function scout() {
         state.sanity += 5;
         if(Math.random() > 0.4) {
-            const isN = Math.random() > 0.9 && state.level >= 7;
+            const isN = Math.random() > 0.9 && state.level >= 15;
             if(isN) {
-                state.enemy = { name: "NARRATOR", icon: "📖✨", hp: 1200, maxHp: 1200, atk: 20 };
+                state.enemy = { name: "NARRATOR", icon: "📖✨", hp: 2000, maxHp: 2000, atk: 50 };
                 log("THE AUTHOR HAS ARRIVED.", "var(--gold)");
             } else {
                 let h = 150 + (state.level * 20);
