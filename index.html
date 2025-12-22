@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -22,26 +21,35 @@
             color: var(--main-color);
         }
 
-        /* --- INTRO & SELECTOR --- */
+        /* --- ЭФФЕКТ СТАРОГО МОНИТОРА --- */
+        .crt::before {
+            content: " "; display: block; position: absolute; inset: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 999; background-size: 100% 2px, 3px 100%; pointer-events: none;
+        }
+
+        /* --- ИНТРО --- */
         #intro-layer {
-            position: fixed; inset: 0; background: #000; z-index: 9999;
+            position: fixed; inset: 0; background: #000; z-index: 10000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             transition: opacity 1s;
         }
 
         #target-selector {
             display: none; text-align: center; border: 1px solid var(--main-color);
-            padding: 30px; background: rgba(0,255,65,0.05);
+            padding: 30px; background: rgba(0,255,65,0.05); box-shadow: 0 0 20px rgba(0,255,65,0.2);
         }
 
         .target-btn {
-            display: block; width: 100%; padding: 10px; margin: 10px 0;
+            display: block; width: 100%; padding: 12px; margin: 10px 0;
             background: transparent; border: 1px solid var(--main-color);
-            color: var(--main-color); cursor: pointer; font-family: inherit;
+            color: var(--main-color); cursor: pointer; font-family: inherit; font-weight: bold;
+            transition: 0.3s;
         }
-        .target-btn:hover { background: var(--main-color); color: #000; }
+        .target-btn:hover { background: var(--main-color); color: #000; box-shadow: 0 0 15px var(--main-color); }
 
-        /* --- DESKTOP --- */
+        /* --- РАБОЧИЙ СТОЛ --- */
         #desktop {
             display: none; width: 100vw; height: 100vh;
             background: radial-gradient(circle, #1a1a1b 0%, #000 100%);
@@ -49,74 +57,71 @@
 
         #monitor {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 95vw; height: 90vh; background: #222; border: 10px solid #333;
-            border-radius: 20px; overflow: hidden; position: relative;
+            width: 95vw; height: 90vh; background: #222; border: 12px solid #333;
+            border-radius: 20px; overflow: hidden;
         }
 
-        #screen {
-            width: 100%; height: 100%; background: var(--bg); position: relative;
-            box-shadow: inset 0 0 100px rgba(0,0,0,1);
-        }
+        #screen { width: 100%; height: 100%; background: var(--bg); position: relative; }
 
-        /* --- TERMINAL WINDOW --- */
+        /* --- ОКНА --- */
         .window {
             position: absolute; background: #080808; border: 1px solid #444;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); display: flex; flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: flex; flex-direction: column;
         }
 
-        #main-terminal { top: 50px; left: 50px; width: 60%; height: 70%; z-index: 5; }
+        #main-terminal { top: 30px; left: 30px; width: 60%; height: 75%; z-index: 5; }
 
         .title-bar {
-            background: #1a1a1a; padding: 5px 15px; display: flex; 
+            background: #1a1a1a; padding: 8px 15px; display: flex; 
             justify-content: space-between; font-size: 12px; border-bottom: 1px solid #333;
+            user-select: none;
         }
 
-        #console-out { flex: 1; padding: 20px; overflow-y: auto; white-space: pre-wrap; font-size: 14px; scroll-behavior: smooth; }
+        #console-out { 
+            flex: 1; padding: 20px; overflow-y: auto; white-space: pre-wrap; 
+            font-size: 14px; scroll-behavior: smooth; line-height: 1.4;
+        }
 
-        /* --- UI ELEMENTS --- */
+        /* --- ПРОГРЕСС --- */
         #progress-bar { width: 100%; height: 4px; background: #111; }
-        #progress-fill { width: 0%; height: 100%; background: var(--main-color); box-shadow: 0 0 10px var(--main-color); }
+        #progress-fill { width: 0%; height: 100%; background: var(--main-color); transition: width 0.1s; }
 
-        #chat-box {
-            position: absolute; right: 20px; bottom: 60px; width: 300px; height: 200px;
-            border-color: var(--warning); display: none;
-        }
-
+        /* --- ТРЕВОГА --- */
         #trace-alert {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: var(--danger); color: #fff; padding: 40px; z-index: 100;
-            text-align: center; display: none; animation: blink 0.5s infinite;
+            background: var(--danger); color: #fff; padding: 40px; z-index: 1000;
+            text-align: center; display: none; border: 4px solid #fff;
+            box-shadow: 0 0 100px rgba(255,0,0,0.5);
+            animation: blink 0.4s infinite;
         }
 
-        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
 
-        /* --- HACKED WINDOWS --- */
-        .hacked-win { position: absolute; border: 2px solid var(--danger); display: none; z-index: 20; background: #000; }
-        #cam-win { top: 30px; right: 30px; width: 250px; height: 200px; }
-        #file-win { bottom: 60px; left: 30px; width: 350px; height: 250px; }
+        /* --- ФИНАЛЬНЫЕ ОКНА --- */
+        .hacked-win { position: absolute; border: 2px solid var(--danger); display: none; z-index: 20; background: #000; box-shadow: 0 0 30px rgba(255,0,0,0.3); }
+        #cam-win { top: 20px; right: 20px; width: 300px; height: 230px; }
+        #file-win { bottom: 60px; right: 20px; width: 350px; height: 300px; }
+        #chat-box { left: 30px; bottom: 30px; width: 400px; height: 150px; border-color: var(--warning); }
 
-        /* --- CRT EFFECT --- */
-        .crt::before {
-            content: " "; display: block; position: absolute; top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-            z-index: 2; background-size: 100% 2px, 3px 100%; pointer-events: none;
-        }
+        .file-item { padding: 8px; border-bottom: 1px solid #200; cursor: pointer; transition: 0.2s; }
+        .file-item:hover { background: var(--danger); color: #000; }
 
         #final-screen {
-            position: fixed; inset: 0; background: #600; color: #fff;
-            display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 10000;
+            position: fixed; inset: 0; background: #000; color: var(--danger);
+            display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 11000;
+            text-align: center;
         }
     </style>
 </head>
 <body class="crt">
 
     <div id="intro-layer">
-        <h1 id="intro-text">VadimIvash Games // Security_System</h1>
+        <h1 id="intro-text">VadimIvash Games // Hacker_OS v4.0</h1>
         <div id="target-selector">
-            <p>ВЫБЕРИТЕ ЦЕЛЬ ДЛЯ ВЗЛОМА:</p>
-            <button class="target-btn" onclick="startGame('PENTAGON', '#00ff41', 2000)">ЦЕНТРАЛЬНЫЙ СЕРВЕР ПЕНТАГОНА (СЛОЖНО)</button>
-            <button class="target-btn" onclick="startGame('CRYPTO', '#00ccff', 1000)">КОШЕЛЕК ELON_M (СРЕДНЕ)</button>
-            <button class="target-btn" onclick="startGame('NEIGHBOR', '#ffcc00', 500)">WI-FI СОСЕДА (ЛЕГКО)</button>
+            <p style="margin-bottom: 20px;">ВЫБЕРИТЕ ЦЕЛЬ ДЛЯ ВТОРЖЕНИЯ:</p>
+            <button class="target-btn" onclick="startGame('PENTAGON', '#00ff41', 2500)">СЕРВЕР ПЕНТАГОНА (ULTRA)</button>
+            <button class="target-btn" onclick="startGame('CRYPTO', '#00ccff', 1500)">ELON_MUSK WALLET (MEDIUM)</button>
+            <button class="target-btn" onclick="startGame('NEIGHBOR', '#ffcc00', 700)">WI-FI СОСЕДА (EASY)</button>
         </div>
     </div>
 
@@ -125,7 +130,7 @@
             <div id="screen">
                 <div class="window" id="main-terminal">
                     <div class="title-bar">
-                        <span id="term-title">EXECUTE: remote_exploit.sh</span>
+                        <span id="term-title">CORE_EXPLOIT.sh</span>
                         <span>[ - ] [ □ ] [ X ]</span>
                     </div>
                     <div id="progress-bar"><div id="progress-fill"></div></div>
@@ -133,58 +138,63 @@
                 </div>
 
                 <div class="window" id="chat-box">
-                    <div class="title-bar" style="background: #332200;"><span>SECURE_CHAT [ADMIN]</span></div>
-                    <div id="chat-content" style="padding: 10px; font-size: 12px; color: var(--warning);"></div>
+                    <div class="title-bar" style="background: #332200;"><span>SYSTEM_MESSAGES</span></div>
+                    <div id="chat-content" style="padding: 15px; font-size: 13px; color: var(--warning); overflow-y: auto;"></div>
                 </div>
 
                 <div id="trace-alert">
-                    <h2>ОБНАРУЖЕНО СЛЕЖЕНИЕ!</h2>
-                    <p>МЕСТОПОЛОЖЕНИЕ ОПРЕДЕЛЯЕТСЯ...</p>
-                    <button class="target-btn" style="background: #fff; color: #000;" onclick="killProxy()">СБРОСИТЬ PROXY-КАНАЛ</button>
+                    <h2 style="margin: 0 0 15px 0;">!!! WARNING !!!</h2>
+                    <p>ОБНАРУЖЕНО ПРЯМОЕ ОТСЛЕЖИВАНИЕ!</p>
+                    <p id="timer-text">КАНАЛ БУДЕТ РАСКРЫТ ЧЕРЕЗ: 10s</p>
+                    <button class="target-btn" style="background: #fff; color: #000; border: none;" onclick="killProxy()">KILL PROXY & REROUTE</button>
                 </div>
 
                 <div id="cam-win" class="hacked-win">
-                    <div class="title-bar" style="background: var(--danger);"><span>LIVE_FEED</span></div>
-                    <div style="height: 100%; background: #111; display: flex; justify-content: center; align-items: center;">
-                         <div style="width: 50px; height: 70px; background: #333; border-radius: 50%;"></div>
+                    <div class="title-bar" style="background: var(--danger); color: white;"><span>LIVE_FEED: AREA_51</span></div>
+                    <div style="height: 100%; background: #050505; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+                         <div style="width: 60px; height: 80px; background: #222; border-radius: 50% 50% 0 0;"></div>
+                         <div style="width: 100px; height: 40px; background: #222; margin-top: 5px;"></div>
+                         <p style="font-size: 10px; color: red; margin-top: 10px;">SIGNAL LOSS: 15%</p>
                     </div>
                 </div>
 
                 <div id="file-win" class="hacked-win">
-                    <div class="title-bar" style="background: var(--danger);"><span>FILE_EXPLORER</span></div>
-                    <div id="file-list" style="padding: 10px; font-size: 12px;"></div>
+                    <div class="title-bar" style="background: var(--danger); color: white;"><span>ROOT_FILESYSTEM</span></div>
+                    <div id="file-list" style="padding: 5px; color: var(--danger);"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <div id="final-screen">
-        <h1 style="font-size: 5rem;">SYSTEM OWNED</h1>
-        <p>VADIMIVASH GAMES - ВСЕ ДАННЫЕ УСПЕШНО УКРАДЕНЫ</p>
-        <button class="target-btn" style="width: 200px; color: #fff;" onclick="location.reload()">REBOOT</button>
+        <h1 style="font-size: 6rem; margin: 0;">ACCESS GRANTED</h1>
+        <p style="font-size: 1.5rem; letter-spacing: 5px;">VADIMIVASH GAMES // MISSION SUCCESSFUL</p>
+        <button class="target-btn" style="width: 250px; margin-top: 40px;" onclick="location.reload()">REBOOT SYSTEM</button>
     </div>
 
 <script>
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    let hackSpeed = 5;
-    let targetGoal = 1000;
+    const audio = new (window.AudioContext || window.webkitAudioContext)();
     let typed = 0;
-    let isTraceActive = false;
+    let targetGoal = 1000;
     let currentTarget = "";
+    let isTraceActive = false;
+    let traceDone = false; // Флаг, чтобы окно не вылезало дважды
 
-    const lines = [
-        "ssh root@remote_host -p 22", "Authenticating...", "Success. Root access granted.",
-        "cd /sys/kernel/security", "nmap -sV -T4 target_ip", "Vulnerability found: CVE-2024-9912",
-        "Initializing buffer overflow...", "Payload size: 1024 bytes", "Injecting shellcode...",
-        "Searching for .db files...", "Found: credentials.db, secrets.log", "Decrypting RSA-4096...",
-        "Bypassing hardware firewall...", "Tunneling through Proxy-RU-42...", "Extracting user metadata..."
+    const codeLines = [
+        "Initializing handshake...", "Attacking RSA encryption...", "Bypassing biometric lock...",
+        "ssh root@target_server -p 22", "Searching for vulnerabilities...", "Exploit: buffer_overflow_v42.c",
+        "Injecting shellcode...", "Escalating privileges...", "Accessing kernel memory...",
+        "Downloading encrypted_database.db", "Cracking password hashes...", "Zero-day vulnerability found.",
+        "Clearing system logs...", "Masking IP: 192.168.1.1 -> 10.0.0.1", "Root shell established."
     ];
 
     function playSound(f, d, t = 'square') {
-        const o = ctx.createOscillator(); const g = ctx.createGain();
-        o.type = t; o.frequency.value = f; g.gain.setValueAtTime(0.05, ctx.currentTime);
-        g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + d);
-        o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + d);
+        try {
+            const o = audio.createOscillator(); const g = audio.createGain();
+            o.type = t; o.frequency.value = f; g.gain.setValueAtTime(0.05, audio.currentTime);
+            g.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + d);
+            o.connect(g); g.connect(audio.destination); o.start(); o.stop(audio.currentTime + d);
+        } catch(e) {}
     }
 
     function startGame(type, color, goal) {
@@ -192,7 +202,7 @@
         targetGoal = goal;
         document.documentElement.style.setProperty('--main-color', color);
         document.getElementById('target-selector').style.display = 'none';
-        document.getElementById('intro-text').innerText = "ACCESSING " + type + "...";
+        document.getElementById('intro-text').innerText = "CONNECTING TO " + type + "...";
         playSound(200, 0.5);
         
         setTimeout(() => {
@@ -204,36 +214,34 @@
         }, 2000);
     }
 
-    // Показывем селектор после загрузки
     window.onload = () => {
-        setTimeout(() => {
-            document.getElementById('target-selector').style.display = 'block';
-        }, 1500);
+        setTimeout(() => { document.getElementById('target-selector').style.display = 'block'; }, 1000);
     };
 
     document.addEventListener('keydown', (e) => {
         if (document.getElementById('desktop').style.display !== 'block' || typed >= targetGoal || isTraceActive) return;
-        if (ctx.state === 'suspended') ctx.resume();
+        if (audio.state === 'suspended') audio.resume();
 
-        playSound(100 + Math.random() * 50, 0.05);
+        playSound(150 + Math.random() * 50, 0.04);
         
         const out = document.getElementById('console-out');
-        for(let i=0; i<hackSpeed; i++) {
-            let line = lines[Math.floor(typed/20) % lines.length];
+        const speed = 6;
+        for(let i=0; i < speed; i++) {
+            let lineIndex = Math.floor(typed / 30) % codeLines.length;
+            let line = codeLines[lineIndex];
             out.textContent += line[typed % line.length];
             typed++;
-            if (typed % 15 === 0) out.textContent += " ";
-            if (typed % 50 === 0) out.textContent += "\n[OK] ";
+            if (typed % 40 === 0) out.textContent += "\n[SYSTEM_OK] ";
         }
         
         let progress = (typed / targetGoal) * 100;
         document.getElementById('progress-fill').style.width = progress + "%";
         out.scrollTop = out.scrollHeight;
 
-        // СОБЫТИЯ ПО ХОДУ ВЗЛОМА
-        if (progress > 30 && progress < 32) showChat("Админ: Эй, я вижу подозрительную активность!");
-        if (progress > 60 && !isTraceActive && typed < targetGoal - 100) startTrace();
-        if (progress > 80 && progress < 82) showChat("Админ: О НЕТ! ОНИ ВНУТРИ СЕРВЕРА!");
+        // СОБЫТИЯ
+        if (progress > 25 && progress < 27) showChat("ADMIN: Кто это? Вышел из системы немедленно!");
+        if (progress > 55 && !traceDone && !isTraceActive) startTrace();
+        if (progress > 85 && progress < 87) showChat("ADMIN: ПОМОГИТЕ! ОНИ УДАЛЯЮТ ФАЙЛЫ!");
         
         if (typed >= targetGoal) finishGame();
     });
@@ -242,21 +250,24 @@
         const box = document.getElementById('chat-box');
         box.style.display = 'flex';
         const content = document.getElementById('chat-content');
-        content.innerHTML += `<p>${msg}</p>`;
-        playSound(800, 0.1, 'sine');
+        content.innerHTML += `<p>> ${msg}</p>`;
+        content.scrollTop = content.scrollHeight;
+        playSound(600, 0.2, 'sine');
     }
 
     function startTrace() {
         isTraceActive = true;
         document.getElementById('trace-alert').style.display = 'block';
-        playSound(400, 1, 'sawtooth');
+        playSound(300, 0.8, 'sawtooth');
+        showChat("SYSTEM: ОБНАРУЖЕНА СЛЕДЯЩАЯ ПРОГРАММА ПРАВИТЕЛЬСТВА!");
     }
 
     function killProxy() {
         isTraceActive = false;
+        traceDone = true; // Ключевое: больше не показываем окно
         document.getElementById('trace-alert').style.display = 'none';
         playSound(1000, 0.2);
-        document.getElementById('console-out').textContent += "\n[SUCCESS] Proxy rerouted to Bahamas.\n";
+        document.getElementById('console-out').textContent += "\n\n[SUCCESS] PROXY KILLED. TRACE LOST.\n\n";
     }
 
     function finishGame() {
@@ -265,25 +276,26 @@
         document.getElementById('file-win').style.display = 'block';
         
         const files = {
-            'PENTAGON': ['nuke_codes.pdf', 'area51_aliens.jpg', 'top_secret.db'],
-            'CRYPTO': ['private_key.txt', 'wallet_seed.phrase', 'tesla_pass.log'],
-            'NEIGHBOR': ['wifi_pass.txt', 'browser_history.html', 'photos.zip']
+            'PENTAGON': ['nuke_codes.key', 'alien_autopsy.mp4', 'budget_2026.xlsx', 'cia_agents.db'],
+            'CRYPTO': ['seed_phrase.txt', 'btc_wallet.dat', 'private_key.pem'],
+            'NEIGHBOR': ['router_pass.txt', 'family_photos.zip', 'search_history.log']
         };
 
         const list = document.getElementById('file-list');
+        list.innerHTML = "";
         files[currentTarget].forEach(f => {
-            list.innerHTML += `<div style="padding:5px; border:1px solid #300; margin:3px; cursor:pointer" onclick="downloadFile('${f}')">📄 ${f}</div>`;
+            list.innerHTML += `<div class="file-item" onclick="download('${f}')">📄 ${f}</div>`;
         });
 
         setTimeout(() => {
             document.getElementById('final-screen').style.display = 'flex';
-            playSound(100, 1, 'sawtooth');
-        }, 8000);
+            playSound(50, 1.5, 'sawtooth');
+        }, 9000);
     }
 
-    function downloadFile(name) {
-        playSound(1200, 0.1);
-        alert("СКАЧИВАНИЕ: " + name + "... Готово.");
+    function download(name) {
+        playSound(1000, 0.1, 'sine');
+        alert("ЭКСПОРТ ДАННЫХ: " + name + " загружен на ваш сервер.");
     }
 </script>
 </body>
