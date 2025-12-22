@@ -1,168 +1,214 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>3D HACKER STRIKE // VADIMIVASH</title>
+    <title>HACK_DASH_3D // VADIMIVASH</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; font-family: 'Courier New', monospace; }
-        canvas { display: block; width: 100vw; height: 100vh; filter: contrast(1.2) brightness(1.1); }
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@500&display=swap');
+        body { margin: 0; background: #050505; overflow: hidden; font-family: 'Fira Code', monospace; }
         
-        /* Руки хакера */
-        #hud {
-            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
-            width: 600px; height: 300px; pointer-events: none;
+        canvas { display: block; width: 100vw; height: 100vh; }
+
+        /* HUD */
+        #ui { position: fixed; top: 20px; left: 20px; color: #fff; background: rgba(0,0,0,0.7); padding: 15px; border-left: 5px solid #0077ff; }
+        #map { position: fixed; top: 20px; right: 20px; width: 150px; height: 150px; border: 2px solid #0077ff; background: rgba(0,0,0,0.8); }
+
+        /* Кулаки */
+        #hands-container {
+            position: fixed; bottom: -20px; left: 50%; transform: translateX(-50%);
+            width: 800px; height: 400px; pointer-events: none;
             display: flex; justify-content: space-between; align-items: flex-end;
         }
         .hand {
-            width: 200px; height: 250px; background: #111;
-            border: 4px solid #00ff41; border-radius: 50px 50px 0 0;
-            box-shadow: 0 0 20px rgba(0,255,65,0.5);
-            transition: transform 0.1s;
+            width: 250px; height: 350px; background: #1a1a1a;
+            border: 6px solid #333; border-radius: 60px 60px 0 0;
+            box-shadow: inset 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(0,119,255,0.3);
+            transition: 0.1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        #left-hand { transform: rotate(-10deg) translateY(50px); }
-        #right-hand { transform: rotate(10deg) translateY(50px); }
+        .punch { transform: translateY(-150px) scale(1.2) !important; background: #0077ff !important; }
 
-        /* Анимация удара */
-        .punch { transform: translateY(-100px) scale(1.1) rotate(0deg) !important; }
-
-        #ui {
-            position: fixed; top: 20px; left: 20px; color: #00ff41;
-            text-shadow: 0 0 5px #00ff41; font-size: 20px;
+        /* Сюжетные окна */
+        #overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.9);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+            color: #fff; text-align: center; z-index: 100;
         }
+        input { background: #000; border: 2px solid #0077ff; color: #fff; padding: 10px; font-size: 24px; text-align: center; font-family: inherit; }
+        .btn { border: 1px solid #0077ff; background: transparent; color: #0077ff; padding: 15px 30px; cursor: pointer; margin-top: 20px; }
+        .btn:hover { background: #0077ff; color: #fff; }
     </style>
 </head>
 <body>
 
-    <div id="ui">SYSTEM_INTRUSION: ACTIVE<br>W,A,S,D - MOVE | SPACE - PUNCH</div>
-    
+    <div id="ui">
+        <b>ЦЕЛЬ:</b> ИЗВЛЕЧЬ ДЕНЬГИ ($<span id="money">0</span>)<br>
+        <b>СТАТУС:</b> СБОР МАСТЕР-КЛЮЧЕЙ...<br>
+        <small>W,A,S,D - ХОДИТЬ | ПРОБЕЛ - УДАР</small>
+    </div>
+
+    <canvas id="map" width="150" height="150"></canvas>
     <canvas id="game"></canvas>
 
-    <div id="hud">
-        <div id="left-hand" class="hand"></div>
-        <div id="right-hand" class="hand"></div>
+    <div id="hands-container">
+        <div id="h-left" class="hand" style="transform: rotate(-10deg) translateX(30px);"></div>
+        <div id="h-right" class="hand" style="transform: rotate(10deg) translateX(-30px);"></div>
+    </div>
+
+    <div id="overlay">
+        <h1 id="title">SYSTEM_LOCK</h1>
+        <p id="msg">ВВЕДИТЕ ПИН-КОД СОСЕДА ДЛЯ ВХОДА:</p>
+        <input type="text" id="inp" maxlength="4">
+        <button class="btn" onclick="checkCode()">ПОДТВЕРДИТЬ</button>
     </div>
 
 <script>
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const lHand = document.getElementById('left-hand');
-    const rHand = document.getElementById('right-hand');
+    const mapCanvas = document.getElementById('map');
+    const mctx = mapCanvas.getContext('2d');
 
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 
-    // Карта лабиринта (1 - стена, 0 - пусто)
-    const map = [
+    let money = 0;
+    let gameActive = false;
+
+    // Карта 10x10 (2 - золото)
+    const world = [
         [1,1,1,1,1,1,1,1,1,1],
-        [1,0,0,0,0,0,0,0,0,1],
-        [1,0,1,1,0,1,1,1,0,1],
-        [1,0,0,0,0,0,0,1,0,1],
-        [1,1,1,0,1,1,0,1,0,1],
+        [1,0,0,0,1,2,0,0,0,1],
+        [1,0,1,0,1,1,1,1,0,1],
+        [1,0,1,0,0,0,0,1,0,1],
+        [1,0,1,1,1,1,0,0,0,1],
+        [1,0,0,0,0,1,0,1,0,1],
+        [1,1,1,1,0,1,0,1,2,1],
+        [1,2,0,1,0,0,0,1,0,1],
         [1,0,0,0,0,1,0,0,0,1],
-        [1,0,1,1,1,1,1,1,0,1],
-        [1,0,0,0,0,0,0,0,0,1],
         [1,1,1,1,1,1,1,1,1,1],
     ];
 
-    const player = { x: 1.5, y: 1.5, dir: 0, rot: 0, speed: 0 };
-
-    // Управление
+    const player = { x: 1.5, y: 1.5, dir: 0 };
     const keys = {};
-    window.onkeydown = (e) => keys[e.code] = true;
+
+    window.onkeydown = (e) => { 
+        keys[e.code] = true; 
+        if(e.code === 'Space') doPunch();
+    };
     window.onkeyup = (e) => keys[e.code] = false;
 
-    window.onmousedown = () => punch();
-    window.onkeydown = (e) => {
-        keys[e.code] = true;
-        if(e.code === 'Space') punch();
-    };
-
-    let punchSide = true;
-    function punch() {
-        const hand = punchSide ? lHand : rHand;
-        hand.classList.add('punch');
-        setTimeout(() => hand.classList.remove('punch'), 150);
-        punchSide = !punchSide;
+    let pSide = true;
+    function doPunch() {
+        const h = document.getElementById(pSide ? 'h-left' : 'h-right');
+        h.classList.add('punch');
+        setTimeout(() => h.classList.remove('punch'), 100);
+        pSide = !pSide;
         
-        // Звук удара
-        const a = new (window.AudioContext || window.webkitAudioContext)();
-        const o = a.createOscillator(); const g = a.createGain();
-        o.frequency.value = 100; g.gain.value = 0.1;
-        o.connect(g); g.connect(a.destination); o.start(); o.stop(a.currentTime + 0.1);
-    }
-
-    function update() {
-        // Вращение
-        if (keys['KeyA']) player.dir -= 0.05;
-        if (keys['KeyD']) player.dir += 0.05;
-
-        // Движение
-        let moveStep = 0;
-        if (keys['KeyW']) moveStep = 0.04;
-        if (keys['KeyS']) moveStep = -0.04;
-
-        let newX = player.x + Math.cos(player.dir) * moveStep;
-        let newY = player.y + Math.sin(player.dir) * moveStep;
-
-        // Простая коллизия
-        if (map[Math.floor(newY)][Math.floor(newX)] === 0) {
-            player.x = newX;
-            player.y = newY;
+        // Проверка сбора денег ударом
+        let tx = Math.floor(player.x + Math.cos(player.dir) * 0.5);
+        let ty = Math.floor(player.y + Math.sin(player.dir) * 0.5);
+        if(world[ty][tx] === 2) {
+            world[ty][tx] = 0;
+            money += 50000;
+            document.getElementById('money').innerText = money;
+            if(money >= 150000) finish();
         }
     }
 
-    function draw() {
-        ctx.fillStyle = '#000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Взлом Банка
+    setTimeout(() => {
+        document.getElementById('overlay').style.display = 'flex';
+    }, 1000);
 
-        // Пол и потолок
-        ctx.fillStyle = '#051005';
+    function checkCode() {
+        const val = document.getElementById('inp').value;
+        if(val === "1984") {
+            document.getElementById('title').innerText = "ACCESS_GRANTED";
+            document.getElementById('msg').innerText = "НАЙДИТЕ И ВЫБЕЙТЕ 3 КРИПТО-КЕЙСА В ЛАБИРИНТЕ!";
+            setTimeout(() => {
+                document.getElementById('overlay').style.display = 'none';
+                gameActive = true;
+                loop();
+            }, 2000);
+        } else {
+            alert("WRONG PIN!");
+        }
+    }
+
+    function render() {
+        // Очистка (Пол и Потолок)
+        ctx.fillStyle = '#111'; // Потолок
+        ctx.fillRect(0,0, canvas.width, canvas.height/2);
+        ctx.fillStyle = '#222'; // Пол
         ctx.fillRect(0, canvas.height/2, canvas.width, canvas.height/2);
 
-        // Raycasting (рисуем стены)
-        const numRays = 300;
+        const rays = 250;
         const fov = Math.PI / 3;
-        
-        for (let i = 0; i < numRays; i++) {
-            let rayAngle = (player.dir - fov/2) + (i / numRays) * fov;
-            let distanceToWall = 0;
-            let hitWall = false;
 
-            let eyeX = Math.cos(rayAngle);
-            let eyeY = Math.sin(rayAngle);
+        for(let i=0; i<rays; i++) {
+            let angle = (player.dir - fov/2) + (i/rays) * fov;
+            let dist = 0;
+            let hit = 0;
 
-            while (!hitWall && distanceToWall < 15) {
-                distanceToWall += 0.1;
-                let testX = Math.floor(player.x + eyeX * distanceToWall);
-                let testY = Math.floor(player.y + eyeY * distanceToWall);
-
-                if (testX < 0 || testX >= map[0].length || testY < 0 || testY >= map.length) {
-                    hitWall = true; distanceToWall = 15;
-                } else if (map[testY][testX] === 1) {
-                    hitWall = true;
+            while(dist < 15) {
+                dist += 0.05;
+                let rx = Math.floor(player.x + Math.cos(angle) * dist);
+                let ry = Math.floor(player.y + Math.sin(angle) * dist);
+                if(world[ry][rx] > 0) {
+                    hit = world[ry][rx];
+                    break;
                 }
             }
 
-            // Коррекция эффекта рыбьего глаза
-            distanceToWall *= Math.cos(rayAngle - player.dir);
-
-            let ceiling = canvas.height / 2 - canvas.height / distanceToWall;
-            let floor = canvas.height - ceiling;
-            let wallHeight = floor - ceiling;
-
-            // Цвет стен в зависимости от дистанции
-            let brightness = Math.min(255, 2000 / distanceToWall);
-            ctx.fillStyle = `rgb(0, ${brightness}, 65)`;
-            ctx.fillRect(i * (canvas.width/numRays), ceiling, (canvas.width/numRays) + 1, wallHeight);
+            let realDist = dist * Math.cos(angle - player.dir);
+            let h = canvas.height / realDist;
+            
+            // Цвет: 1 - стена (синяя), 2 - деньги (золотые)
+            ctx.fillStyle = hit === 1 ? `rgb(0, ${100 - realDist*5}, ${200 - realDist*10})` : '#ffcc00';
+            ctx.fillRect(i * (canvas.width/rays), (canvas.height-h)/2, (canvas.width/rays)+1, h);
         }
+
+        // Мини-карта
+        mctx.fillStyle = '#000'; mctx.fillRect(0,0,150,150);
+        for(let y=0; y<10; y++) {
+            for(let x=0; x<10; x++) {
+                if(world[y][x] === 1) mctx.fillStyle = '#0077ff';
+                else if(world[y][x] === 2) mctx.fillStyle = '#ffcc00';
+                else continue;
+                mctx.fillRect(x*15, y*15, 14, 14);
+            }
+        }
+        mctx.fillStyle = '#fff';
+        mctx.fillRect(player.x*15-2, player.y*15-2, 4, 4);
+    }
+
+    function update() {
+        if(!gameActive) return;
+        if(keys['KeyA']) player.dir -= 0.05;
+        if(keys['KeyD']) player.dir += 0.05;
+        let speed = 0;
+        if(keys['KeyW']) speed = 0.06;
+        if(keys['KeyS']) speed = -0.06;
+
+        let nx = player.x + Math.cos(player.dir) * speed;
+        let ny = player.y + Math.sin(player.dir) * speed;
+        
+        if(world[Math.floor(ny)][Math.floor(nx)] === 0) {
+            player.x = nx; player.y = ny;
+        }
+    }
+
+    function finish() {
+        gameActive = false;
+        document.getElementById('overlay').style.display = 'flex';
+        document.getElementById('title').innerText = "ВЫ БОГАТЫ!";
+        document.getElementById('msg').innerText = `ВЫ УКРАЛИ $${money}. СОСЕД В ШОКЕ.`;
+        document.getElementById('inp').style.display = 'none';
     }
 
     function loop() {
         update();
-        draw();
-        requestAnimationFrame(loop);
+        render();
+        if(gameActive) requestAnimationFrame(loop);
     }
-
-    loop();
 </script>
 </body>
 </html>
