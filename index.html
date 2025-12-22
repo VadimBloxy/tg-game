@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOST HUNTER: ULTIMATE EDITION (1400x900)</title>
+    <title>GHOST HUNTER: THE COMPLETE SAGA (FINAL VERSION)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -16,13 +16,12 @@
             height: 100vh; width: 100vw; overflow: hidden;
         }
         #game-container {
-            width: 1200px; height: 800px; /* Оптимально для 1400x900 */
+            width: 1200px; height: 800px;
             background: var(--panel); border: 5px solid #3e2723; border-radius: 15px;
             padding: 30px; box-sizing: border-box; box-shadow: 0 0 50px rgba(0,0,0,0.9);
             position: relative; display: grid; grid-template-columns: 350px 1fr 350px; gap: 20px;
         }
         
-        /* Колонки */
         .side-panel { display: flex; flex-direction: column; gap: 15px; }
         .main-panel { display: flex; flex-direction: column; justify-content: space-between; position: relative; }
 
@@ -37,17 +36,13 @@
         #xp-fill { width: 0%; height: 100%; background: var(--xp); transition: 0.5s; }
         #enemy-hp-fill { width: 100%; height: 100%; background: var(--blood); transition: 0.3s; }
 
-        /* Враг по центру */
         #enemy-zone { 
             flex-grow: 1; display: none; flex-direction: column; align-items: center; justify-content: center;
             border: 2px dashed var(--blood); border-radius: 20px; margin: 20px 0; background: rgba(0,0,0,0.2);
         }
         #enemy-sprite { font-size: 150px; margin: 20px 0; transition: 0.3s; }
         .narrator-skin { animation: narrator-float 1s infinite alternate; text-shadow: 0 0 40px var(--gold); }
-        @keyframes narrator-float { 
-            from { transform: translateY(0) scale(1); } 
-            to { transform: translateY(-20px) scale(1.1) rotate(5deg); } 
-        }
+        @keyframes narrator-float { from { transform: translateY(0); } to { transform: translateY(-20px); } }
 
         #event-log {
             height: 400px; overflow-y: auto; background: rgba(0,0,0,0.6);
@@ -57,7 +52,6 @@
 
         .inventory { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; background: #000; border-radius: 10px; }
         .inv-slot { height: 60px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; }
-        .inv-slot:hover { border-color: var(--gold); }
 
         .controls { display: grid; grid-template-columns: 1fr; gap: 10px; }
         button {
@@ -65,9 +59,9 @@
             padding: 20px; border-radius: 8px; cursor: pointer; font-weight: bold;
             text-transform: uppercase; font-size: 16px; transition: 0.2s;
         }
-        button:hover { background: #5d4037; transform: scale(1.02); }
+        button:hover { background: #5d4037; }
         button:active { background: var(--gold); color: black; }
-        button:disabled { opacity: 0.2; cursor: default; }
+        button:disabled { opacity: 0.2; }
 
         .overlay-menu { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -82,8 +76,7 @@
         }
 
         .shake { animation: shake 0.3s; }
-        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(10px, 10px); } 50% { transform: translate(-10px, -10px); } 75% { transform: translate(10px, -10px); } }
-        .glitch { filter: invert(1) hue-rotate(90deg); }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(10px, 10px); } 50% { transform: translate(-10px, -10px); } }
     </style>
 </head>
 <body>
@@ -93,25 +86,24 @@
 
     <div class="side-panel">
         <div class="stats-box">
-            <h2 style="margin-top:0; color:var(--gold)">HUNTER</h2>
+            <h2 style="margin:0; color:var(--gold)">HUNTER</h2>
             <div>Gold: $<span id="v-gold">0</span></div>
             <div>Ammo: <span id="v-ammo">0</span></div>
             <div>Level: <span id="v-lvl">1</span></div>
-            <div>SP: <span id="v-sp">0</span></div>
             <div id="wpn-name" style="color:var(--gold)">Colt .45</div>
             <div id="pet-name" style="color:var(--ghost); font-size:14px;">No Companion</div>
         </div>
         <div class="stats-box">
-            Sanity
+            Sanity (Mental HP)
             <div class="bar-bg"><div id="sanity-fill"></div></div>
             Experience
             <div class="bar-bg"><div id="xp-fill"></div></div>
         </div>
-        <h3 style="margin-bottom:5px;">SADDLEBAGS</h3>
+        <h3>SADDLEBAGS</h3>
         <div id="inventory-ui" class="inventory"></div>
         <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="save()" style="flex:1; padding:10px; font-size:12px;">SAVE</button>
-            <button onclick="load()" style="flex:1; padding:10px; font-size:12px;">LOAD</button>
+            <button onclick="save()">SAVE</button>
+            <button onclick="load()">LOAD</button>
         </div>
     </div>
 
@@ -130,10 +122,10 @@
     </div>
 
     <div id="skill-menu" class="overlay-menu">
-        <h2 style="text-align:center; color:var(--xp)">TRAINING</h2>
+        <h2 style="text-align:center; color:var(--xp)">TRAINING (SP: <span id="v-sp">0</span>)</h2>
         <div class="controls">
-            <button id="sk-ds" onclick="learn('doubleShot')">Double Shot (1 SP)</button>
-            <button id="sk-iw" onclick="learn('ironWill')">Iron Will (1 SP)</button>
+            <button onclick="learn('doubleShot')">Double Shot (1 SP)</button>
+            <button onclick="learn('ironWill')">Iron Will (1 SP)</button>
             <button onclick="closeUI()">BACK</button>
         </div>
     </div>
@@ -149,9 +141,9 @@
 </div>
 
 <div id="ending">
-    <h1 style="font-size:60px; color:var(--gold)">THE SAGA IS OVER</h1>
+    <h1 style="font-size:60px; color:var(--gold)">THE STORY ENDS</h1>
     <p id="ending-msg" style="max-width:800px; font-size:24px; color:#ccc;"></p>
-    <button onclick="localStorage.clear(); location.reload();" style="font-size:24px; padding:30px;">REWRITE FATE</button>
+    <button onclick="location.reload()" style="font-size:24px; padding:30px;">START OVER</button>
 </div>
 
 <script>
@@ -164,13 +156,21 @@
 
     function log(msg, color = "#aaa") {
         const el = document.getElementById('event-log');
-        el.innerHTML = `<div style="color:${color}; margin-bottom:5px;">> ${msg}</div>` + el.innerHTML;
+        el.innerHTML = `<div style="color:${color}">> ${msg}</div>` + el.innerHTML;
     }
 
-    function save() { localStorage.setItem('gh_ultra_1400', JSON.stringify(state)); log("World saved.", "var(--xp)"); }
+    function save() {
+        localStorage.setItem('gh_final_ultimate', JSON.stringify(state));
+        log("Progress saved.", "var(--xp)");
+    }
+
     function load() {
-        const s = localStorage.getItem('gh_ultra_1400');
-        if(s) { state = JSON.parse(s); updateDisplay(); log("World restored."); }
+        const s = localStorage.getItem('gh_final_ultimate');
+        if(s) {
+            state = JSON.parse(s);
+            updateDisplay();
+            log("Progress restored.");
+        }
     }
 
     function closeUI() {
@@ -180,8 +180,14 @@
     }
 
     function buyPet(t) {
-        if(state.gold >= 150) { state.gold -= 150; state.companion = t; log(`New pet: ${t}`); closeUI(); }
-        else log("Not enough gold!");
+        if(state.gold >= 150) {
+            state.gold -= 150;
+            state.companion = t;
+            log(`You got a ${t}!`);
+            closeUI();
+        } else {
+            log("Not enough gold!");
+        }
     }
 
     function updateDisplay() {
@@ -199,26 +205,27 @@
         const inv = document.getElementById('inventory-ui');
         inv.innerHTML = '';
         state.inventory.forEach((item, i) => {
-            const s = document.createElement('div'); s.className = 'inv-slot';
-            s.innerHTML = '🧨'; s.onclick = () => useTNT(i);
+            const s = document.createElement('div');
+            s.className = 'inv-slot';
+            if(item === 'tnt') s.innerHTML = '🧨';
+            if(item === 'whiskey') s.innerHTML = '🥃';
+            s.onclick = () => useItem(i);
             inv.appendChild(s);
         });
 
         const ez = document.getElementById('enemy-zone');
-        const sprite = document.getElementById('enemy-sprite');
         if (state.enemy) {
             ez.style.display = 'flex';
             document.getElementById('enemy-name').innerText = state.enemy.name;
-            sprite.innerText = state.enemy.icon;
+            document.getElementById('enemy-sprite').innerText = state.enemy.icon;
             document.getElementById('enemy-hp-fill').style.width = (state.enemy.hp / state.enemy.maxHp * 100) + '%';
             if(state.enemy.name === "NARRATOR") {
-                sprite.className = 'narrator-skin';
-                if(state.enemy.hp < state.enemy.maxHp/2) document.body.classList.add('glitch');
+                document.getElementById('enemy-sprite').className = 'narrator-skin';
             } else {
-                sprite.className = ''; document.body.classList.remove('glitch');
+                document.getElementById('enemy-sprite').className = '';
             }
         } else {
-            ez.style.display = 'none'; document.body.classList.remove('glitch');
+            ez.style.display = 'none';
         }
 
         renderButtons();
@@ -228,89 +235,150 @@
         const btns = document.getElementById('action-buttons');
         let h = '';
         if(state.enemy) {
-            h = `<button onclick="attack('shoot')" style="background:#700">🔥 SHOOT</button>`;
+            h = `<button onclick="attack('shoot')">🔥 SHOOT</button>`;
             if(state.hasCursedGun) h += `<button onclick="attack('cursed')" style="background:#4a148c">💀 SOUL BLAST</button>`;
-            if(state.skills.doubleShot) h += `<button onclick="attack('double')" style="background:#a00">🔥 DOUBLE SHOT</button>`;
+            if(state.skills.doubleShot) h += `<button onclick="attack('double')">🔥 DOUBLE SHOT</button>`;
             h += `<button onclick="attack('dodge')">🏃 DODGE</button>`;
         } else if(!state.isNight) {
             h = `<button onclick="shop('ammo')">🛒 BUY AMMO ($25)</button>
                  <button onclick="shop('tnt')">🧨 BUY DYNAMITE ($50)</button>
-                 <button onclick="document.getElementById('stable-menu').style.display='block'">🐕 VISIT STABLES</button>
+                 <button onclick="shop('whiskey')">🥃 BUY WHISKEY ($40)</button>
+                 <button onclick="document.getElementById('stable-menu').style.display='block'">🐕 STABLES</button>
                  <button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
-            if(state.level >= 5 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 BUY SOUL EATER ($300)</button>`;
-            h += `<button onclick="state.isNight=true; updateDisplay()" style="background:#333; color:var(--ghost)">🌙 GO HUNTING</button>`;
+            if(state.level >= 5 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 SOUL EATER ($300)</button>`;
+            h += `<button onclick="startHunt()" style="background:#333; color:var(--ghost)">🌙 START HUNT</button>`;
         } else {
             h = `<button onclick="scout()" style="padding:40px;">🔍 SCOUT AREA</button>
-                 <button onclick="state.isNight=false; updateDisplay()">🏃 RETURN TO TOWN</button>`;
+                 <button onclick="returnToTown()">🏃 RETURN TO TOWN (HEAL)</button>`;
         }
         btns.innerHTML = h;
     }
 
+    function startHunt() {
+        state.isNight = true;
+        log("You entered the dark lands...");
+        updateDisplay();
+    }
+
+    function returnToTown() {
+        state.isNight = false;
+        state.sanity = 0; // Механика лечения в городе
+        log("Returned to town. Restored sanity to 0%.", "var(--xp)");
+        updateDisplay();
+    }
+
+    function useItem(i) {
+        const item = state.inventory[i];
+        if(item === 'tnt' && state.enemy) {
+            state.enemy.hp -= 300;
+            log("BOOM! Massive damage!", "orange");
+            if(state.enemy.hp <= 0) state.enemy = null;
+        } else if(item === 'whiskey') {
+            state.sanity = Math.max(0, state.sanity - 35);
+            log("Drinking whiskey cleared your mind.", "var(--ghost)");
+        }
+        state.inventory.splice(i, 1);
+        updateDisplay();
+    }
+
+    function scout() {
+        state.sanity += 5;
+        if(Math.random() > 0.4) {
+            const isN = Math.random() > 0.9 && state.level >= 7;
+            if(isN) {
+                state.enemy = { name: "NARRATOR", icon: "📖✨", hp: 1200, maxHp: 1200, atk: 20 };
+                log("THE AUTHOR HAS ARRIVED.", "var(--gold)");
+            } else {
+                let h = 150 + (state.level * 20);
+                state.enemy = { name: "GHOST", icon: "👻", hp: h, maxHp: h, atk: 12 };
+                log("A restless spirit appears.");
+            }
+        } else {
+            let g = 35;
+            if(state.companion === 'raven') g += 30;
+            state.gold += g;
+            log(`Scavenged $${g}.`);
+        }
+        updateDisplay();
+    }
+
     function attack(t) {
-        let d = 0;
-        if(t === 'shoot' && state.ammo >= 1) { state.ammo--; d = state.baseAtk + Math.random()*20; }
-        else if(t === 'double' && state.ammo >= 2) { state.ammo -= 2; d = state.baseAtk * 2.5; }
-        else if(t === 'cursed') { state.sanity += 15; d = 300; log("The gun devours your mind!", "red"); }
-        else if(t === 'dodge' && Math.random() > 0.5) { log("You evaded the attack!"); return updateDisplay(); }
+        let d = state.baseAtk + (Math.random() * 20);
+        if(state.companion === 'dog') d += 20;
+
+        if(t === 'shoot' && state.ammo >= 1) {
+            state.ammo--;
+        } else if(t === 'double' && state.ammo >= 2) {
+            state.ammo -= 2;
+            d *= 2.5;
+        } else if(t === 'cursed') {
+            state.sanity += 15;
+            d = 350;
+        } else if(t === 'dodge' && Math.random() > 0.5) {
+            log("Safe!");
+            return updateDisplay();
+        } else if(state.ammo <= 0 && t !== 'cursed') {
+            log("Out of ammo!", "red");
+            d = 0;
+        }
 
         if(d > 0) {
-            if(state.companion === 'dog') d += 20;
             state.enemy.hp -= d;
             if(state.enemy.hp <= 0) {
                 if(state.enemy.name === "NARRATOR") return doEnd();
-                log("Spirit banished!"); state.gold += 80; state.xp += 50; state.enemy = null;
-                if(state.xp >= state.xpNext) { state.level++; state.sp++; state.xp = 0; state.xpNext *= 1.5; log("LEVEL UP!", "var(--gold)"); }
-                save();
-            } else { enemyTurn(); }
+                log("Spirit banished!");
+                state.gold += 70;
+                state.xp += 50;
+                state.enemy = null;
+                if(state.xp >= state.xpNext) {
+                    state.level++;
+                    state.sp++;
+                    state.xp = 0;
+                    state.xpNext *= 1.5;
+                }
+            } else {
+                enemyTurn();
+            }
         }
         updateDisplay();
     }
 
     function enemyTurn() {
         document.getElementById('game-container').classList.add('shake');
-        setTimeout(()=>document.getElementById('game-container').classList.remove('shake'), 300);
+        setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 200);
+        
         let dmg = 15 + (state.level * 2);
         if(state.skills.ironWill) dmg *= 0.6;
         state.sanity += Math.floor(dmg);
-        if(state.sanity >= 100) { alert("YOU DIED INSANE."); location.reload(); }
-    }
 
-    function scout() {
-        state.sanity += 4;
-        if(Math.random() > 0.4) {
-            const isN = Math.random() > 0.9 && state.level >= 7;
-            state.enemy = isN ? 
-                { name: "NARRATOR", icon: "📖✨", hp: 1200, maxHp: 1200 } : 
-                { name: "GHOST", icon: "👻", hp: 120 + (state.level*25), maxHp: 120 + (state.level*25) };
-            log(isN ? "THE AUTHOR CHALLENGES YOU." : "A spirit appears!");
-        } else {
-            let g = 30; if(state.companion === 'raven') g += 40;
-            state.gold += g; log(`Found $${g}`);
+        if(state.sanity >= 100) {
+            state.gameEnded = true;
+            alert("The darkness took you. Game Over.");
+            location.reload();
         }
-        updateDisplay();
     }
 
     function shop(t) {
         if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 20; }
         if(t === 'tnt' && state.gold >= 50) { state.gold -= 50; state.inventory.push('tnt'); }
+        if(t === 'whiskey' && state.gold >= 40) { state.gold -= 40; state.inventory.push('whiskey'); }
         if(t === 'cursed' && state.gold >= 300) { state.gold -= 300; state.hasCursedGun = true; }
         updateDisplay();
     }
 
-    function useTNT(i) {
-        if(state.enemy) { 
-            state.enemy.hp -= 300; state.inventory.splice(i,1); log("MASSIVE EXPLOSION!"); 
-            if(state.enemy.hp <= 0) { if(state.enemy.name === "NARRATOR") doEnd(); else state.enemy = null; } 
-            updateDisplay(); 
+    function learn(s) {
+        if(state.sp >= 1) {
+            state.sp--;
+            state.skills[s] = true;
+            log(`Learned ${s}!`);
+            updateDisplay();
         }
     }
-
-    function learn(s) { if(state.sp >= 1) { state.sp--; state.skills[s] = true; updateDisplay(); } }
 
     function doEnd() {
         state.gameEnded = true;
         document.getElementById('ending').style.display = 'flex';
-        document.getElementById('ending-msg').innerText = "By slaying the Narrator on this grand scale, you have erased the ink that bound this world. The Dead West is no longer a story—it is reality. You are free, Hunter. Your legend ends here, where the true life begins.";
+        document.getElementById('ending-msg').innerText = "You have defeated the Narrator and freed your soul from the ink. The cycle is broken. The West is finally silent.";
     }
 
     updateDisplay();
