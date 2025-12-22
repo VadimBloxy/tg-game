@@ -2,173 +2,186 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>GHOST HUNTER: THE COMPLETE SAGA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GHOST HUNTER: ULTIMATE EDITION (1400x900)</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
             --gold: #ffcc00; --blood: #af0000; --ghost: #8899cc;
-            --bg: #0a0a0a; --panel: #1a1512; --text: #d2b48c; --xp: #4caf50;
+            --bg: #0d0d0d; --panel: #1e1a17; --text: #d2b48c; --xp: #4caf50;
         }
         body {
             background: var(--bg); color: var(--text); font-family: 'Courier New', monospace;
-            margin: 0; padding: 15px; display: flex; justify-content: center;
-            overflow: hidden; touch-action: manipulation; transition: background 0.2s;
+            margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; overflow: hidden;
         }
         #game-container {
-            width: 100%; max-width: 420px; background: var(--panel);
-            border: 3px solid #3e2723; border-radius: 12px; padding: 15px;
-            box-sizing: border-box; box-shadow: 0 0 25px rgba(0,0,0,0.8);
-            position: relative; transition: transform 0.1s;
+            width: 1200px; height: 800px; /* Оптимально для 1400x900 */
+            background: var(--panel); border: 5px solid #3e2723; border-radius: 15px;
+            padding: 30px; box-sizing: border-box; box-shadow: 0 0 50px rgba(0,0,0,0.9);
+            position: relative; display: grid; grid-template-columns: 350px 1fr 350px; gap: 20px;
         }
-        .header { text-align: center; border-bottom: 2px solid #3e2723; margin-bottom: 10px; }
-        .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 13px; }
-        .bar-bg { width: 100%; height: 8px; background: #222; border-radius: 4px; margin: 4px 0; overflow: hidden; }
-        #sanity-fill { width: 0%; height: 100%; background: var(--ghost); transition: 0.4s; }
-        #xp-fill { width: 0%; height: 100%; background: var(--xp); transition: 0.4s; }
-        #enemy-hp-fill { width: 100%; height: 100%; background: var(--blood); transition: 0.3s; }
         
-        /* Визуал врага */
-        #enemy-sprite { font-size: 65px; text-align: center; margin: 15px 0; transition: all 0.2s; }
-        .narrator-skin { animation: narrator-anim 0.5s infinite alternate; text-shadow: 0 0 20px var(--gold); }
-        @keyframes narrator-anim {
-            0% { transform: scale(1) rotate(-2deg); filter: hue-rotate(0deg); }
-            100% { transform: scale(1.1) rotate(2deg); filter: hue-rotate(90deg); }
-        }
+        /* Колонки */
+        .side-panel { display: flex; flex-direction: column; gap: 15px; }
+        .main-panel { display: flex; flex-direction: column; justify-content: space-between; position: relative; }
 
-        /* Эффекты */
-        .shake { animation: shake-anim 0.2s cubic-bezier(.36,.07,.19,.97); }
-        @keyframes shake-anim {
-            10%, 90% { transform: translate3d(-1px, 0, 0); }
-            30%, 70% { transform: translate3d(-4px, 0, 0); }
-            40%, 60% { transform: translate3d(4px, 0, 0); }
+        .header { text-align: center; border-bottom: 3px solid #3e2723; padding-bottom: 10px; grid-column: span 3; }
+        .header h1 { margin: 0; font-size: 32px; letter-spacing: 5px; color: var(--gold); }
+
+        .stats-box { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid #3e2723; }
+        .stats-box div { margin: 8px 0; font-size: 18px; }
+        
+        .bar-bg { width: 100%; height: 15px; background: #222; border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid #444; }
+        #sanity-fill { width: 0%; height: 100%; background: var(--ghost); transition: 0.5s; }
+        #xp-fill { width: 0%; height: 100%; background: var(--xp); transition: 0.5s; }
+        #enemy-hp-fill { width: 100%; height: 100%; background: var(--blood); transition: 0.3s; }
+
+        /* Враг по центру */
+        #enemy-zone { 
+            flex-grow: 1; display: none; flex-direction: column; align-items: center; justify-content: center;
+            border: 2px dashed var(--blood); border-radius: 20px; margin: 20px 0; background: rgba(0,0,0,0.2);
         }
-        .reality-glitch { animation: glitch-anim 0.1s infinite; filter: invert(1) contrast(2); }
-        @keyframes glitch-anim { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+        #enemy-sprite { font-size: 150px; margin: 20px 0; transition: 0.3s; }
+        .narrator-skin { animation: narrator-float 1s infinite alternate; text-shadow: 0 0 40px var(--gold); }
+        @keyframes narrator-float { 
+            from { transform: translateY(0) scale(1); } 
+            to { transform: translateY(-20px) scale(1.1) rotate(5deg); } 
+        }
 
         #event-log {
-            height: 100px; overflow-y: auto; margin: 10px 0; padding: 8px;
-            background: rgba(0,0,0,0.6); border-left: 3px solid var(--blood);
-            font-size: 11px; line-height: 1.4; display: flex; flex-direction: column-reverse;
+            height: 400px; overflow-y: auto; background: rgba(0,0,0,0.6);
+            border-left: 5px solid var(--blood); padding: 15px; font-size: 14px;
+            display: flex; flex-direction: column-reverse; line-height: 1.6; border-radius: 5px;
         }
-        .inventory { display: flex; gap: 5px; margin: 10px 0; padding: 5px; background: #000; border-radius: 5px; min-height: 40px; }
-        .inv-slot { width: 35px; height: 35px; border: 1px solid #444; display: flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; }
-        
-        .controls { display: grid; grid-template-columns: 1fr; gap: 6px; }
-        button {
-            background: #3e2723; color: var(--text); border: 1px solid #5d4037;
-            padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold;
-            text-transform: uppercase; font-family: 'Courier New', monospace; font-size: 11px;
-        }
-        button:active { transform: scale(0.98); background: var(--gold); color: black; }
-        button:disabled { opacity: 0.3; }
 
-        .ui-overlay { border: 2px solid var(--ghost); padding: 10px; margin-bottom: 10px; display: none; background: #0b0b0b; border-radius: 8px; }
-        #enemy-zone { border-color: var(--blood); display: none; }
-        
-        #ending {
-            position: absolute; top:0; left:0; width:100%; height:100%; 
-            background: black; color: white; display: none; flex-direction: column;
-            align-items: center; justify-content: center; text-align: center; z-index: 1000; padding: 25px;
+        .inventory { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; background: #000; border-radius: 10px; }
+        .inv-slot { height: 60px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; }
+        .inv-slot:hover { border-color: var(--gold); }
+
+        .controls { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        button {
+            background: #3e2723; color: var(--text); border: 2px solid #5d4037;
+            padding: 20px; border-radius: 8px; cursor: pointer; font-weight: bold;
+            text-transform: uppercase; font-size: 16px; transition: 0.2s;
         }
+        button:hover { background: #5d4037; transform: scale(1.02); }
+        button:active { background: var(--gold); color: black; }
+        button:disabled { opacity: 0.2; cursor: default; }
+
+        .overlay-menu { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 500px; background: #121a22; border: 3px solid var(--ghost);
+            padding: 30px; z-index: 100; display: none; border-radius: 15px;
+        }
+
+        #ending {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: black; z-index: 2000; display: none; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+        }
+
+        .shake { animation: shake 0.3s; }
+        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(10px, 10px); } 50% { transform: translate(-10px, -10px); } 75% { transform: translate(10px, -10px); } }
+        .glitch { filter: invert(1) hue-rotate(90deg); }
     </style>
 </head>
 <body>
 
 <div id="game-container">
-    <div id="ending">
-        <h1 style="color:var(--gold)">THE STORY ENDS</h1>
-        <p id="ending-msg" style="font-size:14px; line-height:1.6;"></p>
-        <button onclick="localStorage.clear(); location.reload();" style="background:white; color:black">REWRITE HISTORY</button>
+    <div class="header"><h1>💀 GHOST HUNTER: DEAD WEST</h1></div>
+
+    <div class="side-panel">
+        <div class="stats-box">
+            <h2 style="margin-top:0; color:var(--gold)">HUNTER</h2>
+            <div>Gold: $<span id="v-gold">0</span></div>
+            <div>Ammo: <span id="v-ammo">0</span></div>
+            <div>Level: <span id="v-lvl">1</span></div>
+            <div>SP: <span id="v-sp">0</span></div>
+            <div id="wpn-name" style="color:var(--gold)">Colt .45</div>
+            <div id="pet-name" style="color:var(--ghost); font-size:14px;">No Companion</div>
+        </div>
+        <div class="stats-box">
+            Sanity
+            <div class="bar-bg"><div id="sanity-fill"></div></div>
+            Experience
+            <div class="bar-bg"><div id="xp-fill"></div></div>
+        </div>
+        <h3 style="margin-bottom:5px;">SADDLEBAGS</h3>
+        <div id="inventory-ui" class="inventory"></div>
+        <div style="display:flex; gap:10px; margin-top:20px;">
+            <button onclick="save()" style="flex:1; padding:10px; font-size:12px;">SAVE</button>
+            <button onclick="load()" style="flex:1; padding:10px; font-size:12px;">LOAD</button>
+        </div>
     </div>
 
-    <div class="header"><h3>💀 DEAD WEST COMPLETE</h3></div>
-
-    <div class="stats">
-        <div>Gold: $<span id="v-gold">0</span></div>
-        <div>Ammo: <span id="v-ammo">0</span></div>
-        <div>Level: <span id="v-lvl">1</span></div>
-        <div>SP: <span id="v-sp">0</span></div>
-        <div id="comp-tag" style="grid-column: span 2; font-size:10px; color:var(--ghost);">No Companion</div>
-        <div style="grid-column: span 2;">
-            Sanity <div class="bar-bg"><div id="sanity-fill"></div></div>
-            XP <div class="bar-bg"><div id="xp-fill"></div></div>
+    <div class="main-panel">
+        <div id="enemy-zone">
+            <div id="enemy-sprite">👻</div>
+            <h2 id="enemy-name" style="margin:0; font-size:32px;">GHOST</h2>
+            <div class="bar-bg" style="width:80%; height:25px;"><div id="enemy-hp-fill"></div></div>
         </div>
-        <div style="grid-column: span 2; display: flex; gap: 5px; margin-top:5px;">
-            <button onclick="save()" style="flex:1; padding:2px; font-size:8px;">💾 SAVE</button>
-            <button onclick="load()" style="flex:1; padding:2px; font-size:8px;">📂 LOAD</button>
-        </div>
+        <div id="event-log"></div>
     </div>
 
-    <div id="inventory-ui" class="inventory"></div>
-
-    <div id="enemy-zone" class="ui-overlay">
-        <div id="enemy-sprite">👻</div>
-        <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: bold;">
-            <span id="enemy-name">GHOST</span><span>HP</span>
-        </div>
-        <div class="bar-bg"><div id="enemy-hp-fill"></div></div>
-        <div id="enemy-intent" style="text-align:center; font-size:9px; color:var(--gold);"></div>
+    <div class="side-panel">
+        <h3 style="text-align:center;">ACTIONS</h3>
+        <div id="action-buttons" class="controls"></div>
     </div>
 
-    <div id="skill-menu" class="ui-overlay">
-        <div style="text-align:center; color:var(--xp); margin-bottom:8px;">SKILLS</div>
+    <div id="skill-menu" class="overlay-menu">
+        <h2 style="text-align:center; color:var(--xp)">TRAINING</h2>
         <div class="controls">
-            <button id="btn-ds" onclick="learn('doubleShot')">Double Shot (1 SP)</button>
-            <button id="btn-iw" onclick="learn('ironWill')">Iron Will (1 SP)</button>
-            <button onclick="closeUI()">Back</button>
+            <button id="sk-ds" onclick="learn('doubleShot')">Double Shot (1 SP)</button>
+            <button id="sk-iw" onclick="learn('ironWill')">Iron Will (1 SP)</button>
+            <button onclick="closeUI()">BACK</button>
         </div>
     </div>
 
-    <div id="pet-menu" class="ui-overlay">
-        <div style="text-align:center; margin-bottom:8px;">STABLES</div>
+    <div id="stable-menu" class="overlay-menu">
+        <h2 style="text-align:center; color:var(--ghost)">STABLES</h2>
         <div class="controls">
-            <button onclick="buyPet('dog')">🐕 Ghost Dog ($150) - +Atk</button>
-            <button onclick="buyPet('raven')">🐦 Shadow Raven ($150) - +Loot</button>
-            <button onclick="closeUI()">Back</button>
+            <button onclick="buyPet('dog')">🐕 GHOST DOG ($150)</button>
+            <button onclick="buyPet('raven')">🐦 SHADOW RAVEN ($150)</button>
+            <button onclick="closeUI()">BACK</button>
         </div>
     </div>
+</div>
 
-    <div id="event-log"></div>
-    <div id="action-buttons" class="controls"></div>
+<div id="ending">
+    <h1 style="font-size:60px; color:var(--gold)">THE SAGA IS OVER</h1>
+    <p id="ending-msg" style="max-width:800px; font-size:24px; color:#ccc;"></p>
+    <button onclick="localStorage.clear(); location.reload();" style="font-size:24px; padding:30px;">REWRITE FATE</button>
 </div>
 
 <script>
     let state = {
-        gold: 100, ammo: 15, sanity: 0, level: 1, xp: 0, xpNext: 100, sp: 0,
-        baseAtk: 25, inventory: [], enemy: null, isNight: false,
+        gold: 150, ammo: 30, sanity: 0, level: 1, xp: 0, xpNext: 100, sp: 0,
+        baseAtk: 30, inventory: [], enemy: null, isNight: false,
         companion: null, hasCursedGun: false, gameEnded: false,
         skills: { doubleShot: false, ironWill: false }
     };
 
     function log(msg, color = "#aaa") {
         const el = document.getElementById('event-log');
-        el.innerHTML = `<div style="color:${color}">> ${msg}</div>` + el.innerHTML;
+        el.innerHTML = `<div style="color:${color}; margin-bottom:5px;">> ${msg}</div>` + el.innerHTML;
     }
 
-    function fxShake() {
-        const gc = document.getElementById('game-container');
-        gc.classList.add('shake');
-        setTimeout(() => gc.classList.remove('shake'), 200);
-    }
-
-    function save() { localStorage.setItem('gh_final_saga', JSON.stringify(state)); log("Saved."); }
+    function save() { localStorage.setItem('gh_ultra_1400', JSON.stringify(state)); log("World saved.", "var(--xp)"); }
     function load() {
-        const s = localStorage.getItem('gh_final_saga');
-        if(s) { state = JSON.parse(s); updateDisplay(); log("Loaded."); }
+        const s = localStorage.getItem('gh_ultra_1400');
+        if(s) { state = JSON.parse(s); updateDisplay(); log("World restored."); }
     }
 
     function closeUI() {
         document.getElementById('skill-menu').style.display = 'none';
-        document.getElementById('pet-menu').style.display = 'none';
+        document.getElementById('stable-menu').style.display = 'none';
         updateDisplay();
     }
 
-    function buyPet(type) {
-        if(state.gold >= 150) {
-            state.gold -= 150; state.companion = type;
-            log(`New companion: ${type}!`); closeUI();
-        } else { log("No gold!"); }
+    function buyPet(t) {
+        if(state.gold >= 150) { state.gold -= 150; state.companion = t; log(`New pet: ${t}`); closeUI(); }
+        else log("Not enough gold!");
     }
 
     function updateDisplay() {
@@ -177,11 +190,12 @@
         document.getElementById('v-ammo').innerText = state.ammo;
         document.getElementById('v-lvl').innerText = state.level;
         document.getElementById('v-sp').innerText = state.sp;
+        document.getElementById('wpn-name').innerText = state.hasCursedGun ? "💀 SOUL EATER" : "COLT .45";
+        document.getElementById('pet-name').innerText = state.companion ? `PET: ${state.companion.toUpperCase()}` : "NO COMPANION";
+        
         document.getElementById('sanity-fill').style.width = state.sanity + '%';
         document.getElementById('xp-fill').style.width = (state.xp / state.xpNext * 100) + '%';
         
-        document.getElementById('comp-tag').innerText = state.companion ? `Active Pet: ${state.companion}` : "No Companion";
-
         const inv = document.getElementById('inventory-ui');
         inv.innerHTML = '';
         state.inventory.forEach((item, i) => {
@@ -191,23 +205,20 @@
         });
 
         const ez = document.getElementById('enemy-zone');
-        const cont = document.getElementById('game-container');
-        if(state.enemy) {
-            ez.style.display = 'block';
+        const sprite = document.getElementById('enemy-sprite');
+        if (state.enemy) {
+            ez.style.display = 'flex';
             document.getElementById('enemy-name').innerText = state.enemy.name;
-            document.getElementById('enemy-sprite').innerText = state.enemy.icon;
+            sprite.innerText = state.enemy.icon;
             document.getElementById('enemy-hp-fill').style.width = (state.enemy.hp / state.enemy.maxHp * 100) + '%';
-            
             if(state.enemy.name === "NARRATOR") {
-                document.getElementById('enemy-sprite').className = 'narrator-skin';
-                if(state.enemy.hp < state.enemy.maxHp / 2) cont.classList.add('reality-glitch');
+                sprite.className = 'narrator-skin';
+                if(state.enemy.hp < state.enemy.maxHp/2) document.body.classList.add('glitch');
             } else {
-                document.getElementById('enemy-sprite').className = '';
-                cont.classList.remove('reality-glitch');
+                sprite.className = ''; document.body.classList.remove('glitch');
             }
         } else {
-            ez.style.display = 'none';
-            cont.classList.remove('reality-glitch');
+            ez.style.display = 'none'; document.body.classList.remove('glitch');
         }
 
         renderButtons();
@@ -218,37 +229,37 @@
         let h = '';
         if(state.enemy) {
             h = `<button onclick="attack('shoot')" style="background:#700">🔥 SHOOT</button>`;
-            if(state.hasCursedGun) h += `<button onclick="attack('cursed')" style="background:#4a148c">💀 BLOOD SHOT</button>`;
-            if(state.skills.doubleShot) h += `<button onclick="attack('double')" style="background:#a00">🔥 DOUBLE</button>`;
+            if(state.hasCursedGun) h += `<button onclick="attack('cursed')" style="background:#4a148c">💀 SOUL BLAST</button>`;
+            if(state.skills.doubleShot) h += `<button onclick="attack('double')" style="background:#a00">🔥 DOUBLE SHOT</button>`;
             h += `<button onclick="attack('dodge')">🏃 DODGE</button>`;
         } else if(!state.isNight) {
-            h = `<button onclick="shop('ammo')">🛒 AMMO ($25)</button>
-                 <button onclick="shop('tnt')">🧨 DYNAMITE ($50)</button>
-                 <button onclick="document.getElementById('pet-menu').style.display='block'">🐕 STABLES</button>
-                 <button onclick="document.getElementById('skill-menu').style.display='block'">⭐ SKILLS</button>`;
-            if(state.level >= 5 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--blood)">💀 CURSED GUN ($250)</button>`;
-            h += `<button onclick="state.isNight=true; updateDisplay()" style="color:var(--ghost)">🌙 START HUNT</button>`;
+            h = `<button onclick="shop('ammo')">🛒 BUY AMMO ($25)</button>
+                 <button onclick="shop('tnt')">🧨 BUY DYNAMITE ($50)</button>
+                 <button onclick="document.getElementById('stable-menu').style.display='block'">🐕 VISIT STABLES</button>
+                 <button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
+            if(state.level >= 5 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 BUY SOUL EATER ($300)</button>`;
+            h += `<button onclick="state.isNight=true; updateDisplay()" style="background:#333; color:var(--ghost)">🌙 GO HUNTING</button>`;
         } else {
-            h = `<button onclick="scout()">🔍 SCOUT</button>
-                 <button onclick="state.isNight=false; updateDisplay()">🏃 RETREAT</button>`;
+            h = `<button onclick="scout()" style="padding:40px;">🔍 SCOUT AREA</button>
+                 <button onclick="state.isNight=false; updateDisplay()">🏃 RETURN TO TOWN</button>`;
         }
         btns.innerHTML = h;
     }
 
     function attack(t) {
         let d = 0;
-        if(t === 'shoot' && state.ammo >= 1) { state.ammo--; d = state.baseAtk + Math.random()*15; }
+        if(t === 'shoot' && state.ammo >= 1) { state.ammo--; d = state.baseAtk + Math.random()*20; }
         else if(t === 'double' && state.ammo >= 2) { state.ammo -= 2; d = state.baseAtk * 2.5; }
-        else if(t === 'cursed') { state.sanity += 10; d = 200; log("The gun bites!", "red"); }
-        else if(t === 'dodge' && Math.random() > 0.5) { log("Dodged!"); return updateDisplay(); }
+        else if(t === 'cursed') { state.sanity += 15; d = 300; log("The gun devours your mind!", "red"); }
+        else if(t === 'dodge' && Math.random() > 0.5) { log("You evaded the attack!"); return updateDisplay(); }
 
         if(d > 0) {
-            if(state.companion === 'dog') d += 15;
+            if(state.companion === 'dog') d += 20;
             state.enemy.hp -= d;
             if(state.enemy.hp <= 0) {
                 if(state.enemy.name === "NARRATOR") return doEnd();
-                log("Entity banished!"); state.gold += 60; state.xp += 40; state.enemy = null;
-                if(state.xp >= state.xpNext) { state.level++; state.sp++; state.xp = 0; state.xpNext *= 1.4; }
+                log("Spirit banished!"); state.gold += 80; state.xp += 50; state.enemy = null;
+                if(state.xp >= state.xpNext) { state.level++; state.sp++; state.xp = 0; state.xpNext *= 1.5; log("LEVEL UP!", "var(--gold)"); }
                 save();
             } else { enemyTurn(); }
         }
@@ -256,37 +267,42 @@
     }
 
     function enemyTurn() {
-        fxShake();
-        let dmg = 12 + state.level;
+        document.getElementById('game-container').classList.add('shake');
+        setTimeout(()=>document.getElementById('game-container').classList.remove('shake'), 300);
+        let dmg = 15 + (state.level * 2);
         if(state.skills.ironWill) dmg *= 0.6;
         state.sanity += Math.floor(dmg);
-        if(state.sanity >= 100) { alert("DEAD BY MADNESS"); location.reload(); }
+        if(state.sanity >= 100) { alert("YOU DIED INSANE."); location.reload(); }
     }
 
     function scout() {
-        state.sanity += 5;
-        if(Math.random() > 0.45) {
-            const isN = Math.random() > 0.9 && state.level >= 8;
+        state.sanity += 4;
+        if(Math.random() > 0.4) {
+            const isN = Math.random() > 0.9 && state.level >= 7;
             state.enemy = isN ? 
-                { name: "NARRATOR", icon: "📖✨", hp: 1000, maxHp: 1000 } : 
-                { name: "GHOST", icon: "👻", hp: 100 + (state.level*20), maxHp: 100 + (state.level*20) };
-            log(isN ? "THE AUTHOR IS HERE." : "Shadow emerges.");
+                { name: "NARRATOR", icon: "📖✨", hp: 1200, maxHp: 1200 } : 
+                { name: "GHOST", icon: "👻", hp: 120 + (state.level*25), maxHp: 120 + (state.level*25) };
+            log(isN ? "THE AUTHOR CHALLENGES YOU." : "A spirit appears!");
         } else {
-            let g = 25; if(state.companion === 'raven') g += 25;
+            let g = 30; if(state.companion === 'raven') g += 40;
             state.gold += g; log(`Found $${g}`);
         }
         updateDisplay();
     }
 
     function shop(t) {
-        if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 15; }
+        if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 20; }
         if(t === 'tnt' && state.gold >= 50) { state.gold -= 50; state.inventory.push('tnt'); }
-        if(t === 'cursed' && state.gold >= 250) { state.gold -= 250; state.hasCursedGun = true; }
+        if(t === 'cursed' && state.gold >= 300) { state.gold -= 300; state.hasCursedGun = true; }
         updateDisplay();
     }
 
     function useTNT(i) {
-        if(state.enemy) { state.enemy.hp -= 250; state.inventory.splice(i,1); log("BOOM!"); if(state.enemy.hp <= 0) { if(state.enemy.name === "NARRATOR") doEnd(); else state.enemy = null; } updateDisplay(); }
+        if(state.enemy) { 
+            state.enemy.hp -= 300; state.inventory.splice(i,1); log("MASSIVE EXPLOSION!"); 
+            if(state.enemy.hp <= 0) { if(state.enemy.name === "NARRATOR") doEnd(); else state.enemy = null; } 
+            updateDisplay(); 
+        }
     }
 
     function learn(s) { if(state.sp >= 1) { state.sp--; state.skills[s] = true; updateDisplay(); } }
@@ -294,7 +310,7 @@
     function doEnd() {
         state.gameEnded = true;
         document.getElementById('ending').style.display = 'flex';
-        document.getElementById('ending-msg').innerText = "The ink of fate has dried. By defeating the Narrator, you have freed the Dead West from its endless nightmare. Your story is now your own. Congratulations, Hunter.";
+        document.getElementById('ending-msg').innerText = "By slaying the Narrator on this grand scale, you have erased the ink that bound this world. The Dead West is no longer a story—it is reality. You are free, Hunter. Your legend ends here, where the true life begins.";
     }
 
     updateDisplay();
