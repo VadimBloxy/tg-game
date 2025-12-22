@@ -2,621 +2,289 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>CYBER WESTERN: OMEGA PROTOCOL</title>
+    <title>CYBER WESTERN: OMEGA 5K EDITION</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-
-        body {
-            margin: 0;
-            background-color: #050505;
-            color: #00ff41;
-            font-family: 'Press Start 2P', monospace;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-            user-select: none;
-        }
-
-        #game-case {
-            position: relative;
-            width: 1024px;
-            height: 800px;
-            border: 4px solid #444;
-            background: #000;
-            box-shadow: 0 0 50px rgba(0, 255, 65, 0.2);
-            display: grid;
-            grid-template-rows: 60px 1fr 220px;
-        }
-
-        /* ВЕРХНЯЯ ПАНЕЛЬ */
-        header {
-            background: #111;
-            border-bottom: 2px solid #00ff41;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            font-size: 14px;
-            text-shadow: 2px 2px 0 #000;
-        }
-        .stat { color: #fff; }
-        .stat span { color: #00ff41; }
-        .stat.danger span { color: #ff3333; }
-
-        /* ИГРОВОЙ ЭКРАН (CANVAS) */
-        #viewport {
-            position: relative;
-            background: #000;
-            display: flex;
-            border-bottom: 2px solid #00ff41;
-        }
-        canvas {
-            background: radial-gradient(circle, #1a1a1a 0%, #000 90%);
-            image-rendering: pixelated;
-            width: 750px;
-            height: 100%;
-        }
-
-        /* БОКОВАЯ ПАНЕЛЬ (ИНВЕНТАРЬ) */
-        #sidebar {
-            width: 274px;
-            background: #0a0a0a;
-            border-left: 2px solid #333;
-            padding: 10px;
-            overflow-y: auto;
-            font-size: 10px;
-            color: #aaa;
-        }
-        #sidebar h3 { color: #ffcc00; border-bottom: 1px dashed #ffcc00; padding-bottom: 5px; margin-top: 15px; }
-        .item-row { display: flex; justify-content: space-between; margin-bottom: 5px; border-bottom: 1px solid #222; padding: 2px; }
-        .btn-tiny { background: #222; border: 1px solid #555; color: #fff; cursor: pointer; font-size: 8px; font-family: inherit; }
-        .btn-tiny:hover { background: #ff0000; border-color: #ff0000; }
-
-        /* НИЖНЯЯ ПАНЕЛЬ УПРАВЛЕНИЯ */
-        #control-panel {
-            background: #080808;
-            display: grid;
-            grid-template-columns: 1fr 300px;
-            padding: 10px;
-        }
-        
-        #log {
-            font-family: 'Courier New', monospace;
-            font-size: 14px;
-            color: #00ff41;
-            overflow-y: scroll;
-            padding-right: 10px;
-            height: 180px;
-            border-right: 2px solid #333;
-        }
-        #log p { margin: 4px 0; opacity: 0.9; }
-        .l-dmg { color: #ff3333; }
-        .l-loot { color: #ffcc00; }
-        .l-sys { color: #00ccff; }
-
-        #actions {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            padding-left: 10px;
-            justify-content: center;
-        }
-        
-        .btn-main {
-            padding: 15px;
-            font-family: 'Press Start 2P';
-            font-size: 12px;
-            background: #000;
-            color: #00ff41;
-            border: 2px solid #00ff41;
-            cursor: pointer;
-            transition: 0.1s;
-            text-transform: uppercase;
-        }
-        .btn-main:hover { background: #00ff41; color: #000; box-shadow: 0 0 15px #00ff41; }
-        .btn-main:disabled { border-color: #444; color: #444; cursor: not-allowed; box-shadow: none; }
-        .btn-skill { border-color: #00ccff; color: #00ccff; }
-        .btn-skill:hover { background: #00ccff; color: #000; box-shadow: 0 0 15px #00ccff; }
-
+        body { margin: 0; background: #020202; color: #00ff41; font-family: 'Press Start 2P', cursive; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        #game-frame { width: 1100px; height: 850px; border: 5px solid #111; background: #000; display: grid; grid-template-rows: 70px 1fr 230px; box-shadow: 0 0 100px rgba(0,255,65,0.1); }
+        header { background: #080808; border-bottom: 3px solid #00ff41; display: flex; justify-content: space-around; align-items: center; font-size: 12px; }
+        #main-view { display: flex; border-bottom: 3px solid #00ff41; background: #050505; }
+        canvas { image-rendering: pixelated; width: 750px; height: 100%; cursor: crosshair; }
+        aside { width: 350px; background: #080808; border-left: 2px solid #222; padding: 15px; overflow-y: auto; font-size: 10px; }
+        #log-area { padding: 15px; font-family: monospace; font-size: 14px; overflow-y: scroll; border-right: 2px solid #222; color: #00ff41; }
+        #ui-panel { display: grid; grid-template-columns: 1fr 350px; background: #000; }
+        #actions { display: flex; flex-direction: column; gap: 10px; padding: 15px; justify-content: center; }
+        .btn { padding: 12px; background: #000; border: 2px solid #00ff41; color: #00ff41; font-family: inherit; cursor: pointer; text-transform: uppercase; font-size: 11px; }
+        .btn:hover { background: #00ff41; color: #000; box-shadow: 0 0 20px #00ff41; }
+        .btn:disabled { border-color: #333; color: #333; cursor: not-allowed; }
+        .btn-blue { border-color: #00ccff; color: #00ccff; }
+        .btn-blue:hover { background: #00ccff; color: #000; box-shadow: 0 0 20px #00ccff; }
+        .item-card { border: 1px solid #333; padding: 8px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+        .rarity-common { color: #aaa; }
+        .rarity-rare { color: #00ccff; text-shadow: 0 0 5px #00ccff; }
+        .rarity-legendary { color: #ff00ff; text-shadow: 0 0 10px #ff00ff; }
     </style>
 </head>
 <body>
 
-<div id="game-case">
+<div id="game-frame">
     <header>
-        <div class="stat">LVL: <span id="ui-lvl">1</span></div>
-        <div class="stat">HP: <span id="ui-hp">100</span>/<span id="ui-maxhp">100</span></div>
-        <div class="stat">SP: <span id="ui-sp">100</span></div>
-        <div class="stat">CREDITS: <span id="ui-money">50</span></div>
-        <div class="stat">SCRAP: <span id="ui-parts">0</span></div>
+        <div>HP: <span id="hp">100</span></div>
+        <div>SP: <span id="sp">100</span></div>
+        <div>LVL: <span id="lvl">1</span></div>
+        <div>SCRAP: <span id="scrap">0</span></div>
+        <div>CREDITS: <span id="cash">50</span></div>
     </header>
 
-    <div id="viewport">
-        <canvas id="gameCanvas" width="750" height="518"></canvas>
-        <aside id="sidebar">
-            <h3>SYSTEM STATUS</h3>
-            <div id="status-effects" style="color: #ffaa00; margin-bottom: 10px;">NORMAL</div>
-            
-            <h3>INVENTORY</h3>
+    <div id="main-view">
+        <canvas id="screen" width="750" height="550"></canvas>
+        <aside id="inventory">
+            <h3 style="color:#ffcc00">SYSTEMS / GEAR</h3>
+            <div id="active-drone" style="margin-bottom:15px; color:#00ccff">NO ACTIVE DRONE</div>
+            <h3 style="color:#ffcc00">INVENTORY</h3>
             <div id="inv-list"></div>
-
-            <h3>WORKBENCH</h3>
-            <div style="margin-bottom: 10px;">
-                <div>CRAFT MEDKIT (2 SCRAP)</div>
-                <button class="btn-tiny" style="width:100%" onclick="game.craft('heal')">ASSEMBLE</button>
-            </div>
-            <div>
-                <div>CRAFT DRONE (15 SCRAP)</div>
-                <button class="btn-tiny" style="width:100%" onclick="game.craft('drone')">ASSEMBLE</button>
-            </div>
+            <h3 style="color:#ffcc00">CRAFTING</h3>
+            <button class="btn" style="width:100%; margin-bottom:5px;" onclick="game.craft('drone')">CRAFT DRONE (15 SCRAP)</button>
+            <button class="btn" style="width:100%" onclick="game.craft('heal')">STIMPACK (2 SCRAP)</button>
         </aside>
     </div>
 
-    <div id="control-panel">
-        <div id="log">
-            <p class="l-sys">> SYSTEM ONLINE...</p>
-            <p class="l-sys">> NEURAL LINK ESTABLISHED.</p>
-        </div>
+    <div id="ui-panel">
+        <div id="log-area"></div>
         <div id="actions">
-            <button id="btn-explore" class="btn-main" onclick="game.explore()">EXPLORE WASTES</button>
-            <div style="display:flex; gap:5px;">
-                <button id="btn-attack" class="btn-main" style="flex:1" onclick="game.combatTurn('attack')" disabled>SHOOT</button>
-                <button id="btn-deadeye" class="btn-main btn-skill" style="flex:1" onclick="game.combatTurn('deadeye')" disabled>DEADEYE (40)</button>
+            <button id="btn-explore" class="btn" onclick="game.explore()">EXPLORE SECTOR</button>
+            <div style="display:flex; gap:10px">
+                <button id="btn-atk" class="btn" style="flex:1" onclick="game.combatStep('atk')" disabled>FIRE</button>
+                <button id="btn-dead" class="btn btn-blue" style="flex:1" onclick="game.combatStep('dead')" disabled>DEADEYE</button>
             </div>
-            <div style="display:flex; gap:5px;">
-                <button id="btn-shield" class="btn-main btn-skill" style="flex:1" onclick="game.activateShield()" disabled>SHIELD (30)</button>
-                <button id="btn-heal" class="btn-main" style="flex:1" onclick="game.useItem('heal')">HEAL (0)</button>
-            </div>
+            <button id="btn-stim" class="btn" onclick="game.useHeal()">USE STIMPACK (0)</button>
         </div>
     </div>
 </div>
 
 <script>
-/**
- * --- PIXEL ART ASSET MANAGER ---
- * Матрицы 0 и 1 для рендеринга графики без картинок
+/** * ЧАСТЬ 1: ГРАФИКА И МОДЕЛИ
  */
-const Assets = {
-    // Ковбой
+const Sprites = {
+    // Реалистичный Ковбой (16x18)
     Player: [
-        [0,0,0,1,1,1,1,1,0,0],
-        [0,0,1,1,1,1,1,1,1,0],
-        [0,0,1,1,1,1,1,1,1,0], // Шляпа
-        [0,0,0,1,1,1,1,1,0,0],
-        [0,0,0,1,1,0,1,1,0,0], // Очки
-        [0,0,0,1,1,1,1,1,0,0],
-        [0,0,1,1,1,1,1,1,1,0], // Тело
-        [0,1,1,1,1,1,1,1,1,1],
-        [1,1,0,1,1,1,1,1,0,1], // Руки с пистолетами
-        [1,0,0,1,0,0,0,1,0,0],
-        [0,0,0,1,0,0,0,1,0,0], // Ноги
-        [0,0,1,1,0,0,0,1,1,0]
+        [0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0], // Шляпа
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,0,1,0,1,1,1,1,1,0,1,0,0,0,0], // Лицо
+        [0,0,0,1,1,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,1,1,1,1,1,1,1,1,1,1,1,1,0,0], // Плащ
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0],
+        [1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1], // Руки/Оружие
+        [1,1,1,0,1,1,1,1,1,1,1,1,0,1,1,1],
+        [0,0,0,0,1,1,1,1,1,1,1,1,0,0,0,0],
+        [0,0,0,0,1,1,1,0,1,1,1,1,0,0,0,0],
+        [0,0,0,0,1,1,0,0,0,1,1,0,0,0,0,0], // Ноги
+        [0,0,0,1,1,1,0,0,0,1,1,1,0,0,0,0]
     ],
-    // Враг: Стервятник
-    Vulture: [
-        [0,0,0,0,0,0,1,1,1,0,0],
-        [1,0,0,0,0,1,1,1,1,1,0],
-        [0,1,1,1,1,1,1,1,0,1,1],
-        [0,0,1,1,1,1,1,1,0,0,0],
-        [0,0,0,1,1,1,1,1,0,0,0],
-        [0,0,1,0,0,0,0,0,1,0,0]
-    ],
-    // Враг: Робот
-    Bot: [
-        [0,0,1,1,1,1,0,0],
-        [0,1,1,1,1,1,1,0],
-        [1,1,0,1,1,0,1,1], // Красные глаза
-        [1,1,1,1,1,1,1,1],
-        [0,1,1,1,1,1,1,0],
-        [0,1,0,0,0,0,1,0],
-        [1,1,0,0,0,0,1,1]
-    ],
-    // Враг: Босс
-    Boss: [
-        [0,0,1,1,1,1,1,1,0,0],
-        [0,1,1,1,1,1,1,1,1,0],
-        [1,1,0,1,0,0,1,0,1,1],
-        [1,1,1,1,1,1,1,1,1,1],
-        [1,1,1,0,0,0,0,1,1,1], // Пасть
-        [1,1,1,1,1,1,1,1,1,1],
-        [0,1,1,0,1,1,0,1,1,0],
-        [0,1,0,0,1,1,0,0,1,0]
-    ],
-    // Дрон помощник
-    Drone: [
-        [0,0,1,1,1,0,0],
-        [0,1,0,1,0,1,0],
-        [1,1,1,1,1,1,1],
-        [0,0,1,0,1,0,0]
-    ]
+    // Враг: Тяжелый робот
+    Bot: [[0,1,1,1,1,0],[1,1,0,0,1,1],[1,1,1,1,1,1],[0,1,1,1,1,0],[0,1,0,0,1,0],[1,1,0,0,1,1]],
+    // Дрон MK-III
+    MK3: [[0,1,1,1,0],[1,1,1,1,1],[1,0,1,0,1],[1,1,1,1,1],[1,0,0,0,1]],
+    // Уточка
+    Duck: [[0,1,1,0],[1,1,0,1],[1,1,1,1],[0,1,1,0]]
 };
 
 /**
- * --- ENGINE CORE ---
- * Обработка логики и рендеринга
+ * ЧАСТЬ 2 & 3: ДВИЖОК И ЛОГИКА
  */
-class Engine {
+class CyberEngine {
     constructor() {
-        this.canvas = document.getElementById('gameCanvas');
+        this.canvas = document.getElementById('screen');
         this.ctx = this.canvas.getContext('2d');
-        this.particles = [];
-        this.shake = 0;
-        this.flash = 0;
+        this.logArea = document.getElementById('log-area');
         
-        // Game State
-        this.state = 'IDLE'; // IDLE, COMBAT
-        this.player = {
-            hp: 100, maxHp: 100, sp: 100, maxSp: 100,
-            money: 50, parts: 0, lvl: 1, xp: 0,
-            inventory: [],
-            supplies: { heal: 2 },
-            drone: null, // { dmg: 10 }
-            shield: 0 // кол-во ходов
+        this.p = { 
+            hp: 100, maxHp: 100, sp: 100, scrap: 0, cash: 50, lvl: 1, xp: 0,
+            inv: [], stims: 2, drone: null 
         };
         
-        this.enemy = null;
-        this.bossCounter = 0;
-
-        // Запуск цикла
-        this.loop = this.loop.bind(this);
-        requestAnimationFrame(this.loop);
-        this.updateUI();
-    }
-
-    // === GRAPHICS SYSTEM ===
-
-    drawSprite(matrix, startX, startY, pixelSize, color) {
-        this.ctx.fillStyle = color;
-        for (let y = 0; y < matrix.length; y++) {
-            for (let x = 0; x < matrix[y].length; x++) {
-                if (matrix[y][x] === 1) {
-                    this.ctx.fillRect(startX + x * pixelSize, startY + y * pixelSize, pixelSize, pixelSize);
-                }
-            }
-        }
-    }
-
-    createParticles(x, y, color, count) {
-        for(let i=0; i<count; i++) {
-            this.particles.push({
-                x: x, y: y,
-                vx: (Math.random() - 0.5) * 10,
-                vy: (Math.random() - 0.5) * 10,
-                life: 30, color: color
-            });
-        }
-    }
-
-    render() {
-        // Очистка и эффекты
-        this.ctx.save();
-        
-        // Тряска
-        if (this.shake > 0) {
-            let dx = (Math.random() - 0.5) * this.shake;
-            let dy = (Math.random() - 0.5) * this.shake;
-            this.ctx.translate(dx, dy);
-            this.shake *= 0.9;
-            if(this.shake < 0.5) this.shake = 0;
-        }
-
-        // Фон
-        this.ctx.fillStyle = "#000"; // Прозрачность для шлейфа
-        this.ctx.fillRect(-10, -10, this.canvas.width+20, this.canvas.height+20);
-
-        // Земля (Сетка)
-        this.ctx.strokeStyle = "#004400";
-        this.ctx.lineWidth = 1;
-        this.ctx.beginPath();
-        for(let i=0; i<this.canvas.width; i+=50) {
-            this.ctx.moveTo(i, 300); this.ctx.lineTo(i - 300, 600);
-        }
-        this.ctx.moveTo(0, 400); this.ctx.lineTo(800, 400);
-        this.ctx.stroke();
-
-        // 1. Рисуем Игрока
-        const pColor = this.player.shield > 0 ? "#00ffff" : "#00ff41";
-        this.drawSprite(Assets.Player, 100, 320, 10, pColor);
-
-        // 2. Дрон
-        if (this.player.drone) {
-            let dy = Math.sin(Date.now() / 200) * 5;
-            this.drawSprite(Assets.Drone, 60, 300 + dy, 6, "#00ccff");
-        }
-
-        // 3. Враг
-        if (this.state === 'COMBAT' && this.enemy) {
-            let eColor = this.enemy.isBoss ? "#ff0000" : "#ffaa00";
-            let scale = this.enemy.isBoss ? 15 : 10;
-            let sprite = this.enemy.isBoss ? Assets.Boss : (this.enemy.type === 'bot' ? Assets.Bot : Assets.Vulture);
-            
-            // Анимация дыхания
-            let breath = Math.sin(Date.now() / 300) * 3;
-            this.drawSprite(sprite, 550, 320 + breath, scale, eColor);
-
-            // HP Bar врага
-            this.ctx.fillStyle = "#330000";
-            this.ctx.fillRect(550, 300, 100, 8);
-            this.ctx.fillStyle = "#ff0000";
-            this.ctx.fillRect(550, 300, (this.enemy.hp / this.enemy.maxHp) * 100, 8);
-        }
-
-        // 4. Частицы
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            let p = this.particles[i];
-            p.x += p.vx; p.y += p.vy; p.life--;
-            this.ctx.fillStyle = p.color;
-            this.ctx.fillRect(p.x, p.y, 3, 3);
-            if (p.life <= 0) this.particles.splice(i, 1);
-        }
-
-        // 5. Вспышка
-        if (this.flash > 0) {
-            this.ctx.fillStyle = `rgba(255,255,255,${this.flash * 0.2})`;
-            this.ctx.fillRect(0,0,1000,1000);
-            this.flash--;
-        }
-
-        this.ctx.restore();
-    }
-
-    loop() {
-        this.render();
-        requestAnimationFrame(this.loop);
-    }
-
-    // === GAME LOGIC ===
-
-    log(msg, type="") {
-        const log = document.getElementById('log');
-        log.innerHTML += `<p class="${type}">> ${msg}</p>`;
-        log.scrollTop = log.scrollHeight;
-    }
-
-    explore() {
-        if (this.state === 'COMBAT') return;
-
-        this.flash = 3;
-        
-        // Шанс встречи врага 50%
-        if (Math.random() > 0.5 || this.bossCounter >= 4) {
-            this.startCombat(this.bossCounter >= 4);
-        } else {
-            // Находка
-            let credits = Math.floor(Math.random() * 20) + 10;
-            let scrap = Math.floor(Math.random() * 3) + 1;
-            this.player.money += credits;
-            this.player.parts += scrap;
-            this.log(`Scavenged sector: +${credits} CR, +${scrap} SCRAP`, "l-loot");
-            
-            // Реген SP при исследовании
-            this.player.sp = Math.min(this.player.maxSp, this.player.sp + 10);
-            this.updateUI();
-        }
-    }
-
-    startCombat(isBoss) {
-        this.state = 'COMBAT';
-        if (isBoss) this.bossCounter = 0;
-
-        // Генерация врага
-        const type = Math.random() > 0.5 ? 'bot' : 'beast';
-        let name = isBoss ? "MECHA-GULCH (BOSS)" : (type === 'bot' ? "Binary Bandit" : "Scrap Vulture");
-        let hp = isBoss ? 300 : 50 + (this.player.lvl * 10);
-        let dmg = isBoss ? 30 : 10 + (this.player.lvl * 2);
-
-        this.enemy = { 
-            name, hp, maxHp: hp, damage: dmg, 
-            type, isBoss 
-        };
-
-        this.log(`WARNING: ${name} DETECTED!`, "l-dmg");
-        
-        // UI
-        document.getElementById('btn-explore').disabled = true;
-        document.getElementById('btn-attack').disabled = false;
-        document.getElementById('btn-deadeye').disabled = false;
-        document.getElementById('btn-shield').disabled = false;
-    }
-
-    combatTurn(action) {
-        if (!this.enemy) return;
-
-        let dmg = 0;
-        let isCrit = false;
-
-        // Действия игрока
-        if (action === 'attack') {
-            dmg = Math.floor(Math.random() * 10) + 10 + (this.player.lvl * 2);
-            if (Math.random() < 0.15) { dmg *= 2; isCrit = true; }
-            
-            this.flash = 5;
-            this.shake = 5;
-            this.createParticles(550, 350, "#ffaa00", 10);
-        } 
-        else if (action === 'deadeye') {
-            if (this.player.sp < 40) { this.log("NOT ENOUGH SP!", "l-dmg"); return; }
-            this.player.sp -= 40;
-            dmg = 50 + (this.player.lvl * 5); // Гарантированный крит
-            isCrit = true;
-            this.flash = 10;
-            this.shake = 10;
-            this.createParticles(550, 350, "#00ccff", 20);
-            this.log("DEADEYE ACTIVATED!", "l-sys");
-        }
-
-        // Урон врагу
-        this.enemy.hp -= dmg;
-        if (this.player.drone) {
-            this.enemy.hp -= 10;
-            this.log(`Drone laser: 10 dmg`, "l-sys");
-        }
-
-        this.log(`You hit ${this.enemy.name} for ${dmg} ${isCrit ? "CRIT!" : ""}`);
-
-        if (this.enemy.hp <= 0) {
-            this.winCombat();
-            return;
-        }
-
-        // Ответ врага (задержка)
-        this.toggleButtons(true); // Блок кнопок
-        setTimeout(() => {
-            if (!this.enemy) return;
-            
-            let eDmg = this.enemy.damage;
-            
-            // Щит
-            if (this.player.shield > 0) {
-                eDmg = Math.floor(eDmg * 0.2); // Блокирует 80%
-                this.player.shield--;
-                this.log("SHIELD ABSORBED IMPACT!", "l-sys");
-                this.createParticles(100, 350, "#00ffff", 15);
-            } else {
-                this.createParticles(100, 350, "#ff0000", 10);
-                this.shake = 15;
-            }
-
-            this.player.hp -= eDmg;
-            this.log(`${this.enemy.name} hits you for ${eDmg} dmg`, "l-dmg");
-
-            if (this.player.hp <= 0) {
-                alert("SYSTEM FAILURE. RELOAD.");
-                location.reload();
-            }
-
-            this.toggleButtons(false);
-            this.updateUI();
-        }, 800);
-        
-        this.updateUI();
-    }
-
-    activateShield() {
-        if (this.state !== 'COMBAT') return;
-        if (this.player.sp < 30) { this.log("NOT ENOUGH SP!", "l-dmg"); return; }
-        
-        this.player.sp -= 30;
-        this.player.shield = 2; // на 2 хода
-        this.log("ION SHIELD ONLINE (2 TURNS)", "l-sys");
-        this.updateUI();
-        // Ход переходит к врагу? В простых RPG бафф обычно не тратит ход, либо тратит.
-        // Здесь пусть тратит ход, вызывая атаку врага
-        this.toggleButtons(true);
-        setTimeout(() => {
-            // Враг бьет, но урон будет снижен в следующей проверке?
-            // Нет, надо вызвать логику удара врага. 
-            // Для упрощения: щит активируется мгновенно, но ход не заканчивается (Free Action), либо заканчивается.
-            // Сделаем Free Action для динамики.
-            this.toggleButtons(false); 
-        }, 200);
-    }
-
-    winCombat() {
-        this.createParticles(550, 350, "#ffffff", 30); // Взрыв врага
-        
-        let loot = this.enemy.isBoss ? 200 : 30;
-        let xp = this.enemy.isBoss ? 100 : 20;
-        
-        this.player.money += loot;
-        this.player.xp += xp;
-
-        if (this.enemy.isBoss) {
-            this.log("BOSS DESTROYED. SECTOR CLEARED.", "l-loot");
-            // Дроп редкого предмета
-            this.player.inventory.push({name: "Boss Chip", scrap: 10});
-        } else {
-            this.log(`Target neutralized. +${loot} CR`, "l-loot");
-            this.bossCounter++;
-        }
-
-        // Level UP
-        if (this.player.xp >= 100) {
-            this.player.lvl++;
-            this.player.xp = 0;
-            this.player.maxHp += 20;
-            this.player.hp = this.player.maxHp;
-            this.log(`LEVEL UP! RANK: ${this.player.lvl}`, "l-sys");
-        }
-
         this.enemy = null;
         this.state = 'IDLE';
-        
-        document.getElementById('btn-explore').disabled = false;
-        document.getElementById('btn-attack').disabled = true;
-        document.getElementById('btn-deadeye').disabled = true;
-        document.getElementById('btn-shield').disabled = true;
-        
+        this.shake = 0;
+
+        this.init();
+    }
+
+    init() {
+        this.log("SYSTEM: КИБЕР-ВЕСТЕРН ЗАГРУЖЕН. УДАЧИ, ПАРТНЕР.");
+        this.loop();
         this.updateUI();
     }
 
-    // === UTILS ===
-
-    craft(item) {
-        if (item === 'heal') {
-            if (this.player.parts >= 2) {
-                this.player.parts -= 2;
-                this.player.supplies.heal++;
-                this.log("Medkit assembled.", "l-sys");
-            } else this.log("Need 2 SCRAP.", "l-dmg");
-        }
-        if (item === 'drone') {
-            if (this.player.parts >= 15) {
-                this.player.parts -= 15;
-                this.player.drone = { active: true };
-                this.log("Combat Drone ACTIVATED.", "l-sys");
-            } else this.log("Need 15 SCRAP.", "l-dmg");
-        }
-        this.updateUI();
-    }
-
-    useItem(item) {
-        if (item === 'heal') {
-            if (this.player.supplies.heal > 0) {
-                this.player.supplies.heal--;
-                this.player.hp = Math.min(this.player.maxHp, this.player.hp + 50);
-                this.log("HP Restored (+50).", "l-sys");
-            } else this.log("No Medkits!", "l-dmg");
-        }
-        this.updateUI();
-    }
-
-    toggleButtons(locked) {
-        document.getElementById('btn-attack').disabled = locked;
-        document.getElementById('btn-deadeye').disabled = locked;
-        document.getElementById('btn-shield').disabled = locked;
+    log(m, c = "#00ff41") {
+        this.logArea.innerHTML += `<div style="color:${c}">> ${m}</div>`;
+        this.logArea.scrollTop = this.logArea.scrollHeight;
     }
 
     updateUI() {
-        document.getElementById('ui-lvl').innerText = this.player.lvl;
-        document.getElementById('ui-hp').innerText = this.player.hp;
-        document.getElementById('ui-maxhp').innerText = this.player.maxHp;
-        document.getElementById('ui-sp').innerText = this.player.sp;
-        document.getElementById('ui-money').innerText = this.player.money;
-        document.getElementById('ui-parts').innerText = this.player.parts;
-        document.getElementById('btn-heal').innerText = `HEAL (${this.player.supplies.heal})`;
-
-        // Инвентарь
-        const list = document.getElementById('inv-list');
-        list.innerHTML = "";
-        this.player.inventory.forEach(i => {
-            list.innerHTML += `<div class="item-row"><span>${i.name}</span> <span style="color:#666">[ITEM]</span></div>`;
+        document.getElementById('hp').innerText = this.p.hp;
+        document.getElementById('sp').innerText = this.p.sp;
+        document.getElementById('lvl').innerText = this.p.lvl;
+        document.getElementById('scrap').innerText = this.p.scrap;
+        document.getElementById('cash').innerText = this.p.cash;
+        document.getElementById('btn-stim').innerText = `USE STIMPACK (${this.p.stims})`;
+        
+        const inv = document.getElementById('inv-list');
+        inv.innerHTML = "";
+        this.p.inv.forEach((it, i) => {
+            let rarityCls = it.rarity === 'LEGENDARY' ? 'rarity-legendary' : (it.rarity === 'RARE' ? 'rarity-rare' : 'rarity-common');
+            inv.innerHTML += `
+                <div class="item-card">
+                    <span class="${rarityCls}">${it.name}</span>
+                    ${it.type==='drone' ? `<button class="btn" style="padding:2px 5px" onclick="game.equip(${i})">EQ</button>` : ''}
+                </div>`;
         });
         
-        if (this.player.shield > 0) {
-            document.getElementById('status-effects').innerText = "SHIELD ACTIVE";
-            document.getElementById('status-effects').style.color = "#00ffff";
-        } else {
-            document.getElementById('status-effects').innerText = "NORMAL";
-            document.getElementById('status-effects').style.color = "#ffaa00";
+        if(this.p.drone) {
+            document.getElementById('active-drone').innerText = `ACTIVE: ${this.p.drone.name}`;
         }
+    }
+
+    // --- КРАФТ С ШАНСАМИ ---
+    craft(type) {
+        if(type === 'heal') {
+            if(this.p.scrap >= 2) { this.p.scrap -= 2; this.p.stims++; this.log("Скрафтил стимулятор."); }
+            else this.log("Недостаточно хлама!", "red");
+        }
+        if(type === 'drone') {
+            if(this.p.scrap >= 15) {
+                this.p.scrap -= 15;
+                let r = Math.random() * 100;
+                let d = null;
+                if(r < 10) d = { name: "MK-III EXECUTIONER", dmg: 35, rarity: 'LEGENDARY', type: 'drone' };
+                else if(r < 35) d = { name: "MK-II STALKER", dmg: 18, rarity: 'RARE', type: 'drone' };
+                else if(r < 85) d = { name: "MK-I SCRAPPY", dmg: 8, rarity: 'COMMON', type: 'drone' };
+                
+                if(d) {
+                    this.p.inv.push(d);
+                    this.log(`УСПЕХ! Собрал ${d.name}`, d.rarity === 'LEGENDARY' ? '#ff00ff' : '#00ccff');
+                } else {
+                    this.log("КРАФТ ПРОВАЛЕН. ДЕТАЛИ СГОРЕЛИ.", "red");
+                    this.shake = 10;
+                }
+            } else this.log("Нужно 15 ед. хлама!", "red");
+        }
+        this.updateUI();
+    }
+
+    equip(i) {
+        this.p.drone = this.p.inv[i];
+        this.log(`Дрон ${this.p.drone.name} выведен на орбиту.`);
+        this.updateUI();
+    }
+
+    // --- ГЕЙМПЛЕЙ ---
+    explore() {
+        if(this.state === 'COMBAT') return;
+        this.shake = 5;
+        if(Math.random() > 0.6) {
+            this.state = 'COMBAT';
+            this.enemy = { name: "ROBO-BANDIT", hp: 40 + (this.p.lvl*10), maxHp: 40 + (this.p.lvl*10), dmg: 8 + this.p.lvl };
+            this.log(`ВРАГ ОБНАРУЖЕН: ${this.enemy.name}`, "red");
+            this.toggleCombatUI(true);
+        } else {
+            let find = Math.floor(Math.random()*5)+1;
+            this.p.scrap += find;
+            this.log(`Нашел немного хлама: +${find}`);
+            if(Math.random() < 0.2) this.log("Нашел резиновую уточку... Она бесполезна, но милая.", "yellow");
+        }
+        this.updateUI();
+    }
+
+    combatStep(type) {
+        if(!this.enemy) return;
+        let dmg = 0;
+        if(type === 'atk') dmg = 10 + Math.floor(Math.random()*10);
+        if(type === 'dead') {
+            if(this.p.sp >= 40) { this.p.sp -= 40; dmg = 40 + Math.floor(Math.random()*20); this.log("DEADEYE! Точный выстрел!"); }
+            else { this.log("Мало SP!", "orange"); return; }
+        }
+
+        this.enemy.hp -= dmg;
+        if(this.p.drone) {
+            this.enemy.hp -= this.p.drone.dmg;
+            this.log(`Дрон атаковал: -${this.p.drone.dmg} HP`, "#00ccff");
+        }
+
+        if(this.enemy.hp <= 0) {
+            this.log(`ПОБЕДА! +${this.enemy.maxHp/2} XP`, "gold");
+            this.p.xp += this.enemy.maxHp/2;
+            this.p.cash += 20;
+            if(this.p.xp >= 100) { this.p.lvl++; this.p.xp = 0; this.log("LEVEL UP!", "cyan"); }
+            this.enemy = null;
+            this.state = 'IDLE';
+            this.toggleCombatUI(false);
+        } else {
+            // Ответка
+            let eDmg = Math.floor(Math.random()*this.enemy.dmg);
+            this.p.hp -= eDmg;
+            this.log(`${this.enemy.name} попал по тебе: -${eDmg} HP`, "red");
+            if(this.p.hp <= 0) { alert("ВЫ ПОГИБЛИ."); location.reload(); }
+        }
+        this.updateUI();
+    }
+
+    useHeal() {
+        if(this.p.stims > 0) { this.p.stims--; this.p.hp = Math.min(this.p.maxHp, this.p.hp + 40); this.log("Использовал стимулятор."); }
+        this.updateUI();
+    }
+
+    toggleCombatUI(on) {
+        document.getElementById('btn-atk').disabled = !on;
+        document.getElementById('btn-dead').disabled = !on;
+        document.getElementById('btn-explore').disabled = on;
+    }
+
+    // --- РЕНДЕР (ЧАСТЬ 3) ---
+    drawSprite(m, x, y, size, color) {
+        this.ctx.fillStyle = color;
+        m.forEach((row, r) => {
+            row.forEach((pixel, c) => {
+                if(pixel) this.ctx.fillRect(x + c*size, y + r*size, size, size);
+            });
+        });
+    }
+
+    loop() {
+        this.ctx.fillStyle = "#000";
+        this.ctx.fillRect(0,0,750,550);
+
+        // Тряска
+        let ox = 0, oy = 0;
+        if(this.shake > 0) { ox = Math.random()*this.shake; oy = Math.random()*this.shake; this.shake *= 0.9; }
+
+        // Рисуем ковбоя
+        this.drawSprite(Sprites.Player, 100 + ox, 300 + oy, 8, "#00ff41");
+
+        // Дрон
+        if(this.p.drone) {
+            let hover = Math.sin(Date.now()/200)*10;
+            this.drawSprite(Sprites.MK3, 60, 250 + hover, 6, "#00ccff");
+        }
+
+        // Враг
+        if(this.enemy) {
+            this.drawSprite(Sprites.Bot, 550, 320, 12, "#ff3333");
+            // HP Bar
+            this.ctx.fillStyle = "#333";
+            this.ctx.fillRect(550, 300, 100, 10);
+            this.ctx.fillStyle = "#ff3333";
+            this.ctx.fillRect(550, 300, (this.enemy.hp/this.enemy.maxHp)*100, 10);
+        }
+
+        requestAnimationFrame(() => this.loop());
     }
 }
 
-// ЗАПУСК ИГРЫ
-const game = new Engine();
-
+const game = new CyberEngine();
 </script>
 </body>
 </html>
