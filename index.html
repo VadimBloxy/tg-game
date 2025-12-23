@@ -367,7 +367,7 @@
             htmlCode += '<button onclick="document.getElementById(\'skill-menu\').style.display=\'block\'">⭐ UPGRADES</button>';
             
             if (state.level >= 8 && state.hasRailgun === false) {
-                htmlCode += '<button onclick="shop(\'railgun\')" style="color:#00bcd4;">⚡ BUY RAILGUN ($1500)</button>';
+                htmlCode += '<button onclick="shop(\'railgun\')" style="color:#00bcd4;">⚡ BUY RAILGUN ($3000)</button>';
             }
             htmlCode += '<button onclick="startHunt()" style="background:#333; color:var(--ghost)">🌙 START HUNT</button>';
         } else {
@@ -425,8 +425,8 @@ function shop(type) {
             log("You already have the Railgun!", "var(--gold)");
             return;
         }
-        if (state.gold >= 1500) {
-            state.gold = state.gold - 1500;
+        if (state.gold >= 3000) {
+            state.gold = state.gold - 3000;
             state.hasRailgun = true;
             log("EQUIPPED: ⚡ RAILGUN.", "#00bcd4");
         } else {
@@ -448,7 +448,7 @@ function shop(type) {
             if (state.ammo >= 2) { state.ammo = state.ammo - 2; damage = damage * 2.5; } 
             else { log("Not enough ammo!", "red"); return; }
         } else if (method === 'railgun') {
-            if (state.ammo >= 100) { state.ammo = state.ammo - 100; damage = 1500; } 
+            if (state.ammo >= 100) { state.ammo = state.ammo - 100; damage = 300; } 
             else { log("Need 100 ammo!", "red"); return; }
         }
 
