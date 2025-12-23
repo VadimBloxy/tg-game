@@ -58,7 +58,12 @@
             display: flex; flex-direction: column-reverse; line-height: 1.6; border-radius: 5px;
         }
 
-        .inventory { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; padding: 10px; background: #000; border-radius: 10px; }
+        .inventory { 
+            display: grid; 
+            grid-template-columns: repeat(4, 1fr); 
+            gap: 10px; padding: 10px; background: #000; border-radius: 10px; 
+            min-height: 70px;
+        }
         .inv-slot { height: 60px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; }
 
         .controls { display: grid; grid-template-columns: 1fr; gap: 10px; }
@@ -135,6 +140,7 @@
         <div class="controls">
             <button id="btn-doubleShot" onclick="learn('doubleShot')">Double Shot (1 SP)</button>
             <button id="btn-ironWill" onclick="learn('ironWill')">Iron Will (1 SP)</button>
+            <button id="btn-extraSlot" onclick="upgradeInventory()">Expand Bags (Step 1: 2 SP)</button>
             <button onclick="closeUI()" style="margin-top:20px; background:#222">BACK</button>
         </div>
     </div>
@@ -161,6 +167,7 @@
     const initialState = {
         gold: 150, ammo: 30, sanity: 0, level: 1, xp: 0, xpNext: 100, sp: 0,
         baseAtk: 30, inventory: [], enemy: null, isNight: false,
+        maxInv: 4, invLevel: 0, // Лимиты инвентаря
         companion: null, hasCursedGun: false, hasRailgun: false, gameEnded: false,
         skills: { doubleShot: false, ironWill: false }
     };
@@ -206,6 +213,24 @@
         updateDisplay();
     }
 
+    // ЛОГИКА АПГРЕЙДА ИНВЕНТАРЯ
+    function upgradeInventory() {
+        const costs = [2, 4, 8];
+        const currentCost = costs[state.invLevel];
+
+        if (state.invLevel >= 3) return;
+
+        if (state.sp >= currentCost) {
+            state.sp -= currentCost;
+            state.invLevel++;
+            state.maxInv++;
+            log(`INVENTORY EXPANDED! New limit: ${state.maxInv} slots.`, "var(--xp)");
+            updateDisplay();
+        } else {
+            log(`Need ${currentCost} SP for this expansion!`, "red");
+        }
+    }
+
     function updateDisplay() {
         if(state.gameEnded) return;
 
@@ -235,6 +260,7 @@
         const inv = document.getElementById('inventory-ui');
         if(inv) {
             inv.innerHTML = '';
+            // Отрисовка занятых слотов
             state.inventory.forEach((item, i) => {
                 const s = document.createElement('div');
                 s.className = 'inv-slot';
@@ -242,6 +268,13 @@
                 s.onclick = () => useItem(i);
                 inv.appendChild(s);
             });
+            // Отрисовка пустых слотов для наглядности
+            for(let i = state.inventory.length; i < state.maxInv; i++) {
+                const s = document.createElement('div');
+                s.className = 'inv-slot';
+                s.style.opacity = "0.2";
+                inv.appendChild(s);
+            }
         }
 
         const ez = document.getElementById('enemy-zone');
@@ -259,18 +292,28 @@
             ez.style.display = 'none';
         }
 
+        // Обновление кнопок навыков
         const dsBtn = document.getElementById('btn-doubleShot');
         const iwBtn = document.getElementById('btn-ironWill');
+        const exBtn = document.getElementById('btn-extraSlot');
         
         if(dsBtn) {
             dsBtn.innerText = state.skills.doubleShot ? "Double Shot (LEARNED)" : "Double Shot (1 SP)";
             dsBtn.disabled = state.skills.doubleShot;
-            dsBtn.style.opacity = state.skills.doubleShot ? "0.5" : "1";
         }
         if(iwBtn) {
             iwBtn.innerText = state.skills.ironWill ? "Iron Will (LEARNED)" : "Iron Will (1 SP)";
             iwBtn.disabled = state.skills.ironWill;
-            iwBtn.style.opacity = state.skills.ironWill ? "0.5" : "1";
+        }
+        if(exBtn) {
+            const costs = [2, 4, 8];
+            if (state.invLevel >= 3) {
+                exBtn.innerText = "Inventory MAXED OUT";
+                exBtn.disabled = true;
+                exBtn.style.opacity = "0.5";
+            } else {
+                exBtn.innerText = `Expand Bags (Step ${state.invLevel + 1}: ${costs[state.invLevel]} SP)`;
+            }
         }
 
         renderButtons();
@@ -381,6 +424,14 @@
     }
 
     function shop(t) {
+        // Проверка лимита инвентаря
+        if (t === 'tnt' || t === 'whiskey') {
+            if (state.inventory.length >= state.maxInv) {
+                log("Saddlebags full! Buy 'Expand Bags' upgrade.", "red");
+                return;
+            }
+        }
+
         if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 20; }
         if(t === 'tnt' && state.gold >= 50) { state.gold -= 50; state.inventory.push('tnt'); }
         if(t === 'whiskey' && state.gold >= 40) { state.gold -= 40; state.inventory.push('whiskey'); }
