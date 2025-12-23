@@ -6,15 +6,14 @@
     <title>TERMINAL GOD: DARKNET EDITION 2025</title>
     <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
-        /* CSS ПЕРЕМЕННЫЕ И ОСНОВНЫЕ СТИЛИ */
         :root {
-            --n: #00ff00;    /* Neon Green */
-            --nb: #003300;   /* Dark Green */
-            --bg: #000000;   /* Black */
-            --err: #ff0033;  /* Cyber Red */
-            --gold: #ffcc00; /* Gold */
-            --blue: #00ccff; /* Cyber Blue */
-            --purp: #cc00ff; /* Void Purple */
+            --n: #00ff00;
+            --nb: #003300;
+            --bg: #000000;
+            --err: #ff0033;
+            --gold: #ffcc00;
+            --blue: #00ccff;
+            --purp: #cc00ff;
         }
 
         * {
@@ -34,7 +33,6 @@
             height: 100vh;
         }
 
-        /* CRT И ГЛИТЧ ЭФФЕКТЫ */
         .crt::before {
             content: " ";
             display: block;
@@ -59,7 +57,6 @@
             pointer-events: none; z-index: 9998;
         }
 
-        /* ОСНОВНОЙ КОНТЕЙНЕР */
         .app {
             display: flex;
             flex-direction: column;
@@ -69,7 +66,6 @@
             position: relative;
         }
 
-        /* ВЕРХНЯЯ ПАНЕЛЬ (HUD) */
         .hud {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
@@ -87,7 +83,6 @@
         .bar-f { height: 100%; background: var(--n); width: 0%; transition: width 0.3s; }
         .bar-t { position: absolute; width: 100%; text-align: center; font-size: 5px; top: 1px; color: #fff; mix-blend-mode: difference; }
 
-        /* ИГРОВОЕ ОКНО */
         .viewport {
             flex-grow: 1;
             border: 2px solid var(--n);
@@ -106,7 +101,6 @@
 
         .screen.active { display: block; }
 
-        /* ТЕРМИНАЛ И БОССЫ */
         #log { font-size: 8px; line-height: 1.6; }
         .line { margin-bottom: 4px; border-left: 2px solid var(--nb); padding-left: 8px; animation: in 0.2s ease; }
         @keyframes in { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
@@ -119,7 +113,6 @@
         .boss-active { display: block; animation: shake 0.3s infinite; }
         @keyframes shake { 0% { margin-left: 0; } 25% { margin-left: 2px; } 50% { margin-left: 0; } 75% { margin-left: -2px; } }
 
-        /* КАРТОЧКИ ОБЪЕКТОВ */
         .card {
             border: 1px solid var(--nb);
             background: #010;
@@ -147,9 +140,8 @@
             box-shadow: 3px 3px 0 var(--nb);
         }
         .btn:active { transform: translate(2px, 2px); box-shadow: none; }
-        .btn:disabled { background: #222; color: #555; box-shadow: none; cursor: not-allowed; }
+        .btn:disabled { background: #222 !important; color: #555 !important; box-shadow: none !important; cursor: not-allowed; }
 
-        /* НАВИГАЦИЯ */
         .nav {
             display: grid;
             grid-template-columns: repeat(5, 1fr);
@@ -167,7 +159,6 @@
         }
         .nav-btn.active { background: var(--n); color: #000; }
 
-        /* ЧАСТИЦЫ И ЭФФЕКТЫ */
         .p { position: absolute; pointer-events: none; animation: p-up 0.8s ease-out forwards; font-weight: bold; z-index: 1000; }
         @keyframes p-up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px) rotate(20deg); } }
 
@@ -201,7 +192,6 @@
         </header>
 
         <main class="viewport" id="tap-zone">
-            
             <div id="s-exe" class="screen active">
                 <div id="boss-ui" class="boss-area">
                     <div style="font-size: 8px; margin-bottom: 5px;">!!! FIREWALL DETECTED !!!</div>
@@ -225,7 +215,6 @@
 
             <div id="s-dark" class="screen">
                 <h2 style="font-size: 10px; color: var(--purp); border-bottom: 1px solid; padding-bottom: 5px;">DARKNET_DEALS</h2>
-                <p style="font-size: 6px;">Cтраница обновляется только при перезагрузке системы.</p>
                 <div id="dark-list"></div>
             </div>
 
@@ -247,23 +236,13 @@
     </div>
 
     <script>
-        /* ЯДРО ИГРЫ (CORE) */
         const core = {
-            bytes: 0,
-            spd: 0,
-            pwr: 1,
-            lvl: 1,
-            exp: 0,
-            pts: 0,
-            totalClicks: 0,
-            totalEarned: 0,
-            
-            bossActive: false,
-            bossHP: 0,
-            bossMaxHP: 0,
-            bossReward: 0,
+            bytes: 0, spd: 0, pwr: 1, lvl: 1, exp: 0, pts: 0,
+            totalClicks: 0, totalEarned: 0,
+            bossActive: false, bossHP: 0, bossMaxHP: 0, bossReward: 0,
+            critChance: 0.02,
+            ownedHw: [], ownedSkills: [],
 
-            // Базы данных
             hardware: [
                 { id: 0, name: '9600-Baud Modem', cost: 15, spd: 1, pwr: 1, desc: 'Начальная скорость.' },
                 { id: 1, name: 'Coprocessor 387', cost: 120, spd: 6, pwr: 4, desc: 'Ускоряет вычисления.' },
@@ -279,15 +258,6 @@
                 { id: 3, name: 'AI Automator', cost: 5, type: 'auto', val: 1, desc: 'Авто-клики каждую секунду.' }
             ],
 
-            darkDeals: [
-                { name: 'Satoshi Drive', cost: 100000, effect: 'win', desc: 'Купить всё и сразу (Заглушка).' },
-                { name: 'Ghost Protocol', cost: 5000, effect: 'pts', val: 5, desc: 'Получить +5 очков навыков.' }
-            ],
-
-            ownedHw: [],
-            ownedSkills: [],
-            critChance: 0.02,
-
             init() {
                 this.load();
                 setInterval(() => this.loop(), 100);
@@ -296,7 +266,6 @@
             },
 
             loop() {
-                // Пассивный доход
                 let currentSpd = this.spd;
                 this.ownedSkills.forEach(sId => {
                     if(this.skills[sId].type === 'spd_mult') currentSpd *= this.skills[sId].val;
@@ -308,19 +277,18 @@
                     this.totalEarned += tick;
                 }
 
-                // Авто-клики
                 if(this.ownedSkills.includes(3)) {
-                    if(Math.random() < 0.1) this.tap({clientX: window.innerWidth/2, clientY: window.innerHeight/2, auto: true});
+                    if(Math.random() < 0.1) this.tap({auto: true});
                 }
 
                 ui.update();
+                // Постоянное обновление кнопок в активной вкладке
+                if(ui.activeTab === 'shop') ui.renderShop();
+                if(ui.activeTab === 'skill') ui.renderSkills();
             },
 
             tap(e) {
-                if (this.bossActive) {
-                    this.attackBoss(e);
-                    return;
-                }
+                if (this.bossActive) { this.attackBoss(e); return; }
 
                 let gain = this.pwr;
                 this.ownedSkills.forEach(sId => {
@@ -335,19 +303,15 @@
                 this.exp += 1;
                 this.totalClicks++;
 
-                ui.particle(e, `+${Math.floor(gain)}`, crit ? varHex('--gold') : '#fff');
+                ui.particle(e, `+${Math.floor(gain)}`, crit ? '#ffcc00' : '#fff');
                 ui.logCmd(crit);
 
                 if(this.exp >= this.lvl * 100) this.levelUp();
-                
-                // Шанс появления босса
                 if(this.totalClicks % 200 === 0) this.spawnBoss();
             },
 
             levelUp() {
-                this.exp = 0;
-                this.lvl++;
-                this.pts += 2;
+                this.exp = 0; this.lvl++; this.pts += 2;
                 ui.flash();
                 ui.logSys(`SYSTEM UPGRADE: LEVEL ${this.lvl} REACHED. +2 PTS.`);
             },
@@ -355,9 +319,8 @@
             attackBoss(e) {
                 let dmg = this.pwr * 2;
                 this.bossHP -= dmg;
-                ui.particle(e, `DMG: ${Math.floor(dmg)}`, varHex('--err'));
+                ui.particle(e, `DMG: ${Math.floor(dmg)}`, '#ff0033');
                 if(this.bossHP <= 0) this.defeatBoss();
-                ui.update();
             },
 
             spawnBoss() {
@@ -376,12 +339,11 @@
                 this.exp += 50;
                 ui.flash();
                 ui.logSys(`FIREWALL BREACHED! REWARD: ${this.bossReward}B`);
-                ui.renderAll();
             },
 
             buyHw(id) {
                 const h = this.hardware[id];
-                if(this.bytes >= h.cost) {
+                if(this.bytes >= h.cost && !this.bossActive) {
                     this.bytes -= h.cost;
                     this.spd += h.spd;
                     this.pwr += h.pwr;
@@ -393,7 +355,7 @@
 
             learnSkill(id) {
                 const s = this.skills[id];
-                if(this.pts >= s.cost && !this.ownedSkills.includes(id)) {
+                if(this.pts >= s.cost && !this.ownedSkills.includes(id) && !this.bossActive) {
                     this.pts -= s.cost;
                     this.ownedSkills.push(id);
                     if(s.type === 'crit') this.critChance += s.val;
@@ -417,19 +379,13 @@
                     this.bytes = d.b; this.spd = d.s; this.pwr = d.p; this.lvl = d.l;
                     this.exp = d.e; this.pts = d.pt; this.totalClicks = d.tc;
                     this.totalEarned = d.te || d.b; this.ownedHw = d.oh; this.ownedSkills = d.os;
-                    d.hCosts.forEach((c, i) => this.hardware[i].cost = c);
+                    if(d.hCosts) d.hCosts.forEach((c, i) => { if(this.hardware[i]) this.hardware[i].cost = c; });
                 }
             },
 
-            format() {
-                if(confirm("CONFIRM SYSTEM FORMAT? ALL DATA WILL BE LOST.")) {
-                    localStorage.clear();
-                    location.reload();
-                }
-            }
+            format() { if(confirm("FORMAT C:?")) { localStorage.clear(); location.reload(); } }
         };
 
-        /* ИНТЕРФЕЙС (UI) */
         const ui = {
             activeTab: 'exe',
             tab(t) {
@@ -439,6 +395,7 @@
                 document.getElementById(`s-${t}`).classList.add('active');
                 event.currentTarget.classList.add('active');
                 if(t === 'sys') this.renderStats();
+                this.renderAll();
             },
 
             update() {
@@ -446,7 +403,6 @@
                 document.getElementById('v-spd').innerText = core.spd.toLocaleString();
                 document.getElementById('v-lvl').innerText = core.lvl;
                 document.getElementById('v-pts').innerText = core.pts;
-
                 const xpNext = core.lvl * 100;
                 document.getElementById('f-exp').style.width = (core.exp / xpNext * 100) + '%';
                 document.getElementById('t-exp').innerText = `${core.exp} / ${xpNext} XP`;
@@ -460,13 +416,58 @@
                 }
             },
 
+            renderShop() {
+                const c = document.getElementById('shop-list');
+                const html = core.hardware.map((h, i) => `
+                    <div class="card">
+                        <div class="card-meta">
+                            <span class="card-name">${h.name}</span>
+                            <span class="card-desc">${h.desc}</span>
+                            <span class="card-price">COST: ${h.cost}B | SPD+${h.spd}</span>
+                        </div>
+                        <button class="btn" onclick="core.buyHw(${i})" ${(core.bytes < h.cost || core.bossActive) ? 'disabled' : ''}>BUY</button>
+                    </div>
+                `).join('');
+                if(c.innerHTML !== html) c.innerHTML = html;
+            },
+
+            renderSkills() {
+                const c = document.getElementById('skill-list');
+                const html = core.skills.map((s, i) => {
+                    const owned = core.ownedSkills.includes(i);
+                    return `
+                    <div class="card" style="${owned ? 'border-color: var(--blue)' : ''}">
+                        <div class="card-meta">
+                            <span class="card-name">${s.name} ${owned ? '[MAX]' : ''}</span>
+                            <span class="card-desc">${s.desc}</span>
+                            <span class="card-price" style="color: var(--blue)">COST: ${s.cost} PTS</span>
+                        </div>
+                        <button class="btn" onclick="core.learnSkill(${i})" ${(owned || core.pts < s.cost || core.bossActive) ? 'disabled' : ''}>${owned ? 'OK' : 'LRN'}</button>
+                    </div>
+                `}).join('');
+                if(c.innerHTML !== html) c.innerHTML = html;
+            },
+
+            renderDark() {
+                const c = document.getElementById('dark-list');
+                c.innerHTML = '<p style="font-size:8px; color:var(--purp)">ACCESS DENIED: UNKNOWN PROTOCOL</p>';
+            },
+
+            renderStats() {
+                document.getElementById('stat-content').innerHTML = `
+                    TOTAL_EARNED: ${Math.floor(core.totalEarned)}B<br>
+                    KEY_STROKES: ${core.totalClicks}<br>
+                    HARDWARE: ${core.ownedHw.length}<br>
+                    SKILLS: ${core.ownedSkills.length}
+                `;
+            },
+
             logCmd(crit) {
                 const l = document.getElementById('log');
-                const pool = ["TCP_HANDSHAKE", "MD5_CRACK", "PROXY_ROUTE", "GET_AUTH_TOKEN", "SQL_INJECT", "SSL_STRIP"];
                 const d = document.createElement('div');
                 d.className = 'line';
-                if(crit) d.style.color = 'var(--gold)';
-                d.innerText = `> ${pool[Math.floor(Math.random()*pool.length)]} ${crit ? '[CRIT!]' : ''}`;
+                if(crit) d.style.color = '#ffcc00';
+                d.innerText = `> ${crit ? 'CRITICAL_VULN_EXPLOITED' : 'DATA_PACKET_SENT'}`;
                 l.appendChild(d);
                 if(l.children.length > 15) l.removeChild(l.firstChild);
                 l.scrollTop = l.scrollHeight;
@@ -475,8 +476,7 @@
             logSys(m) {
                 const l = document.getElementById('log');
                 const d = document.createElement('div');
-                d.className = 'line';
-                d.style.color = 'var(--blue)';
+                d.className = 'line'; d.style.color = '#00ccff';
                 d.innerText = `[SYS]: ${m}`;
                 l.appendChild(d);
                 l.scrollTop = l.scrollHeight;
@@ -484,11 +484,9 @@
 
             particle(e, t, c) {
                 const p = document.createElement('div');
-                p.className = 'p';
-                p.innerText = t;
-                p.style.color = c;
-                p.style.left = (e.clientX || window.innerWidth/2) + 'px';
-                p.style.top = (e.clientY || window.innerHeight/2) + 'px';
+                p.className = 'p'; p.innerText = t; p.style.color = c;
+                p.style.left = (e ? (e.clientX || window.innerWidth/2) : window.innerWidth/2) + 'px';
+                p.style.top = (e ? (e.clientY || window.innerHeight/2) : window.innerHeight/2) + 'px';
                 document.body.appendChild(p);
                 setTimeout(() => p.remove(), 800);
             },
@@ -499,72 +497,9 @@
                 setTimeout(() => f.style.opacity = '0', 100);
             },
 
-            renderShop() {
-                const c = document.getElementById('shop-list');
-                c.innerHTML = core.hardware.map((h, i) => `
-                    <div class="card">
-                        <div class="card-meta">
-                            <span class="card-name">${h.name}</span>
-                            <span class="card-desc">${h.desc}</span>
-                            <span class="card-price">COST: ${h.cost}B | SPD+${h.spd}</span>
-                        </div>
-                        <button class="btn" onclick="core.buyHw(${i})" ${core.bytes < h.cost ? 'disabled' : ''}>BUY</button>
-                    </div>
-                `).join('');
-            },
-
-            renderSkills() {
-                const c = document.getElementById('skill-list');
-                c.innerHTML = core.skills.map((s, i) => {
-                    const owned = core.ownedSkills.includes(i);
-                    return `
-                    <div class="card" style="${owned ? 'border-color: var(--blue)' : ''}">
-                        <div class="card-meta">
-                            <span class="card-name">${s.name} ${owned ? '[MAX]' : ''}</span>
-                            <span class="card-desc">${s.desc}</span>
-                            <span class="card-price" style="color: var(--blue)">COST: ${s.cost} PTS</span>
-                        </div>
-                        <button class="btn" onclick="core.learnSkill(${i})" ${owned || core.pts < s.cost ? 'disabled' : ''}>${owned ? 'OK' : 'LRN'}</button>
-                    </div>
-                `}).join('');
-            },
-
-            renderDark() {
-                const c = document.getElementById('dark-list');
-                c.innerHTML = core.darkDeals.map(d => `
-                    <div class="card" style="border-color: var(--purp)">
-                        <div class="card-meta">
-                            <span class="card-name" style="color: var(--purp)">${d.name}</span>
-                            <span class="card-desc">${d.desc}</span>
-                            <span class="card-price">COST: ${d.cost}B</span>
-                        </div>
-                        <button class="btn" onclick="alert('DARKNET ERROR: ENCRYPTED')" disabled>???</button>
-                    </div>
-                `).join('');
-            },
-
-            renderStats() {
-                document.getElementById('stat-content').innerHTML = `
-                    TOTAL_BYTES_EARNED: ${Math.floor(core.totalEarned)}<br>
-                    TOTAL_KEY_STROKES: ${core.totalClicks}<br>
-                    HARDWARE_COUNT: ${core.ownedHw.length}<br>
-                    ACTIVE_EXPLOITS: ${core.ownedSkills.length}<br>
-                    TIME_SINCE_BOOT: ${Math.floor(performance.now()/1000)}s
-                `;
-            },
-
-            renderAll() {
-                this.renderShop();
-                this.renderSkills();
-                this.renderDark();
-                this.update();
-            }
+            renderAll() { this.renderShop(); this.renderSkills(); this.renderDark(); this.update(); }
         };
 
-        // Хелпер для получения цвета из CSS
-        function varHex(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
-
-        // ЗАПУСК
         document.getElementById('tap-zone').onclick = (e) => { if(ui.activeTab === 'exe') core.tap(e); };
         core.init();
     </script>
