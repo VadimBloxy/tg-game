@@ -1,482 +1,572 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GHOST HUNTER: NARRATOR EDITION</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TERMINAL GOD: DARKNET EDITION 2025</title>
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
     <style>
+        /* CSS ПЕРЕМЕННЫЕ И ОСНОВНЫЕ СТИЛИ */
         :root {
-            --gold: #ffcc00; --blood: #af0000; --ghost: #8899cc;
-            --bg: #0d0d0d; --panel: #1e1a17; --text: #d2b48c; --xp: #4caf50;
+            --n: #00ff00;    /* Neon Green */
+            --nb: #003300;   /* Dark Green */
+            --bg: #000000;   /* Black */
+            --err: #ff0033;  /* Cyber Red */
+            --gold: #ffcc00; /* Gold */
+            --blue: #00ccff; /* Cyber Blue */
+            --purp: #cc00ff; /* Void Purple */
         }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            scrollbar-width: none;
+        }
+
         body {
-            background: var(--bg); color: var(--text); font-family: 'Courier New', monospace;
-            margin: 0; padding: 0; display: flex; justify-content: center; align-items: center;
-            height: 100vh; width: 100vw; overflow: hidden;
+            margin: 0;
+            background: var(--bg);
+            color: var(--n);
+            font-family: 'Press Start 2P', cursive;
+            font-size: 10px;
+            overflow: hidden;
+            height: 100vh;
         }
-        #game-container {
-            width: 1200px; height: 800px;
-            background: var(--panel); border: 5px solid #3e2723; border-radius: 15px;
-            padding: 30px; box-sizing: border-box; box-shadow: 0 0 50px rgba(0,0,0,0.9);
-            position: relative; display: grid; grid-template-columns: 350px 1fr 350px; gap: 20px;
+
+        /* CRT И ГЛИТЧ ЭФФЕКТЫ */
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
+            z-index: 9999;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
         }
+
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
+        }
+
+        .scan {
+            position: absolute; width: 100%; height: 100px;
+            background: linear-gradient(to bottom, transparent, rgba(0, 255, 0, 0.05), transparent);
+            animation: scanline 8s linear infinite;
+            pointer-events: none; z-index: 9998;
+        }
+
+        /* ОСНОВНОЙ КОНТЕЙНЕР */
+        .app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding: 10px;
+            z-index: 10;
+            position: relative;
+        }
+
+        /* ВЕРХНЯЯ ПАНЕЛЬ (HUD) */
+        .hud {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 5px;
+            border: 3px double var(--n);
+            padding: 10px;
+            background: #010;
+            margin-bottom: 10px;
+            box-shadow: 0 0 15px var(--nb);
+        }
+
+        .hud-item { font-size: 7px; line-height: 1.5; }
+        .val { color: #fff; text-shadow: 0 0 8px var(--n); }
+        .bar-w { width: 100%; height: 8px; background: #111; border: 1px solid var(--n); margin-top: 5px; position: relative; }
+        .bar-f { height: 100%; background: var(--n); width: 0%; transition: width 0.3s; }
+        .bar-t { position: absolute; width: 100%; text-align: center; font-size: 5px; top: 1px; color: #fff; mix-blend-mode: difference; }
+
+        /* ИГРОВОЕ ОКНО */
+        .viewport {
+            flex-grow: 1;
+            border: 2px solid var(--n);
+            position: relative;
+            overflow: hidden;
+            background: rgba(0, 10, 0, 0.9);
+            box-shadow: inset 0 0 20px #000;
+        }
+
+        .screen {
+            display: none;
+            height: 100%;
+            padding: 12px;
+            overflow-y: auto;
+        }
+
+        .screen.active { display: block; }
+
+        /* ТЕРМИНАЛ И БОССЫ */
+        #log { font-size: 8px; line-height: 1.6; }
+        .line { margin-bottom: 4px; border-left: 2px solid var(--nb); padding-left: 8px; animation: in 0.2s ease; }
+        @keyframes in { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
         
-        .side-panel { display: flex; flex-direction: column; gap: 15px; }
-        .main-panel { display: flex; flex-direction: column; justify-content: space-between; position: relative; }
-
-        .header { text-align: center; border-bottom: 3px solid #3e2723; padding-bottom: 10px; grid-column: span 3; }
-        .header h1 { margin: 0; font-size: 32px; letter-spacing: 5px; color: var(--gold); }
-
-        .stats-box { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid #3e2723; }
-        .stats-box div { margin: 8px 0; font-size: 18px; }
-        
-        .bar-background { width: 100%; height: 15px; background: #222; border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid #444; }
-        #sanity-fill { width: 0%; height: 100%; background: var(--ghost); transition: 0.5s; }
-        #experience-fill { width: 0%; height: 100%; background: var(--xp); transition: 0.5s; }
-        #enemy-health-fill { width: 100%; height: 100%; background: var(--blood); transition: 0.3s; }
-
-        #enemy-zone { 
-            flex-grow: 1; display: none; flex-direction: column; align-items: center; justify-content: center;
-            border: 2px dashed var(--blood); border-radius: 20px; margin: 20px 0; background: rgba(0,0,0,0.2);
+        .boss-area {
+            background: #200; border: 2px solid var(--err);
+            padding: 10px; margin-bottom: 10px; text-align: center;
+            display: none;
         }
-        
-        #enemy-sprite { font-size: 150px; margin: 20px 0; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+        .boss-active { display: block; animation: shake 0.3s infinite; }
+        @keyframes shake { 0% { margin-left: 0; } 25% { margin-left: 2px; } 50% { margin-left: 0; } 75% { margin-left: -2px; } }
 
-        .narrator-image {
-            width: 300px; height: 300px; object-fit: contain;
-            animation: narrator-float 2s infinite alternate ease-in-out;
-            filter: drop-shadow(0 0 30px var(--gold)); border-radius: 20px;
+        /* КАРТОЧКИ ОБЪЕКТОВ */
+        .card {
+            border: 1px solid var(--nb);
+            background: #010;
+            padding: 12px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.2s;
         }
-        @keyframes narrator-float { 
-            from { transform: translateY(0) rotate(-1deg); } 
-            to { transform: translateY(-25px) rotate(1deg); } 
-        }
+        .card:hover { border-color: var(--n); background: #020; }
+        .card-meta { flex-grow: 1; }
+        .card-name { font-size: 9px; color: var(--n); margin-bottom: 5px; display: block; }
+        .card-desc { font-size: 6px; color: #7a7; line-height: 1.3; }
+        .card-price { font-size: 7px; color: var(--gold); margin-top: 5px; display: block; }
 
-        #event-log {
-            height: 400px; overflow-y: auto; background: rgba(0,0,0,0.6);
-            border-left: 5px solid var(--blood); padding: 15px; font-size: 14px;
-            display: flex; flex-direction: column-reverse; line-height: 1.6; border-radius: 5px;
+        .btn {
+            background: var(--n);
+            color: #000;
+            border: none;
+            font-family: 'Press Start 2P';
+            font-size: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            box-shadow: 3px 3px 0 var(--nb);
         }
+        .btn:active { transform: translate(2px, 2px); box-shadow: none; }
+        .btn:disabled { background: #222; color: #555; box-shadow: none; cursor: not-allowed; }
 
-        .inventory-grid { 
-            display: grid; 
-            grid-template-columns: repeat(4, 1fr); 
-            gap: 10px; padding: 10px; background: #000; border-radius: 10px; 
-            min-height: 70px;
+        /* НАВИГАЦИЯ */
+        .nav {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 4px;
+            margin-top: 10px;
         }
-        .inventory-slot { height: 60px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; }
-
-        .controls-layout { display: grid; grid-template-columns: 1fr; gap: 10px; }
-        button {
-            background: #3e2723; color: var(--text); border: 2px solid #5d4037;
-            padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold;
-            text-transform: uppercase; font-size: 14px; transition: 0.2s;
+        .nav-btn {
+            background: #000;
+            border: 1px solid var(--n);
+            color: var(--n);
+            padding: 12px 0;
+            font-family: 'Press Start 2P';
+            font-size: 6px;
+            cursor: pointer;
         }
-        button:hover { background: #5d4037; }
-        button:active { background: var(--gold); color: black; }
-        button:disabled { opacity: 0.3; cursor: default; }
+        .nav-btn.active { background: var(--n); color: #000; }
 
-        .overlay-window { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 500px; background: #121a22; border: 3px solid var(--ghost);
-            padding: 30px; z-index: 100; display: none; border-radius: 15px;
-        }
+        /* ЧАСТИЦЫ И ЭФФЕКТЫ */
+        .p { position: absolute; pointer-events: none; animation: p-up 0.8s ease-out forwards; font-weight: bold; z-index: 1000; }
+        @keyframes p-up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px) rotate(20deg); } }
 
-        #ending-screen {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: black; z-index: 2000; display: none; flex-direction: column;
-            align-items: center; justify-content: center; text-align: center;
+        .glitch-flash {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: white; opacity: 0; pointer-events: none; z-index: 9999;
         }
     </style>
 </head>
-<body>
+<body class="crt">
+    <div class="scan"></div>
+    <div id="flash" class="glitch-flash"></div>
 
-<div id="game-container">
-    <div class="header"><h1>💀 GHOST HUNTER: DEAD WEST</h1></div>
+    <div class="app">
+        <header class="hud">
+            <div class="hud-item">
+                BYTES: <span id="v-bytes" class="val">0</span><br>
+                BPS: <span id="v-spd" class="val">0</span>
+            </div>
+            <div class="hud-item" style="text-align: right;">
+                LVL: <span id="v-lvl" class="val">1</span><br>
+                PTS: <span id="v-pts" class="val">0</span>
+            </div>
+            <div class="hud-item" style="grid-column: span 2;">
+                SYSTEM INTEGRITY (XP):
+                <div class="bar-w">
+                    <div id="f-exp" class="bar-f" style="background: var(--blue);"></div>
+                    <div id="t-exp" class="bar-t">0 / 100</div>
+                </div>
+            </div>
+        </header>
 
-    <div class="side-panel">
-        <div class="stats-box">
-            <h2 style="margin:0; color:var(--gold)">HUNTER</h2>
-            <div>Gold: $<span id="display-gold">0</span></div>
-            <div>Ammo: <span id="display-ammo">0</span></div>
-            <div>Level: <span id="display-level">1</span></div>
-            <div>SP: <span id="display-skill-points">0</span></div>
-            <div id="display-weapon-name" style="color:var(--gold)">Colt .45</div>
-            <div id="display-companion-name" style="color:var(--ghost); font-size:14px;">No Companion</div>
-        </div>
-        <div class="stats-box">
-            Sanity (Mental HP)
-            <div class="bar-background"><div id="sanity-fill"></div></div>
-            Experience
-            <div class="bar-background"><div id="experience-fill"></div></div>
-        </div>
-        <h3>SADDLEBAGS</h3>
-        <div id="inventory-container" class="inventory-grid"></div>
-        <div style="display:flex; gap:10px; margin-top:10px;">
-            <button onclick="saveGame()">SAVE</button>
-            <button onclick="loadGame()">LOAD</button>
-        </div>
-    </div>
-
-    <div class="main-panel">
-        <div id="enemy-zone">
-            <div id="enemy-sprite"></div>
-            <h2 id="enemy-display-name" style="margin:0; font-size:32px;">GHOST</h2>
-            <div class="bar-background" style="width:80%; height:25px;"><div id="enemy-health-fill"></div></div>
-        </div>
-        <div id="event-log"></div>
-    </div>
-
-    <div class="side-panel">
-        <h3 style="text-align:center;">ACTIONS</h3>
-        <div id="action-buttons-container" class="controls-layout"></div>
-    </div>
-
-    <div id="skill-menu" class="overlay-window">
-        <h2 style="text-align:center; color:var(--xp)">SKILLS (SP: <span id="display-skill-points-menu">0</span>)</h2>
-        <div class="controls-layout">
-            <button id="skill-button-doubleShot" onclick="learnSkill('doubleShot')">Double Shot (1 SP)</button>
-            <button id="skill-button-ironWill" onclick="learnSkill('ironWill')">Iron Will (1 SP)</button>
-            <button id="skill-button-expandInventory" onclick="upgradeInventorySize()">Expand Bags (2 SP)</button>
-            <button onclick="closeAllMenus()" style="margin-top:20px; background:#222">BACK</button>
-        </div>
-    </div>
-</div>
-
-<div id="ending-screen">
-    <h1 style="font-size:60px; color:var(--gold)">THE STORY ENDS</h1>
-    <p id="ending-message" style="max-width:800px; font-size:24px; color:#ccc;"></p>
-    <button onclick="location.reload()" style="font-size:24px; padding:30px;">START OVER</button>
-</div>
-
-<script>
-    const NARRATOR_IMAGE_PATH = "file:///Users/vadim/Downloads/Narrator.jpg";
-
-    let gameState = {
-        gold: 150,
-        ammo: 30,
-        sanity: 0,
-        level: 1,
-        experience: 0,
-        experienceNeeded: 100,
-        skillPoints: 0,
-        baseAttackDamage: 35,
-        inventory: [],
-        activeEnemy: null,
-        isNightTime: false,
-        maxInventorySlots: 4,
-        isGameFinished: false,
-        skillsLearned: {
-            doubleShot: false,
-            ironWill: false
-        },
-        hasRailgun: false,
-        isPlayerStunned: false
-    };
-
-    function addLogMessage(message, color = "#aaa") {
-        const logContainer = document.getElementById('event-log');
-        logContainer.innerHTML = `<div style="color:${color}">> ${message}</div>` + logContainer.innerHTML;
-    }
-
-    function saveGame() {
-        const dataToSave = JSON.parse(JSON.stringify(gameState));
-        dataToSave.activeEnemy = null;
-        dataToSave.isNightTime = false;
-        localStorage.setItem('GHOST_HUNTER_SAVE_DATA', JSON.stringify(dataToSave));
-        addLogMessage("Progress recorded in the archives.", "var(--xp)");
-    }
-
-    function loadGame() {
-        const savedData = localStorage.getItem('GHOST_HUNTER_SAVE_DATA');
-        if (savedData) {
-            gameState = JSON.parse(savedData);
-            updateUserInterface();
-            addLogMessage("Progress restored.", "var(--gold)");
-        }
-    }
-
-    function updateUserInterface() {
-        if (gameState.isGameFinished) return;
-
-        document.getElementById('display-gold').innerText = gameState.gold;
-        document.getElementById('display-ammo').innerText = gameState.ammo;
-        document.getElementById('display-level').innerText = gameState.level;
-        document.getElementById('display-skill-points').innerText = gameState.skillPoints;
-        document.getElementById('display-skill-points-menu').innerText = gameState.skillPoints;
-        document.getElementById('display-weapon-name').innerText = gameState.hasRailgun ? "⚡ RAILGUN" : "COLT .45";
-        
-        document.getElementById('sanity-fill').style.width = gameState.sanity + '%';
-        document.getElementById('experience-fill').style.width = (gameState.experience / gameState.experienceNeeded * 100) + '%';
-
-        const inventoryUI = document.getElementById('inventory-container');
-        inventoryUI.innerHTML = '';
-        for (let i = 0; i < gameState.maxInventorySlots; i++) {
-            const slotElement = document.createElement('div');
-            slotElement.className = 'inventory-slot';
-            if (gameState.inventory[i]) {
-                slotElement.innerHTML = gameState.inventory[i] === 'tnt' ? '🧨' : '🥃';
-                slotElement.onclick = () => useInventoryItem(i);
-            } else {
-                slotElement.style.opacity = "0.2";
-            }
-            inventoryUI.appendChild(slotElement);
-        }
-
-        const enemyArea = document.getElementById('enemy-zone');
-        if (gameState.activeEnemy) {
-            enemyArea.style.display = 'flex';
-            document.getElementById('enemy-display-name').innerText = gameState.activeEnemy.name;
-            document.getElementById('enemy-health-fill').style.width = (gameState.activeEnemy.health / gameState.activeEnemy.maxHealth * 100) + '%';
+        <main class="viewport" id="tap-zone">
             
-            const spriteContainer = document.getElementById('enemy-sprite');
-            if (gameState.activeEnemy.name === "NARRATOR") {
-                spriteContainer.innerHTML = `<img src="${NARRATOR_IMAGE_PATH}" class="narrator-image">`;
-            } else {
-                spriteContainer.innerHTML = gameState.activeEnemy.icon;
-            }
-        } else {
-            enemyArea.style.display = 'none';
-        }
-        
-        refreshActionButtons();
-    }
+            <div id="s-exe" class="screen active">
+                <div id="boss-ui" class="boss-area">
+                    <div style="font-size: 8px; margin-bottom: 5px;">!!! FIREWALL DETECTED !!!</div>
+                    <div class="bar-w" style="border-color: var(--err);">
+                        <div id="f-boss" class="bar-f" style="background: var(--err);"></div>
+                        <div id="t-boss" class="bar-t">HP: 1000</div>
+                    </div>
+                </div>
+                <div id="log"></div>
+            </div>
 
-    function refreshActionButtons() {
-        const buttonContainer = document.getElementById('action-buttons-container');
-        let htmlContent = '';
+            <div id="s-shop" class="screen">
+                <h2 style="font-size: 10px; color: var(--gold); border-bottom: 1px solid; padding-bottom: 5px;">HARDWARE_MARKET</h2>
+                <div id="shop-list"></div>
+            </div>
 
-        if (gameState.activeEnemy) {
-            if (gameState.isPlayerStunned) {
-                htmlContent += `<button disabled style="color:red">STUNNED BY THE INK</button>`;
-                // Автоматический переход хода врага, если игрок оглушен
-                setTimeout(() => { gameState.isPlayerStunned = false; enemyTurnLogic(); }, 1000);
-            } else {
-                htmlContent += `<button onclick="processAttack('shoot')">🔥 SHOOT</button>`;
-                if (gameState.hasRailgun) {
-                    htmlContent += `<button onclick="processAttack('railgun')" style="background:#00bcd4; color:black">⚡ RAILGUN</button>`;
-                }
-                if (gameState.skillsLearned.doubleShot) {
-                    htmlContent += `<button onclick="processAttack('double')">🔥 DOUBLE SHOT</button>`;
-                }
-                htmlContent += `<button onclick="enemyTurnLogic()">🏃 DODGE</button>`;
-            }
-        } else if (!gameState.isNightTime) {
-            htmlContent += `<button onclick="openShop('ammo')">🛒 BUY AMMO ($25)</button>`;
-            htmlContent += `<button onclick="openShop('tnt')">🧨 BUY DYNAMITE ($50)</button>`;
-            htmlContent += `<button onclick="openShop('whiskey')">🥃 BUY WHISKEY ($40)</button>`;
-            htmlContent += `<button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
-            if (gameState.level >= 8 && !gameState.hasRailgun) {
-                htmlContent += `<button onclick="openShop('railgun')" style="color:#00bcd4;">⚡ RAILGUN ($3000)</button>`;
-            }
-            htmlContent += `<button onclick="startHuntingNight()" style="background:#333">🌙 START HUNT</button>`;
-        } else {
-            htmlContent += `<button onclick="scoutArea()" style="padding:30px;">🔍 SCOUT AREA</button>`;
-            htmlContent += `<button onclick="returnToSafeTown()">🏃 RETURN TO TOWN</button>`;
-        }
-        buttonContainer.innerHTML = htmlContent;
-    }
+            <div id="s-skill" class="screen">
+                <h2 style="font-size: 10px; color: var(--blue); border-bottom: 1px solid; padding-bottom: 5px;">SKILL_TREE</h2>
+                <div id="skill-list"></div>
+            </div>
 
-    function processAttack(method) {
-        if (!gameState.activeEnemy) return;
+            <div id="s-dark" class="screen">
+                <h2 style="font-size: 10px; color: var(--purp); border-bottom: 1px solid; padding-bottom: 5px;">DARKNET_DEALS</h2>
+                <p style="font-size: 6px;">Cтраница обновляется только при перезагрузке системы.</p>
+                <div id="dark-list"></div>
+            </div>
 
-        let finalDamage = gameState.baseAttackDamage + (Math.random() * 20);
+            <div id="s-sys" class="screen">
+                <h3>KERNEL_INFO</h3>
+                <div id="stat-content" style="font-size: 7px; line-height: 2;"></div>
+                <hr style="border: 1px solid var(--nb);">
+                <button class="btn" style="background: var(--err); color: #fff; width: 100%;" onclick="core.format()">FORMAT C: (RESET)</button>
+            </div>
+        </main>
 
-        if (method === 'shoot') {
-            if (gameState.ammo >= 1) {
-                gameState.ammo -= 1;
-            } else {
-                addLogMessage("No ammo left!", "red");
-                return;
-            }
-        } else if (method === 'double') {
-            if (gameState.ammo >= 2) {
-                gameState.ammo -= 2;
-                finalDamage *= 2.5;
-            } else {
-                addLogMessage("Not enough ammo!", "red");
-                return;
-            }
-        } else if (method === 'railgun') {
-            if (gameState.ammo >= 100) {
-                gameState.ammo -= 100;
-                finalDamage = 500;
-            } else {
-                addLogMessage("Railgun needs 100 ammo to fire!", "red");
-                return;
-            }
-        }
+        <nav class="nav">
+            <button class="nav-btn active" onclick="ui.tab('exe')">EXE</button>
+            <button class="nav-btn" onclick="ui.tab('shop')">SHOP</button>
+            <button class="nav-btn" onclick="ui.tab('skill')">SKL</button>
+            <button class="nav-btn" onclick="ui.tab('dark')">NET</button>
+            <button class="nav-btn" onclick="ui.tab('sys')">SYS</button>
+        </nav>
+    </div>
 
-        gameState.activeEnemy.health -= finalDamage;
-        addLogMessage(`You dealt ${Math.floor(finalDamage)} damage to the ${gameState.activeEnemy.name}.`);
-
-        if (gameState.activeEnemy.health <= 0) {
-            handleEnemyDefeat();
-        } else {
-            enemyTurnLogic();
-        }
-        updateUserInterface();
-    }
-
-    function handleEnemyDefeat() {
-        if (gameState.activeEnemy.name === "NARRATOR") {
-            showGameEnding("The author's pen is broken. You are no longer a character, you are free.");
-        } else {
-            addLogMessage("Enemy banished!");
-            gameState.gold += 80;
-            gameState.experience += 50;
-            gameState.activeEnemy = null;
-
-            if (gameState.experience >= gameState.experienceNeeded) {
-                gameState.level += 1;
-                gameState.skillPoints += 1;
-                gameState.experience = 0;
-                gameState.experienceNeeded *= 1.5;
-                addLogMessage(`LEVEL UP! You are now level ${gameState.level}`, "var(--xp)");
-            }
-        }
-    }
-
-    function enemyTurnLogic() {
-        if (!gameState.activeEnemy) return;
-
-        if (gameState.activeEnemy.name === "NARRATOR") {
-            const randomSpecialMove = Math.random();
+    <script>
+        /* ЯДРО ИГРЫ (CORE) */
+        const core = {
+            bytes: 0,
+            spd: 0,
+            pwr: 1,
+            lvl: 1,
+            exp: 0,
+            pts: 0,
+            totalClicks: 0,
+            totalEarned: 0,
             
-            if (randomSpecialMove > 0.8) {
-                addLogMessage("NARRATOR: 'This chapter needs a rewrite!' - He restores health!", "var(--gold)");
-                gameState.activeEnemy.health = Math.min(gameState.activeEnemy.maxHealth, gameState.activeEnemy.health + 250);
-            } else if (randomSpecialMove > 0.6) {
-                addLogMessage("NARRATOR: 'You are just ink on paper!' - You are stunned!", "purple");
-                gameState.isPlayerStunned = true;
-                gameState.sanity += 10;
-            } else if (randomSpecialMove > 0.4) {
-                addLogMessage("NARRATOR: 'Let's erase your resources!' - Some ammo disappeared!", "red");
-                gameState.ammo = Math.max(0, gameState.ammo - 15);
-            } else {
-                addLogMessage("The Narrator strikes your soul directly.", "var(--blood)");
-                gameState.sanity += 20;
+            bossActive: false,
+            bossHP: 0,
+            bossMaxHP: 0,
+            bossReward: 0,
+
+            // Базы данных
+            hardware: [
+                { id: 0, name: '9600-Baud Modem', cost: 15, spd: 1, pwr: 1, desc: 'Начальная скорость.' },
+                { id: 1, name: 'Coprocessor 387', cost: 120, spd: 6, pwr: 4, desc: 'Ускоряет вычисления.' },
+                { id: 2, name: 'Voodoo Graphics', cost: 750, spd: 25, pwr: 12, desc: 'Визуализация кода.' },
+                { id: 3, name: 'Fiber Optic Card', cost: 4500, spd: 120, pwr: 50, desc: 'Световая скорость.' },
+                { id: 4, name: 'Quantum Cell', cost: 25000, spd: 600, pwr: 200, desc: 'Взлом реальности.' }
+            ],
+
+            skills: [
+                { id: 0, name: 'Multi-Threading', cost: 1, type: 'spd_mult', val: 1.25, desc: '+25% к пассивному доходу.' },
+                { id: 1, name: 'Overclock Click', cost: 2, type: 'pwr_mult', val: 2.0, desc: 'Удваивает силу клика.' },
+                { id: 2, name: 'Root Exploit', cost: 3, type: 'crit', val: 0.15, desc: '+15% шанс крит-кликов (x10).' },
+                { id: 3, name: 'AI Automator', cost: 5, type: 'auto', val: 1, desc: 'Авто-клики каждую секунду.' }
+            ],
+
+            darkDeals: [
+                { name: 'Satoshi Drive', cost: 100000, effect: 'win', desc: 'Купить всё и сразу (Заглушка).' },
+                { name: 'Ghost Protocol', cost: 5000, effect: 'pts', val: 5, desc: 'Получить +5 очков навыков.' }
+            ],
+
+            ownedHw: [],
+            ownedSkills: [],
+            critChance: 0.02,
+
+            init() {
+                this.load();
+                setInterval(() => this.loop(), 100);
+                setInterval(() => this.save(), 10000);
+                ui.renderAll();
+            },
+
+            loop() {
+                // Пассивный доход
+                let currentSpd = this.spd;
+                this.ownedSkills.forEach(sId => {
+                    if(this.skills[sId].type === 'spd_mult') currentSpd *= this.skills[sId].val;
+                });
+
+                if (currentSpd > 0) {
+                    const tick = currentSpd / 10;
+                    this.bytes += tick;
+                    this.totalEarned += tick;
+                }
+
+                // Авто-клики
+                if(this.ownedSkills.includes(3)) {
+                    if(Math.random() < 0.1) this.tap({clientX: window.innerWidth/2, clientY: window.innerHeight/2, auto: true});
+                }
+
+                ui.update();
+            },
+
+            tap(e) {
+                if (this.bossActive) {
+                    this.attackBoss(e);
+                    return;
+                }
+
+                let gain = this.pwr;
+                this.ownedSkills.forEach(sId => {
+                    if(this.skills[sId].type === 'pwr_mult') gain *= this.skills[sId].val;
+                });
+
+                let crit = Math.random() < this.critChance;
+                if(crit) gain *= 10;
+
+                this.bytes += gain;
+                this.totalEarned += gain;
+                this.exp += 1;
+                this.totalClicks++;
+
+                ui.particle(e, `+${Math.floor(gain)}`, crit ? varHex('--gold') : '#fff');
+                ui.logCmd(crit);
+
+                if(this.exp >= this.lvl * 100) this.levelUp();
+                
+                // Шанс появления босса
+                if(this.totalClicks % 200 === 0) this.spawnBoss();
+            },
+
+            levelUp() {
+                this.exp = 0;
+                this.lvl++;
+                this.pts += 2;
+                ui.flash();
+                ui.logSys(`SYSTEM UPGRADE: LEVEL ${this.lvl} REACHED. +2 PTS.`);
+            },
+
+            attackBoss(e) {
+                let dmg = this.pwr * 2;
+                this.bossHP -= dmg;
+                ui.particle(e, `DMG: ${Math.floor(dmg)}`, varHex('--err'));
+                if(this.bossHP <= 0) this.defeatBoss();
+                ui.update();
+            },
+
+            spawnBoss() {
+                this.bossActive = true;
+                this.bossMaxHP = this.lvl * 500;
+                this.bossHP = this.bossMaxHP;
+                this.bossReward = this.lvl * 1000;
+                ui.logSys(`WARNING: FIREWALL DETECTED! ACCESS BLOCKED.`);
+                ui.tab('exe');
+            },
+
+            defeatBoss() {
+                this.bossActive = false;
+                this.bytes += this.bossReward;
+                this.totalEarned += this.bossReward;
+                this.exp += 50;
+                ui.flash();
+                ui.logSys(`FIREWALL BREACHED! REWARD: ${this.bossReward}B`);
+                ui.renderAll();
+            },
+
+            buyHw(id) {
+                const h = this.hardware[id];
+                if(this.bytes >= h.cost) {
+                    this.bytes -= h.cost;
+                    this.spd += h.spd;
+                    this.pwr += h.pwr;
+                    this.ownedHw.push(id);
+                    h.cost = Math.floor(h.cost * 1.55);
+                    ui.renderAll();
+                }
+            },
+
+            learnSkill(id) {
+                const s = this.skills[id];
+                if(this.pts >= s.cost && !this.ownedSkills.includes(id)) {
+                    this.pts -= s.cost;
+                    this.ownedSkills.push(id);
+                    if(s.type === 'crit') this.critChance += s.val;
+                    ui.renderAll();
+                }
+            },
+
+            save() {
+                const d = {
+                    b: this.bytes, s: this.spd, p: this.pwr, l: this.lvl, e: this.exp, pt: this.pts,
+                    tc: this.totalClicks, te: this.totalEarned, oh: this.ownedHw, os: this.ownedSkills,
+                    hCosts: this.hardware.map(h => h.cost)
+                };
+                localStorage.setItem('tg_god_save', JSON.stringify(d));
+            },
+
+            load() {
+                const s = localStorage.getItem('tg_god_save');
+                if(s) {
+                    const d = JSON.parse(s);
+                    this.bytes = d.b; this.spd = d.s; this.pwr = d.p; this.lvl = d.l;
+                    this.exp = d.e; this.pts = d.pt; this.totalClicks = d.tc;
+                    this.totalEarned = d.te || d.b; this.ownedHw = d.oh; this.ownedSkills = d.os;
+                    d.hCosts.forEach((c, i) => this.hardware[i].cost = c);
+                }
+            },
+
+            format() {
+                if(confirm("CONFIRM SYSTEM FORMAT? ALL DATA WILL BE LOST.")) {
+                    localStorage.clear();
+                    location.reload();
+                }
             }
-        } else {
-            let incomingDamage = 15 + (gameState.level * 2);
-            if (gameState.skillsLearned.ironWill) incomingDamage *= 0.6;
-            gameState.sanity += Math.floor(incomingDamage);
-            addLogMessage("The ghost haunts your thoughts.", "var(--blood)");
-        }
+        };
 
-        if (gameState.sanity >= 100) {
-            alert("Insanity has taken over. Game Over.");
-            location.reload();
-        }
-        updateUserInterface();
-    }
+        /* ИНТЕРФЕЙС (UI) */
+        const ui = {
+            activeTab: 'exe',
+            tab(t) {
+                this.activeTab = t;
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+                document.getElementById(`s-${t}`).classList.add('active');
+                event.currentTarget.classList.add('active');
+                if(t === 'sys') this.renderStats();
+            },
 
-    function scoutArea() {
-        gameState.sanity += 5;
-        // Шанс на Нарратора только с 10 уровня
-        const narratorChance = gameState.level >= 10 && Math.random() > 0.85;
+            update() {
+                document.getElementById('v-bytes').innerText = Math.floor(core.bytes).toLocaleString();
+                document.getElementById('v-spd').innerText = core.spd.toLocaleString();
+                document.getElementById('v-lvl').innerText = core.lvl;
+                document.getElementById('v-pts').innerText = core.pts;
 
-        if (narratorChance) {
-            gameState.activeEnemy = {
-                name: "NARRATOR",
-                health: 3000,
-                maxHealth: 3000
-            };
-            addLogMessage("THE AUTHOR HAS ARRIVED TO FINISH YOUR STORY!", "var(--gold)");
-        } else if (Math.random() > 0.5) {
-            let ghostHealth = 150 + (gameState.level * 30);
-            gameState.activeEnemy = {
-                name: "GHOST",
-                icon: "👻",
-                health: ghostHealth,
-                maxHealth: ghostHealth
-            };
-            addLogMessage("A shadow takes form in front of you!");
-        } else {
-            const foundGold = 40 + (gameState.level * 5);
-            gameState.gold += foundGold;
-            addLogMessage(`You searched the ruins and found ${foundGold} gold.`);
-        }
-        updateUserInterface();
-    }
+                const xpNext = core.lvl * 100;
+                document.getElementById('f-exp').style.width = (core.exp / xpNext * 100) + '%';
+                document.getElementById('t-exp').innerText = `${core.exp} / ${xpNext} XP`;
 
-    function openShop(itemType) {
-        const itemPrices = { ammo: 25, tnt: 50, whiskey: 40, railgun: 3000 };
-        
-        if (gameState.gold < itemPrices[itemType]) {
-            addLogMessage("You don't have enough gold!", "red");
-            return;
-        }
+                if(core.bossActive) {
+                    document.getElementById('boss-ui').classList.add('boss-active');
+                    document.getElementById('f-boss').style.width = (core.bossHP / core.bossMaxHP * 100) + '%';
+                    document.getElementById('t-boss').innerText = `HP: ${Math.floor(core.bossHP)}`;
+                } else {
+                    document.getElementById('boss-ui').classList.remove('boss-active');
+                }
+            },
 
-        if ((itemType === 'tnt' || itemType === 'whiskey') && gameState.inventory.length >= gameState.maxInventorySlots) {
-            addLogMessage("Your saddlebags are full!", "red");
-            return;
-        }
+            logCmd(crit) {
+                const l = document.getElementById('log');
+                const pool = ["TCP_HANDSHAKE", "MD5_CRACK", "PROXY_ROUTE", "GET_AUTH_TOKEN", "SQL_INJECT", "SSL_STRIP"];
+                const d = document.createElement('div');
+                d.className = 'line';
+                if(crit) d.style.color = 'var(--gold)';
+                d.innerText = `> ${pool[Math.floor(Math.random()*pool.length)]} ${crit ? '[CRIT!]' : ''}`;
+                l.appendChild(d);
+                if(l.children.length > 15) l.removeChild(l.firstChild);
+                l.scrollTop = l.scrollHeight;
+            },
 
-        gameState.gold -= itemPrices[itemType];
+            logSys(m) {
+                const l = document.getElementById('log');
+                const d = document.createElement('div');
+                d.className = 'line';
+                d.style.color = 'var(--blue)';
+                d.innerText = `[SYS]: ${m}`;
+                l.appendChild(d);
+                l.scrollTop = l.scrollHeight;
+            },
 
-        if (itemType === 'ammo') {
-            gameState.ammo += 20;
-            addLogMessage("Bought 20 bullets.");
-        } else if (itemType === 'railgun') {
-            gameState.hasRailgun = true;
-            addLogMessage("You now possess the experimental Railgun!", "#00bcd4");
-        } else {
-            gameState.inventory.push(itemType);
-            addLogMessage(`Purchased ${itemType}.`);
-        }
-        updateUserInterface();
-    }
+            particle(e, t, c) {
+                const p = document.createElement('div');
+                p.className = 'p';
+                p.innerText = t;
+                p.style.color = c;
+                p.style.left = (e.clientX || window.innerWidth/2) + 'px';
+                p.style.top = (e.clientY || window.innerHeight/2) + 'px';
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 800);
+            },
 
-    function useInventoryItem(index) {
-        const itemName = gameState.inventory[index];
-        if (itemName === 'tnt' && gameState.activeEnemy) {
-            gameState.activeEnemy.health -= 350;
-            addLogMessage("DYNAMITE EXPLOSION! 350 damage!", "orange");
-            if (gameState.activeEnemy.health <= 0) handleEnemyDefeat();
-        } else if (itemName === 'whiskey') {
-            gameState.sanity = Math.max(0, gameState.sanity - 40);
-            addLogMessage("The whiskey calms your mind.");
-        } else {
-            addLogMessage("Can't use that right now.");
-            return;
-        }
-        gameState.inventory.splice(index, 1);
-        updateUserInterface();
-    }
+            flash() {
+                const f = document.getElementById('flash');
+                f.style.opacity = '0.5';
+                setTimeout(() => f.style.opacity = '0', 100);
+            },
 
-    function learnSkill(skillKey) {
-        if (gameState.skillPoints >= 1 && !gameState.skillsLearned[skillKey]) {
-            gameState.skillPoints -= 1;
-            gameState.skillsLearned[skillKey] = true;
-            addLogMessage(`Mastered: ${skillKey}`, "var(--xp)");
-            updateUserInterface();
-        }
-    }
+            renderShop() {
+                const c = document.getElementById('shop-list');
+                c.innerHTML = core.hardware.map((h, i) => `
+                    <div class="card">
+                        <div class="card-meta">
+                            <span class="card-name">${h.name}</span>
+                            <span class="card-desc">${h.desc}</span>
+                            <span class="card-price">COST: ${h.cost}B | SPD+${h.spd}</span>
+                        </div>
+                        <button class="btn" onclick="core.buyHw(${i})" ${core.bytes < h.cost ? 'disabled' : ''}>BUY</button>
+                    </div>
+                `).join('');
+            },
 
-    function upgradeInventorySize() {
-        if (gameState.skillPoints >= 2) {
-            gameState.skillPoints -= 2;
-            gameState.maxInventorySlots += 1;
-            addLogMessage("Inventory expanded by 1 slot!", "var(--xp)");
-            updateUserInterface();
-        } else {
-            addLogMessage("Expansion costs 2 Skill Points!", "red");
-        }
-    }
+            renderSkills() {
+                const c = document.getElementById('skill-list');
+                c.innerHTML = core.skills.map((s, i) => {
+                    const owned = core.ownedSkills.includes(i);
+                    return `
+                    <div class="card" style="${owned ? 'border-color: var(--blue)' : ''}">
+                        <div class="card-meta">
+                            <span class="card-name">${s.name} ${owned ? '[MAX]' : ''}</span>
+                            <span class="card-desc">${s.desc}</span>
+                            <span class="card-price" style="color: var(--blue)">COST: ${s.cost} PTS</span>
+                        </div>
+                        <button class="btn" onclick="core.learnSkill(${i})" ${owned || core.pts < s.cost ? 'disabled' : ''}>${owned ? 'OK' : 'LRN'}</button>
+                    </div>
+                `}).join('');
+            },
 
-    function showGameEnding(finalText) {
-        gameState.isGameFinished = true;
-        document.getElementById('ending-screen').style.display = 'flex';
-        document.getElementById('ending-message').innerText = finalText;
-    }
+            renderDark() {
+                const c = document.getElementById('dark-list');
+                c.innerHTML = core.darkDeals.map(d => `
+                    <div class="card" style="border-color: var(--purp)">
+                        <div class="card-meta">
+                            <span class="card-name" style="color: var(--purp)">${d.name}</span>
+                            <span class="card-desc">${d.desc}</span>
+                            <span class="card-price">COST: ${d.cost}B</span>
+                        </div>
+                        <button class="btn" onclick="alert('DARKNET ERROR: ENCRYPTED')" disabled>???</button>
+                    </div>
+                `).join('');
+            },
 
-    function startHuntingNight() { gameState.isNightTime = true; updateUserInterface(); }
-    function returnToSafeTown() { gameState.isNightTime = false; gameState.sanity = 0; updateUserInterface(); }
-    function closeAllMenus() { document.querySelectorAll('.overlay-window').forEach(menu => menu.style.display = 'none'); }
+            renderStats() {
+                document.getElementById('stat-content').innerHTML = `
+                    TOTAL_BYTES_EARNED: ${Math.floor(core.totalEarned)}<br>
+                    TOTAL_KEY_STROKES: ${core.totalClicks}<br>
+                    HARDWARE_COUNT: ${core.ownedHw.length}<br>
+                    ACTIVE_EXPLOITS: ${core.ownedSkills.length}<br>
+                    TIME_SINCE_BOOT: ${Math.floor(performance.now()/1000)}s
+                `;
+            },
 
-    window.onload = loadGame;
-    updateUserInterface();
-</script>
+            renderAll() {
+                this.renderShop();
+                this.renderSkills();
+                this.renderDark();
+                this.update();
+            }
+        };
+
+        // Хелпер для получения цвета из CSS
+        function varHex(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+
+        // ЗАПУСК
+        document.getElementById('tap-zone').onclick = (e) => { if(ui.activeTab === 'exe') core.tap(e); };
+        core.init();
+    </script>
 </body>
 </html>
