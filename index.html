@@ -241,7 +241,7 @@
             totalClicks: 0, totalEarned: 0,
             bossActive: false, bossHP: 0, bossMaxHP: 0, bossReward: 0,
             critChance: 0.02,
-            ownedHw: [], ownedSkills: [],
+            ownedHw: [], ownedSkills: [], ownedDark: [],
 
             hardware: [
                 { id: 0, name: '9600-Baud Modem', cost: 15, spd: 1, pwr: 1, desc: 'Начальная скорость.' },
@@ -256,6 +256,12 @@
                 { id: 1, name: 'Overclock Click', cost: 2, type: 'pwr_mult', val: 2.0, desc: 'Удваивает силу клика.' },
                 { id: 2, name: 'Root Exploit', cost: 3, type: 'crit', val: 0.15, desc: '+15% шанс крит-кликов (x10).' },
                 { id: 3, name: 'AI Automator', cost: 5, type: 'auto', val: 1, desc: 'Авто-клики каждую секунду.' }
+            ],
+
+            darkDeals: [
+                { id: 0, name: 'Botnet Rental', cost: 50000, idle: 50, desc: 'Фармит 50 B/сек в офлайне.' },
+                { id: 1, name: 'Shadow Server', cost: 250000, idle: 300, desc: 'Офшорный сервер: 300 B/сек.' },
+                { id: 2, name: 'Neural Miner', cost: 1000000, idle: 1500, desc: 'ИИ-майнер: 1500 B/сек.' }
             ],
 
             init() {
@@ -277,14 +283,12 @@
                     this.totalEarned += tick;
                 }
 
+                // AI Automator logic
                 if(this.ownedSkills.includes(3)) {
                     if(Math.random() < 0.1) this.tap({auto: true});
                 }
 
                 ui.update();
-                // Постоянное обновление кнопок в активной вкладке
-                if(ui.activeTab === 'shop') ui.renderShop();
-                if(ui.activeTab === 'skill') ui.renderSkills();
             },
 
             tap(e) {
@@ -303,8 +307,10 @@
                 this.exp += 1;
                 this.totalClicks++;
 
-                ui.particle(e, `+${Math.floor(gain)}`, crit ? '#ffcc00' : '#fff');
-                ui.logCmd(crit);
+                if(!e.auto) {
+                    ui.particle(e, `+${Math.floor(gain)}`, crit ? '#ffcc00' : '#fff');
+                    ui.logCmd(crit);
+                }
 
                 if(this.exp >= this.lvl * 100) this.levelUp();
                 if(this.totalClicks % 200 === 0) this.spawnBoss();
@@ -314,6 +320,7 @@
                 this.exp = 0; this.lvl++; this.pts += 2;
                 ui.flash();
                 ui.logSys(`SYSTEM UPGRADE: LEVEL ${this.lvl} REACHED. +2 PTS.`);
+                ui.renderAll();
             },
 
             attackBoss(e) {
@@ -339,6 +346,7 @@
                 this.exp += 50;
                 ui.flash();
                 ui.logSys(`FIREWALL BREACHED! REWARD: ${this.bossReward}B`);
+                ui.renderAll();
             },
 
             buyHw(id) {
@@ -363,11 +371,23 @@
                 }
             },
 
+            buyDark(id) {
+                const d = this.darkDeals[id];
+                if(this.bytes >= d.cost && !this.ownedDark.includes(id)) {
+                    this.bytes -= d.cost;
+                    this.ownedDark.push(id);
+                    ui.logSys(`DARKNET: ${d.name} ACTIVATED.`);
+                    ui.renderAll();
+                }
+            },
+
             save() {
                 const d = {
                     b: this.bytes, s: this.spd, p: this.pwr, l: this.lvl, e: this.exp, pt: this.pts,
                     tc: this.totalClicks, te: this.totalEarned, oh: this.ownedHw, os: this.ownedSkills,
-                    hCosts: this.hardware.map(h => h.cost)
+                    od: this.ownedDark,
+                    hCosts: this.hardware.map(h => h.cost),
+                    ts: Date.now()
                 };
                 localStorage.setItem('tg_god_save', JSON.stringify(d));
             },
@@ -379,11 +399,27 @@
                     this.bytes = d.b; this.spd = d.s; this.pwr = d.p; this.lvl = d.l;
                     this.exp = d.e; this.pts = d.pt; this.totalClicks = d.tc;
                     this.totalEarned = d.te || d.b; this.ownedHw = d.oh; this.ownedSkills = d.os;
+                    this.ownedDark = d.od || [];
                     if(d.hCosts) d.hCosts.forEach((c, i) => { if(this.hardware[i]) this.hardware[i].cost = c; });
+
+                    // Офлайн доход
+                    if(d.ts) {
+                        const secondsAway = Math.floor((Date.now() - d.ts) / 1000);
+                        if(secondsAway > 5) {
+                            let idleRate = 0;
+                            this.ownedDark.forEach(id => idleRate += this.darkDeals[id].idle);
+                            const gained = secondsAway * idleRate;
+                            if(gained > 0) {
+                                this.bytes += gained;
+                                this.totalEarned += gained;
+                                setTimeout(() => alert(`ВРЕМЯ ОТСУТСТВИЯ: ${secondsAway}с\nВАШИ БОТНЕТЫ ДОБЫЛИ: ${Math.floor(gained)}B`), 500);
+                            }
+                        }
+                    }
                 }
             },
 
-            format() { if(confirm("FORMAT C:?")) { localStorage.clear(); location.reload(); } }
+            format() { if(confirm("FORMAT C:? Это удалит весь прогресс!")) { localStorage.clear(); location.reload(); } }
         };
 
         const ui = {
@@ -394,7 +430,6 @@
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 document.getElementById(`s-${t}`).classList.add('active');
                 event.currentTarget.classList.add('active');
-                if(t === 'sys') this.renderStats();
                 this.renderAll();
             },
 
@@ -403,6 +438,7 @@
                 document.getElementById('v-spd').innerText = core.spd.toLocaleString();
                 document.getElementById('v-lvl').innerText = core.lvl;
                 document.getElementById('v-pts').innerText = core.pts;
+                
                 const xpNext = core.lvl * 100;
                 document.getElementById('f-exp').style.width = (core.exp / xpNext * 100) + '%';
                 document.getElementById('t-exp').innerText = `${core.exp} / ${xpNext} XP`;
@@ -414,6 +450,30 @@
                 } else {
                     document.getElementById('boss-ui').classList.remove('boss-active');
                 }
+
+                // Динамическое обновление доступности кнопок без перерисовки всего списка
+                if(this.activeTab === 'shop') {
+                    document.querySelectorAll('#shop-list .btn').forEach((btn, i) => {
+                        const cost = core.hardware[i].cost;
+                        btn.disabled = (core.bytes < cost || core.bossActive);
+                    });
+                }
+                if(this.activeTab === 'skill') {
+                    document.querySelectorAll('#skill-list .btn').forEach((btn, i) => {
+                        const cost = core.skills[i].cost;
+                        const owned = core.ownedSkills.includes(i);
+                        btn.disabled = (owned || core.pts < cost || core.bossActive);
+                    });
+                }
+                if(this.activeTab === 'dark') {
+                    document.querySelectorAll('#dark-list .btn').forEach((btn, i) => {
+                        if(core.darkDeals[i]) {
+                            const cost = core.darkDeals[i].cost;
+                            const owned = core.ownedDark.includes(i);
+                            btn.disabled = (owned || core.bytes < cost);
+                        }
+                    });
+                }
             },
 
             renderShop() {
@@ -423,12 +483,12 @@
                         <div class="card-meta">
                             <span class="card-name">${h.name}</span>
                             <span class="card-desc">${h.desc}</span>
-                            <span class="card-price">COST: ${h.cost}B | SPD+${h.spd}</span>
+                            <span class="card-price">COST: ${h.cost.toLocaleString()}B | SPD+${h.spd}</span>
                         </div>
-                        <button class="btn" onclick="core.buyHw(${i})" ${(core.bytes < h.cost || core.bossActive) ? 'disabled' : ''}>BUY</button>
+                        <button class="btn" onclick="core.buyHw(${i})">BUY</button>
                     </div>
                 `).join('');
-                if(c.innerHTML !== html) c.innerHTML = html;
+                c.innerHTML = html;
             },
 
             renderSkills() {
@@ -442,23 +502,48 @@
                             <span class="card-desc">${s.desc}</span>
                             <span class="card-price" style="color: var(--blue)">COST: ${s.cost} PTS</span>
                         </div>
-                        <button class="btn" onclick="core.learnSkill(${i})" ${(owned || core.pts < s.cost || core.bossActive) ? 'disabled' : ''}>${owned ? 'OK' : 'LRN'}</button>
+                        <button class="btn" onclick="core.learnSkill(${i})">${owned ? 'OK' : 'LRN'}</button>
                     </div>
                 `}).join('');
-                if(c.innerHTML !== html) c.innerHTML = html;
+                c.innerHTML = html;
             },
 
             renderDark() {
                 const c = document.getElementById('dark-list');
-                c.innerHTML = '<p style="font-size:8px; color:var(--purp)">ACCESS DENIED: UNKNOWN PROTOCOL</p>';
+                if (core.lvl < 10) {
+                    c.innerHTML = `
+                        <div style="text-align:center; padding:30px; border:1px dashed var(--err); color:var(--err);">
+                            <p style="font-size:10px;">[!] ACCESS RESTRICTED</p>
+                            <p style="font-size:7px;">DARKNET UNLOCKS AT LVL 10</p>
+                            <p style="font-size:7px;">CURRENT LVL: ${core.lvl}</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                c.innerHTML = core.darkDeals.map((d, i) => {
+                    const owned = core.ownedDark.includes(i);
+                    return `
+                    <div class="card" style="border-color: ${owned ? 'var(--purp)' : '#333'}">
+                        <div class="card-meta">
+                            <span class="card-name" style="color:var(--purp)">${d.name} ${owned ? '[ONLINE]' : ''}</span>
+                            <span class="card-desc">${d.desc}</span>
+                            <span class="card-price">COST: ${d.cost.toLocaleString()}B | IDLE: +${d.idle}/s</span>
+                        </div>
+                        <button class="btn" style="background:var(--purp); color:#fff;" onclick="core.buyDark(${i})">
+                            ${owned ? 'ACTIVE' : 'BUY'}
+                        </button>
+                    </div>
+                `}).join('');
             },
 
             renderStats() {
                 document.getElementById('stat-content').innerHTML = `
-                    TOTAL_EARNED: ${Math.floor(core.totalEarned)}B<br>
+                    TOTAL_EARNED: ${Math.floor(core.totalEarned).toLocaleString()}B<br>
                     KEY_STROKES: ${core.totalClicks}<br>
-                    HARDWARE: ${core.ownedHw.length}<br>
-                    SKILLS: ${core.ownedSkills.length}
+                    HARDWARE_UNITS: ${core.ownedHw.length}<br>
+                    ACTIVE_SKILLS: ${core.ownedSkills.length}<br>
+                    DARKNET_NODES: ${core.ownedDark.length}
                 `;
             },
 
@@ -485,8 +570,8 @@
             particle(e, t, c) {
                 const p = document.createElement('div');
                 p.className = 'p'; p.innerText = t; p.style.color = c;
-                p.style.left = (e ? (e.clientX || window.innerWidth/2) : window.innerWidth/2) + 'px';
-                p.style.top = (e ? (e.clientY || window.innerHeight/2) : window.innerHeight/2) + 'px';
+                p.style.left = (e && e.clientX ? e.clientX : window.innerWidth/2) + 'px';
+                p.style.top = (e && e.clientY ? e.clientY : window.innerHeight/2) + 'px';
                 document.body.appendChild(p);
                 setTimeout(() => p.remove(), 800);
             },
@@ -497,10 +582,21 @@
                 setTimeout(() => f.style.opacity = '0', 100);
             },
 
-            renderAll() { this.renderShop(); this.renderSkills(); this.renderDark(); this.update(); }
+            renderAll() { 
+                this.renderShop(); 
+                this.renderSkills(); 
+                this.renderDark(); 
+                this.renderStats();
+                this.update(); 
+            }
         };
 
-        document.getElementById('tap-zone').onclick = (e) => { if(ui.activeTab === 'exe') core.tap(e); };
+        // Tap Zone Logic
+        document.getElementById('tap-zone').onclick = (e) => { 
+            if(ui.activeTab === 'exe') core.tap(e); 
+        };
+
+        // Запуск
         core.init();
     </script>
 </body>
