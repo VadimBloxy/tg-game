@@ -539,13 +539,18 @@
 }
 
             tab(t) {
-                this.activeTab = t;
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                document.getElementById(`s-${t}`).classList.add('active');
-                if(event) event.currentTarget.classList.add('active');
-                this.renderAll();
-            },
+    this.activeTab = t;
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(`s-${t}`).classList.add('active');
+    
+    // ИСПРАВЛЕНИЕ: Добавлена проверка на существование event
+    if (window.event && window.event.currentTarget) {
+        window.event.currentTarget.classList.add('active');
+    }
+    
+    this.renderAll();
+},
 
             update() {
                 document.getElementById('v-bytes').innerText = Math.floor(core.bytes).toLocaleString();
