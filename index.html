@@ -161,7 +161,7 @@
     const initialState = {
         gold: 150, ammo: 30, sanity: 0, level: 1, xp: 0, xpNext: 100, sp: 0,
         baseAtk: 30, inventory: [], enemy: null, isNight: false,
-        companion: null, hasCursedGun: false, gameEnded: false,
+        companion: null, hasCursedGun: false, hasRailgun: false, gameEnded: false,
         skills: { doubleShot: false, ironWill: false }
     };
 
@@ -206,10 +206,9 @@
         updateDisplay();
     }
 
-function updateDisplay() {
+    function updateDisplay() {
         if(state.gameEnded) return;
 
-        // 1. Статы (с проверкой на существование элементов)
         const safeSetText = (id, text) => {
             const el = document.getElementById(id);
             if(el) el.innerText = text;
@@ -220,16 +219,20 @@ function updateDisplay() {
         safeSetText('v-lvl', state.level);
         safeSetText('v-sp', state.sp);
         safeSetText('v-sp-menu', state.sp);
-        safeSetText('wpn-name', state.hasCursedGun ? "💀 SOUL EATER" : "COLT .45");
+
+        // Отображение активного оружия
+        let currentWpn = "COLT .45";
+        if (state.hasRailgun) currentWpn = "⚡ RAILGUN";
+        else if (state.hasCursedGun) currentWpn = "💀 SOUL EATER";
+        safeSetText('wpn-name', currentWpn);
+
         safeSetText('pet-name', state.companion ? `PET: ${state.companion.toUpperCase()}` : "NO COMPANION");
         
-        // 2. Бары
         const sanFill = document.getElementById('sanity-fill');
         const xpFill = document.getElementById('xp-fill');
         if(sanFill) sanFill.style.width = state.sanity + '%';
         if(xpFill) xpFill.style.width = (state.xp / state.xpNext * 100) + '%';
         
-        // 3. Инвентарь
         const inv = document.getElementById('inventory-ui');
         if(inv) {
             inv.innerHTML = '';
@@ -242,7 +245,6 @@ function updateDisplay() {
             });
         }
 
-        // 4. Враг
         const ez = document.getElementById('enemy-zone');
         const spriteCont = document.getElementById('enemy-sprite');
         if (state.enemy && ez) {
@@ -258,7 +260,6 @@ function updateDisplay() {
             ez.style.display = 'none';
         }
 
-        // 5. Кнопки навыков (Безопасное обновление)
         const dsBtn = document.getElementById('btn-doubleShot');
         const iwBtn = document.getElementById('btn-ironWill');
         
@@ -273,16 +274,17 @@ function updateDisplay() {
             iwBtn.style.opacity = state.skills.ironWill ? "0.5" : "1";
         }
 
-        renderButtons(); // Вызываем отрисовку действий
+        renderButtons();
     }
 
     function renderButtons() {
         const btns = document.getElementById('action-buttons');
-        if(!btns) return; // Если контейнера нет, выходим
+        if(!btns) return;
 
         let h = '';
         if(state.enemy) {
             h = `<button onclick="attack('shoot')">🔥 SHOOT</button>`;
+            if(state.hasRailgun) h += `<button onclick="attack('railgun')" style="background:#00bcd4; color:black">⚡ RAILGUN SHOT</button>`;
             if(state.hasCursedGun) h += `<button onclick="attack('cursed')" style="background:#4a148c">💀 SOUL BLAST</button>`;
             if(state.skills.doubleShot) h += `<button onclick="attack('double')">🔥 DOUBLE SHOT</button>`;
             h += `<button onclick="attack('dodge')">🏃 DODGE</button>`;
@@ -292,61 +294,20 @@ function updateDisplay() {
                  <button onclick="shop('whiskey')">🥃 BUY WHISKEY ($40)</button>
                  <button onclick="document.getElementById('stable-menu').style.display='block'">🐕 STABLES</button>
                  <button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
-            if(state.level >= 7 && !state.hasCursedGun) h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 SOUL EATER ($750)</button>`;
+            
+            // RAILGUN появляется на 8 уровне
+            if(state.level >= 9 && !state.hasRailgun) {
+                h += `<button onclick="shop('railgun')" style="color:#00bcd4; border-color:#00bcd4;">⚡ BUY RAILGUN ($1500)</button>`;
+            }
+            if(state.level >= 7 && !state.hasCursedGun) {
+                h += `<button onclick="shop('cursed')" style="color:var(--gold)">💀 SOUL EATER ($750)</button>`;
+            }
             h += `<button onclick="startHunt()" style="background:#333; color:var(--ghost)">🌙 START HUNT</button>`;
         } else {
             h = `<button onclick="scout()" style="padding:40px;">🔍 SCOUT AREA</button>
                  <button onclick="returnToTown()">🏃 RETURN TO TOWN (HEAL)</button>`;
         }
         btns.innerHTML = h;
-    }
-
-    function startHunt() {
-        state.isNight = true;
-        log("You entered the dark lands...");
-        updateDisplay();
-    }
-
-    function returnToTown() {
-        state.isNight = false;
-        state.sanity = 0; 
-        log("Returned to town. Restored sanity to 0%.", "var(--xp)");
-        updateDisplay();
-    }
-
-    function useItem(i) {
-        const item = state.inventory[i];
-        if(item === 'tnt' && state.enemy) {
-            state.enemy.hp -= 300;
-            log("BOOM! Massive damage!", "orange");
-            if(state.enemy.hp <= 0) state.enemy = null;
-        } else if(item === 'whiskey') {
-            state.sanity = Math.max(0, state.sanity - 35);
-            log("Drinking whiskey cleared your mind.", "var(--ghost)");
-        }
-        state.inventory.splice(i, 1);
-        updateDisplay();
-    }
-
-    function scout() {
-        state.sanity += 5;
-        if(Math.random() > 0.4) {
-            const isN = Math.random() > 0.9 && state.level >= 15;
-            if(isN) {
-                state.enemy = { name: "NARRATOR", icon: "", hp: 2100, maxHp: 2100, atk: 40 };
-                log("THE AUTHOR HAS ARRIVED.", "var(--gold)");
-            } else {
-                let h = 150 + (state.level * 20);
-                state.enemy = { name: "GHOST", icon: "👻", hp: h, maxHp: h, atk: 12 };
-                log("A restless spirit appears.");
-            }
-        } else {
-            let g = 35;
-            if(state.companion === 'raven') g += 30;
-            state.gold += g;
-            log(`Scavenged $${g}.`);
-        }
-        updateDisplay();
     }
 
     function attack(t) {
@@ -357,6 +318,16 @@ function updateDisplay() {
             if(state.ammo >= 1) { state.ammo--; } 
             else { log("Out of ammo!", "red"); return updateDisplay(); }
         } 
+        else if(t === 'railgun') {
+            if(state.ammo >= 100) {
+                state.ammo -= 100;
+                d = 1500;
+                log("RAILGUN: A supersonic slug tears through reality!", "#00bcd4");
+            } else {
+                log("Railgun needs 100 ammo!", "red");
+                return updateDisplay();
+            }
+        }
         else if(t === 'double') {
             if(state.ammo >= 2) { state.ammo -= 2; d *= 2.5; } 
             else { log("Not enough ammo!", "red"); return updateDisplay(); }
@@ -396,6 +367,100 @@ function updateDisplay() {
         updateDisplay();
     }
 
+    function enemyTurn() {
+        document.getElementById('game-container').classList.add('shake');
+        setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 200);
+        let dmg = 15 + (state.level * 2);
+        if(state.skills.ironWill) dmg *= 0.6;
+        state.sanity += Math.floor(dmg);
+
+        if(state.sanity >= 100) {
+            state.gameEnded = true;
+            localStorage.removeItem('GHOST_HUNTER_DB'); 
+            alert("The darkness took you. YOUR PROGRESS HAS BEEN WIPED.");
+            location.reload(); 
+        }
+    }
+
+    function shop(t) {
+        if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 20; }
+        if(t === 'tnt' && state.gold >= 50) { state.gold -= 50; state.inventory.push('tnt'); }
+        if(t === 'whiskey' && state.gold >= 40) { state.gold -= 40; state.inventory.push('whiskey'); }
+        if(t === 'cursed' && state.gold >= 750) { state.gold -= 750; state.hasCursedGun = true; }
+        if(t === 'railgun' && state.gold >= 1500) { state.gold -= 1500; state.hasRailgun = true; }
+        updateDisplay();
+    }
+
+    function scout() {
+        state.sanity += 5;
+        if(Math.random() > 0.4) {
+            const isN = Math.random() > 0.9 && state.level >= 15;
+            if(isN) {
+                state.enemy = { name: "NARRATOR", icon: "", hp: 2100, maxHp: 2100, atk: 40 };
+                log("THE AUTHOR HAS ARRIVED.", "var(--gold)");
+            } else {
+                let h = 150 + (state.level * 20);
+                state.enemy = { name: "GHOST", icon: "👻", hp: h, maxHp: h, atk: 12 };
+                log("A restless spirit appears.");
+            }
+        } else {
+            let g = 35;
+            if(state.companion === 'raven') g += 30;
+            state.gold += g;
+            log(`Scavenged $${g}.`);
+        }
+        updateDisplay();
+    }
+
+    function useItem(i) {
+        const item = state.inventory[i];
+        if(item === 'tnt' && state.enemy) {
+            state.enemy.hp -= 300;
+            log("BOOM! Massive damage!", "orange");
+            if(state.enemy.hp <= 0) state.enemy = null;
+        } else if(item === 'whiskey') {
+            state.sanity = Math.max(0, state.sanity - 35);
+            log("Drinking whiskey cleared your mind.", "var(--ghost)");
+        }
+        state.inventory.splice(i, 1);
+        updateDisplay();
+    }
+
+    function learn(s) {
+        if(state.sp >= 1 && !state.skills[s]) {
+            state.sp--;
+            state.skills[s] = true;
+            log(`STRENGTH INCREASED: Learned ${s}!`, "var(--xp)");
+            updateDisplay();
+        } else if(state.skills[s]) {
+            log("You already know this skill.");
+        } else {
+            log("Not enough SP!");
+        }
+    }
+
+    function startHunt() {
+        state.isNight = true;
+        log("You entered the dark lands...");
+        updateDisplay();
+    }
+
+    function returnToTown() {
+        state.isNight = false;
+        state.sanity = 0; 
+        log("Returned to town. Restored sanity to 0%.", "var(--xp)");
+        updateDisplay();
+    }
+
+    function doEnd() {
+        state.gameEnded = true;
+        document.getElementById('ending').style.display = 'flex';
+        document.getElementById('ending-msg').innerText = "You have defeated the Narrator and freed your soul from the ink. The West is finally silent.";
+    }
+
+    window.onload = load;
+    updateDisplay();
+</script>
     function enemyTurn() {
         document.getElementById('game-container').classList.add('shake');
         setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 200);
