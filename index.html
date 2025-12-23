@@ -220,7 +220,6 @@
         safeSetText('v-sp', state.sp);
         safeSetText('v-sp-menu', state.sp);
 
-        // Отображение активного оружия
         let currentWpn = "COLT .45";
         if (state.hasRailgun) currentWpn = "⚡ RAILGUN";
         else if (state.hasCursedGun) currentWpn = "💀 SOUL EATER";
@@ -295,8 +294,7 @@
                  <button onclick="document.getElementById('stable-menu').style.display='block'">🐕 STABLES</button>
                  <button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
             
-            // RAILGUN появляется на 8 уровне
-            if(state.level >= 9 && !state.hasRailgun) {
+            if(state.level >= 8 && !state.hasRailgun) {
                 h += `<button onclick="shop('railgun')" style="color:#00bcd4; border-color:#00bcd4;">⚡ BUY RAILGUN ($1500)</button>`;
             }
             if(state.level >= 7 && !state.hasCursedGun) {
@@ -450,51 +448,6 @@
         state.sanity = 0; 
         log("Returned to town. Restored sanity to 0%.", "var(--xp)");
         updateDisplay();
-    }
-
-    function doEnd() {
-        state.gameEnded = true;
-        document.getElementById('ending').style.display = 'flex';
-        document.getElementById('ending-msg').innerText = "You have defeated the Narrator and freed your soul from the ink. The West is finally silent.";
-    }
-
-    window.onload = load;
-    updateDisplay();
-</script>
-    function enemyTurn() {
-        document.getElementById('game-container').classList.add('shake');
-        setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 200);
-        let dmg = 15 + (state.level * 2);
-        if(state.skills.ironWill) dmg *= 0.6;
-        state.sanity += Math.floor(dmg);
-
-        if(state.sanity >= 100) {
-            state.gameEnded = true;
-            localStorage.removeItem('GHOST_HUNTER_DB'); 
-            alert("The darkness took you. YOUR PROGRESS HAS BEEN WIPED.");
-            location.reload(); 
-        }
-    }
-
-    function shop(t) {
-        if(t === 'ammo' && state.gold >= 25) { state.gold -= 25; state.ammo += 20; }
-        if(t === 'tnt' && state.gold >= 50) { state.gold -= 50; state.inventory.push('tnt'); }
-        if(t === 'whiskey' && state.gold >= 40) { state.gold -= 40; state.inventory.push('whiskey'); }
-        if(t === 'cursed' && state.gold >= 750) { state.gold -= 750; state.hasCursedGun = true; }
-        updateDisplay();
-    }
-
-    function learn(s) {
-        if(state.sp >= 1 && !state.skills[s]) {
-            state.sp--;
-            state.skills[s] = true;
-            log(`STRENGTH INCREASED: Learned ${s}!`, "var(--xp)");
-            updateDisplay();
-        } else if(state.skills[s]) {
-            log("You already know this skill.");
-        } else {
-            log("Not enough SP!");
-        }
     }
 
     function doEnd() {
