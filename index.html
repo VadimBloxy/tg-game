@@ -30,10 +30,10 @@
         .stats-box { background: rgba(0,0,0,0.4); padding: 15px; border-radius: 8px; border: 1px solid #3e2723; }
         .stats-box div { margin: 8px 0; font-size: 18px; }
         
-        .bar-bg { width: 100%; height: 15px; background: #222; border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid #444; }
+        .bar-background { width: 100%; height: 15px; background: #222; border-radius: 10px; margin: 10px 0; overflow: hidden; border: 1px solid #444; }
         #sanity-fill { width: 0%; height: 100%; background: var(--ghost); transition: 0.5s; }
-        #xp-fill { width: 0%; height: 100%; background: var(--xp); transition: 0.5s; }
-        #enemy-hp-fill { width: 100%; height: 100%; background: var(--blood); transition: 0.3s; }
+        #experience-fill { width: 0%; height: 100%; background: var(--xp); transition: 0.5s; }
+        #enemy-health-fill { width: 100%; height: 100%; background: var(--blood); transition: 0.3s; }
 
         #enemy-zone { 
             flex-grow: 1; display: none; flex-direction: column; align-items: center; justify-content: center;
@@ -42,7 +42,7 @@
         
         #enemy-sprite { font-size: 150px; margin: 20px 0; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
 
-        .narrator-img {
+        .narrator-image {
             width: 300px; height: 300px; object-fit: contain;
             animation: narrator-float 2s infinite alternate ease-in-out;
             filter: drop-shadow(0 0 30px var(--gold)); border-radius: 20px;
@@ -58,38 +58,35 @@
             display: flex; flex-direction: column-reverse; line-height: 1.6; border-radius: 5px;
         }
 
-        .inventory { 
+        .inventory-grid { 
             display: grid; 
             grid-template-columns: repeat(4, 1fr); 
             gap: 10px; padding: 10px; background: #000; border-radius: 10px; 
             min-height: 70px;
         }
-        .inv-slot { height: 60px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; }
+        .inventory-slot { height: 60px; border: 2px solid #444; display: flex; align-items: center; justify-content: center; font-size: 30px; cursor: pointer; }
 
-        .controls { display: grid; grid-template-columns: 1fr; gap: 10px; }
+        .controls-layout { display: grid; grid-template-columns: 1fr; gap: 10px; }
         button {
             background: #3e2723; color: var(--text); border: 2px solid #5d4037;
-            padding: 20px; border-radius: 8px; cursor: pointer; font-weight: bold;
-            text-transform: uppercase; font-size: 16px; transition: 0.2s;
+            padding: 15px; border-radius: 8px; cursor: pointer; font-weight: bold;
+            text-transform: uppercase; font-size: 14px; transition: 0.2s;
         }
         button:hover { background: #5d4037; }
         button:active { background: var(--gold); color: black; }
-        button:disabled { opacity: 0.5; cursor: default; }
+        button:disabled { opacity: 0.3; cursor: default; }
 
-        .overlay-menu { 
+        .overlay-window { 
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             width: 500px; background: #121a22; border: 3px solid var(--ghost);
             padding: 30px; z-index: 100; display: none; border-radius: 15px;
         }
 
-        #ending {
+        #ending-screen {
             position: fixed; top:0; left:0; width:100%; height:100%;
             background: black; z-index: 2000; display: none; flex-direction: column;
             align-items: center; justify-content: center; text-align: center;
         }
-
-        .shake { animation: shake 0.3s; }
-        @keyframes shake { 0%, 100% { transform: translate(0,0); } 25% { transform: translate(10px, 10px); } 50% { transform: translate(-10px, -10px); } }
     </style>
 </head>
 <body>
@@ -100,437 +97,386 @@
     <div class="side-panel">
         <div class="stats-box">
             <h2 style="margin:0; color:var(--gold)">HUNTER</h2>
-            <div>Gold: $<span id="v-gold">0</span></div>
-            <div>Ammo: <span id="v-ammo">0</span></div>
-            <div>Level: <span id="v-lvl">1</span></div>
-            <div>SP: <span id="v-sp">0</span></div>
-            <div id="wpn-name" style="color:var(--gold)">Colt .45</div>
-            <div id="pet-name" style="color:var(--ghost); font-size:14px;">No Companion</div>
+            <div>Gold: $<span id="display-gold">0</span></div>
+            <div>Ammo: <span id="display-ammo">0</span></div>
+            <div>Level: <span id="display-level">1</span></div>
+            <div>SP: <span id="display-skill-points">0</span></div>
+            <div id="display-weapon-name" style="color:var(--gold)">Colt .45</div>
+            <div id="display-companion-name" style="color:var(--ghost); font-size:14px;">No Companion</div>
         </div>
         <div class="stats-box">
             Sanity (Mental HP)
-            <div class="bar-bg"><div id="sanity-fill"></div></div>
+            <div class="bar-background"><div id="sanity-fill"></div></div>
             Experience
-            <div class="bar-bg"><div id="xp-fill"></div></div>
+            <div class="bar-background"><div id="experience-fill"></div></div>
         </div>
         <h3>SADDLEBAGS</h3>
-        <div id="inventory-ui" class="inventory"></div>
-        <div style="display:flex; gap:10px; margin-top:20px;">
-            <button onclick="save()">SAVE</button>
-            <button onclick="load()">LOAD</button>
+        <div id="inventory-container" class="inventory-grid"></div>
+        <div style="display:flex; gap:10px; margin-top:10px;">
+            <button onclick="saveGame()">SAVE</button>
+            <button onclick="loadGame()">LOAD</button>
         </div>
     </div>
 
     <div class="main-panel">
         <div id="enemy-zone">
             <div id="enemy-sprite"></div>
-            <h2 id="enemy-name" style="margin:0; font-size:32px;">GHOST</h2>
-            <div class="bar-bg" style="width:80%; height:25px;"><div id="enemy-hp-fill"></div></div>
+            <h2 id="enemy-display-name" style="margin:0; font-size:32px;">GHOST</h2>
+            <div class="bar-background" style="width:80%; height:25px;"><div id="enemy-health-fill"></div></div>
         </div>
         <div id="event-log"></div>
     </div>
 
     <div class="side-panel">
         <h3 style="text-align:center;">ACTIONS</h3>
-        <div id="action-buttons" class="controls"></div>
+        <div id="action-buttons-container" class="controls-layout"></div>
     </div>
 
-    <div id="skill-menu" class="overlay-menu">
-        <h2 style="text-align:center; color:var(--xp)">SKILLS (SP: <span id="v-sp-menu">0</span>)</h2>
-        <div class="controls">
-            <button id="btn-doubleShot" onclick="learn('doubleShot')">Double Shot (1 SP)</button>
-            <button id="btn-ironWill" onclick="learn('ironWill')">Iron Will (1 SP)</button>
-            <button id="btn-extraSlot" onclick="upgradeInventory()">Expand Bags (Step 1: 2 SP)</button>
-            <button onclick="closeUI()" style="margin-top:20px; background:#222">BACK</button>
-        </div>
-    </div>
-
-    <div id="stable-menu" class="overlay-menu">
-        <h2 style="text-align:center; color:var(--ghost)">STABLES</h2>
-        <div class="controls">
-            <button onclick="buyPet('dog')">🐕 GHOST DOG ($150)</button>
-            <button onclick="buyPet('raven')">🐦 SHADOW RAVEN ($150)</button>
-            <button onclick="closeUI()">BACK</button>
+    <div id="skill-menu" class="overlay-window">
+        <h2 style="text-align:center; color:var(--xp)">SKILLS (SP: <span id="display-skill-points-menu">0</span>)</h2>
+        <div class="controls-layout">
+            <button id="skill-button-doubleShot" onclick="learnSkill('doubleShot')">Double Shot (1 SP)</button>
+            <button id="skill-button-ironWill" onclick="learnSkill('ironWill')">Iron Will (1 SP)</button>
+            <button id="skill-button-expandInventory" onclick="upgradeInventorySize()">Expand Bags (2 SP)</button>
+            <button onclick="closeAllMenus()" style="margin-top:20px; background:#222">BACK</button>
         </div>
     </div>
 </div>
 
-<div id="ending">
+<div id="ending-screen">
     <h1 style="font-size:60px; color:var(--gold)">THE STORY ENDS</h1>
-    <p id="ending-msg" style="max-width:800px; font-size:24px; color:#ccc;"></p>
+    <p id="ending-message" style="max-width:800px; font-size:24px; color:#ccc;"></p>
     <button onclick="location.reload()" style="font-size:24px; padding:30px;">START OVER</button>
 </div>
 
 <script>
-    const NARRATOR_IMAGE_URL = "file:///Users/vadim/Downloads/Narrator.jpg";
+    const NARRATOR_IMAGE_PATH = "file:///Users/vadim/Downloads/Narrator.jpg";
 
-    const initialState = {
+    let gameState = {
         gold: 150,
         ammo: 30,
         sanity: 0,
         level: 1,
-        xp: 0,
-        xpNext: 100,
-        sp: 0,
-        baseAtk: 30,
+        experience: 0,
+        experienceNeeded: 100,
+        skillPoints: 0,
+        baseAttackDamage: 35,
         inventory: [],
-        enemy: null,
-        isNight: false,
-        maxInv: 4,
-        invLevel: 0,
-        companion: null,
-        hasCursedGun: false,
-        hasRailgun: false,
-        gameEnded: false,
-        skills: {
+        activeEnemy: null,
+        isNightTime: false,
+        maxInventorySlots: 4,
+        isGameFinished: false,
+        skillsLearned: {
             doubleShot: false,
             ironWill: false
-        }
+        },
+        hasRailgun: false,
+        isPlayerStunned: false
     };
 
-    let state = JSON.parse(JSON.stringify(initialState));
-
-    function log(msg, color = "#aaa") {
-        const el = document.getElementById('event-log');
-        el.innerHTML = `<div style="color:${color}">> ${msg}</div>` + el.innerHTML;
+    function addLogMessage(message, color = "#aaa") {
+        const logContainer = document.getElementById('event-log');
+        logContainer.innerHTML = `<div style="color:${color}">> ${message}</div>` + logContainer.innerHTML;
     }
 
-    function save() {
-        const saveState = JSON.parse(JSON.stringify(state));
-        saveState.enemy = null;
-        saveState.isNight = false;
-        localStorage.setItem('GHOST_HUNTER_DB', JSON.stringify(saveState));
-        log("DATABASE UPDATED: Progress locked in.", "var(--xp)");
+    function saveGame() {
+        const dataToSave = JSON.parse(JSON.stringify(gameState));
+        dataToSave.activeEnemy = null;
+        dataToSave.isNightTime = false;
+        localStorage.setItem('GHOST_HUNTER_SAVE_DATA', JSON.stringify(dataToSave));
+        addLogMessage("Progress recorded in the archives.", "var(--xp)");
     }
 
-    function load() {
-        const savedData = localStorage.getItem('GHOST_HUNTER_DB');
+    function loadGame() {
+        const savedData = localStorage.getItem('GHOST_HUNTER_SAVE_DATA');
         if (savedData) {
-            state = JSON.parse(savedData);
-            
-            // ПРОВЕРКА НОВЫХ ПОЛЕЙ (чтобы не было undefined)
-            if (state.invLevel === undefined) {
-                state.invLevel = 0;
-            }
-            if (state.maxInv === undefined) {
-                state.maxInv = 4;
-            }
-            
-            updateDisplay();
-            log("DATABASE LOADED: Welcome back, Hunter.", "var(--gold)");
-        } else {
-            log("No save file found in database.", "red");
+            gameState = JSON.parse(savedData);
+            updateUserInterface();
+            addLogMessage("Progress restored.", "var(--gold)");
         }
     }
 
-    function upgradeInventory() {
-        const costs = [2, 4, 8];
+    function updateUserInterface() {
+        if (gameState.isGameFinished) return;
+
+        document.getElementById('display-gold').innerText = gameState.gold;
+        document.getElementById('display-ammo').innerText = gameState.ammo;
+        document.getElementById('display-level').innerText = gameState.level;
+        document.getElementById('display-skill-points').innerText = gameState.skillPoints;
+        document.getElementById('display-skill-points-menu').innerText = gameState.skillPoints;
+        document.getElementById('display-weapon-name').innerText = gameState.hasRailgun ? "⚡ RAILGUN" : "COLT .45";
         
-        // Гарантируем, что переменные существуют
-        if (state.invLevel === undefined) { state.invLevel = 0; }
-        if (state.maxInv === undefined) { state.maxInv = 4; }
+        document.getElementById('sanity-fill').style.width = gameState.sanity + '%';
+        document.getElementById('experience-fill').style.width = (gameState.experience / gameState.experienceNeeded * 100) + '%';
 
-        // Если уже купили все 3 уровня
-        if (state.invLevel >= costs.length) {
-            log("Inventory is already at maximum capacity!", "var(--gold)");
-            return;
-        }
-
-        const currentCost = costs[state.invLevel];
-
-        if (state.sp >= currentCost) {
-            state.sp = state.sp - currentCost;
-            state.invLevel = state.invLevel + 1;
-            state.maxInv = state.maxInv + 1;
-            log("INVENTORY EXPANDED: +1 Slot added!", "var(--xp)");
-            updateDisplay();
-        } else {
-            log("Need " + currentCost + " SP for this expansion!", "red");
-        }
-    }
-
-    function updateDisplay() {
-        if (state.gameEnded === true) {
-            return;
-        }
-
-        // Обновление текстовых полей
-        document.getElementById('v-gold').innerText = state.gold;
-        document.getElementById('v-ammo').innerText = state.ammo;
-        document.getElementById('v-lvl').innerText = state.level;
-        document.getElementById('v-sp').innerText = state.sp;
-        document.getElementById('v-sp-menu').innerText = state.sp;
-
-        // Оружие
-        let weaponDisplay = "COLT .45";
-        if (state.hasRailgun === true) {
-            weaponDisplay = "⚡ RAILGUN";
-        } else if (state.hasCursedGun === true) {
-            weaponDisplay = "💀 SOUL EATER";
-        }
-        document.getElementById('wpn-name').innerText = weaponDisplay;
-
-        // Питомец
-        if (state.companion) {
-            document.getElementById('pet-name').innerText = "PET: " + state.companion.toUpperCase();
-        } else {
-            document.getElementById('pet-name').innerText = "NO COMPANION";
-        }
-        
-        // Полоски HP и XP
-        document.getElementById('sanity-fill').style.width = state.sanity + '%';
-        document.getElementById('xp-fill').style.width = (state.xp / state.xpNext * 100) + '%';
-        
-        // Инвентарь
-        const invContainer = document.getElementById('inventory-ui');
-        invContainer.innerHTML = '';
-        
-        // Рисуем занятые слоты
-        for (let i = 0; i < state.inventory.length; i++) {
-            const slot = document.createElement('div');
-            slot.className = 'inv-slot';
-            if (state.inventory[i] === 'tnt') {
-                slot.innerHTML = '🧨';
+        const inventoryUI = document.getElementById('inventory-container');
+        inventoryUI.innerHTML = '';
+        for (let i = 0; i < gameState.maxInventorySlots; i++) {
+            const slotElement = document.createElement('div');
+            slotElement.className = 'inventory-slot';
+            if (gameState.inventory[i]) {
+                slotElement.innerHTML = gameState.inventory[i] === 'tnt' ? '🧨' : '🥃';
+                slotElement.onclick = () => useInventoryItem(i);
             } else {
-                slot.innerHTML = '🥃';
+                slotElement.style.opacity = "0.2";
             }
-            slot.onclick = function() { useItem(i); };
-            invContainer.appendChild(slot);
+            inventoryUI.appendChild(slotElement);
+        }
+
+        const enemyArea = document.getElementById('enemy-zone');
+        if (gameState.activeEnemy) {
+            enemyArea.style.display = 'flex';
+            document.getElementById('enemy-display-name').innerText = gameState.activeEnemy.name;
+            document.getElementById('enemy-health-fill').style.width = (gameState.activeEnemy.health / gameState.activeEnemy.maxHealth * 100) + '%';
+            
+            const spriteContainer = document.getElementById('enemy-sprite');
+            if (gameState.activeEnemy.name === "NARRATOR") {
+                spriteContainer.innerHTML = `<img src="${NARRATOR_IMAGE_PATH}" class="narrator-image">`;
+            } else {
+                spriteContainer.innerHTML = gameState.activeEnemy.icon;
+            }
+        } else {
+            enemyArea.style.display = 'none';
         }
         
-        // Рисуем пустые слоты (до текущего лимита maxInv)
-        for (let i = state.inventory.length; i < state.maxInv; i++) {
-            const emptySlot = document.createElement('div');
-            emptySlot.className = 'inv-slot';
-            emptySlot.style.opacity = "0.2";
-            invContainer.appendChild(emptySlot);
-        }
+        refreshActionButtons();
+    }
 
-        // Враг
-        const enemyZone = document.getElementById('enemy-zone');
-        if (state.enemy) {
-            enemyZone.style.display = 'flex';
-            document.getElementById('enemy-name').innerText = state.enemy.name;
-            document.getElementById('enemy-hp-fill').style.width = (state.enemy.hp / state.enemy.maxHp * 100) + '%';
-            
-            const spriteCont = document.getElementById('enemy-sprite');
-            if (state.enemy.name === "NARRATOR") {
-                spriteCont.innerHTML = '<img src="' + NARRATOR_IMAGE_URL + '" class="narrator-img">';
+    function refreshActionButtons() {
+        const buttonContainer = document.getElementById('action-buttons-container');
+        let htmlContent = '';
+
+        if (gameState.activeEnemy) {
+            if (gameState.isPlayerStunned) {
+                htmlContent += `<button disabled style="color:red">STUNNED BY THE INK</button>`;
+                // Автоматический переход хода врага, если игрок оглушен
+                setTimeout(() => { gameState.isPlayerStunned = false; enemyTurnLogic(); }, 1000);
             } else {
-                spriteCont.innerHTML = state.enemy.icon;
+                htmlContent += `<button onclick="processAttack('shoot')">🔥 SHOOT</button>`;
+                if (gameState.hasRailgun) {
+                    htmlContent += `<button onclick="processAttack('railgun')" style="background:#00bcd4; color:black">⚡ RAILGUN</button>`;
+                }
+                if (gameState.skillsLearned.doubleShot) {
+                    htmlContent += `<button onclick="processAttack('double')">🔥 DOUBLE SHOT</button>`;
+                }
+                htmlContent += `<button onclick="enemyTurnLogic()">🏃 DODGE</button>`;
             }
+        } else if (!gameState.isNightTime) {
+            htmlContent += `<button onclick="openShop('ammo')">🛒 BUY AMMO ($25)</button>`;
+            htmlContent += `<button onclick="openShop('tnt')">🧨 BUY DYNAMITE ($50)</button>`;
+            htmlContent += `<button onclick="openShop('whiskey')">🥃 BUY WHISKEY ($40)</button>`;
+            htmlContent += `<button onclick="document.getElementById('skill-menu').style.display='block'">⭐ UPGRADES</button>`;
+            if (gameState.level >= 8 && !gameState.hasRailgun) {
+                htmlContent += `<button onclick="openShop('railgun')" style="color:#00bcd4;">⚡ RAILGUN ($3000)</button>`;
+            }
+            htmlContent += `<button onclick="startHuntingNight()" style="background:#333">🌙 START HUNT</button>`;
         } else {
-            enemyZone.style.display = 'none';
+            htmlContent += `<button onclick="scoutArea()" style="padding:30px;">🔍 SCOUT AREA</button>`;
+            htmlContent += `<button onclick="returnToSafeTown()">🏃 RETURN TO TOWN</button>`;
         }
-
-        // Кнопка апгрейда инвентаря в меню
-        const exBtn = document.getElementById('btn-extraSlot');
-        const costs = [2, 4, 8];
-        const currentLevel = state.invLevel || 0;
-
-        if (currentLevel >= 3) {
-            exBtn.innerText = "INVENTORY MAXED OUT";
-            exBtn.disabled = true;
-        } else {
-            exBtn.innerText = "Expand Bags (Step " + (currentLevel + 1) + ": " + costs[currentLevel] + " SP)";
-            exBtn.disabled = false;
-        }
-
-        // Навыки
-        document.getElementById('btn-doubleShot').disabled = state.skills.doubleShot;
-        document.getElementById('btn-ironWill').disabled = state.skills.ironWill;
-
-        renderButtons();
+        buttonContainer.innerHTML = htmlContent;
     }
 
-    function renderButtons() {
-        const btns = document.getElementById('action-buttons');
-        let htmlCode = '';
+    function processAttack(method) {
+        if (!gameState.activeEnemy) return;
 
-        if (state.enemy) {
-            htmlCode += '<button onclick="attack(\'shoot\')">🔥 SHOOT</button>';
-            if (state.hasRailgun) {
-                htmlCode += '<button onclick="attack(\'railgun\')" style="background:#00bcd4; color:black">⚡ RAILGUN SHOT</button>';
-            }
-            if (state.hasCursedGun) {
-                htmlCode += '<button onclick="attack(\'cursed\')" style="background:#4a148c">💀 SOUL BLAST</button>';
-            }
-            if (state.skills.doubleShot) {
-                htmlCode += '<button onclick="attack(\'double\')">🔥 DOUBLE SHOT</button>';
-            }
-            htmlCode += '<button onclick="attack(\'dodge\')">🏃 DODGE</button>';
-        } else if (state.isNight === false) {
-            htmlCode += '<button onclick="shop(\'ammo\')">🛒 BUY AMMO ($25)</button>';
-            htmlCode += '<button onclick="shop(\'tnt\')">🧨 BUY DYNAMITE ($50)</button>';
-            htmlCode += '<button onclick="shop(\'whiskey\')">🥃 BUY WHISKEY ($40)</button>';
-            htmlCode += '<button onclick="document.getElementById(\'stable-menu\').style.display=\'block\'">🐕 STABLES</button>';
-            htmlCode += '<button onclick="document.getElementById(\'skill-menu\').style.display=\'block\'">⭐ UPGRADES</button>';
-            
-            if (state.level >= 8 && state.hasRailgun === false) {
-                htmlCode += '<button onclick="shop(\'railgun\')" style="color:#00bcd4;">⚡ BUY RAILGUN ($3000)</button>';
-            }
-            htmlCode += '<button onclick="startHunt()" style="background:#333; color:var(--ghost)">🌙 START HUNT</button>';
-        } else {
-            htmlCode += '<button onclick="scout()" style="padding:40px;">🔍 SCOUT AREA</button>';
-            htmlCode += '<button onclick="returnToTown()">🏃 RETURN TO TOWN</button>';
-        }
-        btns.innerHTML = htmlCode;
-    }
-
-function shop(type) {
-    // 1. ПРОВЕРКА МЕСТА В ИНВЕНТАРЕ (для динамита и виски)
-    if (type === 'tnt' || type === 'whiskey') {
-        if (state.inventory.length >= state.maxInv) {
-            log("No space in saddlebags!", "red");
-            return; // Прекращаем выполнение, покупка не состоится
-        }
-    }
-
-    // 2. ПОКУПКА ПАТРОНОВ
-    if (type === 'ammo') {
-        if (state.gold >= 25) {
-            state.gold = state.gold - 25;
-            state.ammo = state.ammo + 20;
-            log("Bought 20 ammo.", "var(--text)");
-        } else {
-            log("Not enough gold for ammo!", "red");
-        }
-    } 
-
-    // 3. ПОКУПКА ДИНАМИТА
-    else if (type === 'tnt') {
-        if (state.gold >= 50) {
-            state.gold = state.gold - 50;
-            state.inventory.push('tnt');
-            log("Bought Dynamite!", "orange");
-        } else {
-            log("Not enough gold for Dynamite!", "red");
-        }
-    } 
-
-    // 4. ПОКУПКА ВИСКИ
-    else if (type === 'whiskey') {
-        if (state.gold >= 40) {
-            state.gold = state.gold - 40;
-            state.inventory.push('whiskey');
-            log("Bought Whiskey!", "var(--ghost)");
-        } else {
-            log("Not enough gold for Whiskey!", "red");
-        }
-    } 
-
-    // 5. ПОКУПКА RAILGUN (с защитой от повторной покупки)
-    else if (type === 'railgun') {
-        if (state.hasRailgun === true) {
-            log("You already have the Railgun!", "var(--gold)");
-            return;
-        }
-        if (state.gold >= 3000) {
-            state.gold = state.gold - 3000;
-            state.hasRailgun = true;
-            log("EQUIPPED: ⚡ RAILGUN.", "#00bcd4");
-        } else {
-            log("Not enough gold for Railgun!", "red");
-        }
-    }
-
-    updateDisplay();
-}
-
-    function attack(method) {
-        let damage = state.baseAtk + (Math.random() * 20);
-        if (state.companion === 'dog') { damage = damage + 20; }
+        let finalDamage = gameState.baseAttackDamage + (Math.random() * 20);
 
         if (method === 'shoot') {
-            if (state.ammo >= 1) { state.ammo = state.ammo - 1; } 
-            else { log("Out of ammo!", "red"); return; }
-        } else if (method === 'double') {
-            if (state.ammo >= 2) { state.ammo = state.ammo - 2; damage = damage * 2.5; } 
-            else { log("Not enough ammo!", "red"); return; }
-        } else if (method === 'railgun') {
-            if (state.ammo >= 100) { state.ammo = state.ammo - 100; damage = 300; } 
-            else { log("Need 100 ammo!", "red"); return; }
-        }
-
-        if (state.enemy) {
-            state.enemy.hp = state.enemy.hp - damage;
-            if (state.enemy.hp <= 0) {
-                log("Spirit banished!");
-                state.gold = state.gold + 70;
-                state.xp = state.xp + 50;
-                state.enemy = null;
-                if (state.xp >= state.xpNext) {
-                    state.level = state.level + 1;
-                    state.sp = state.sp + 1;
-                    state.xp = 0;
-                    state.xpNext = state.xpNext * 1.5;
-                }
+            if (gameState.ammo >= 1) {
+                gameState.ammo -= 1;
             } else {
-                enemyTurn();
+                addLogMessage("No ammo left!", "red");
+                return;
+            }
+        } else if (method === 'double') {
+            if (gameState.ammo >= 2) {
+                gameState.ammo -= 2;
+                finalDamage *= 2.5;
+            } else {
+                addLogMessage("Not enough ammo!", "red");
+                return;
+            }
+        } else if (method === 'railgun') {
+            if (gameState.ammo >= 100) {
+                gameState.ammo -= 100;
+                finalDamage = 500;
+            } else {
+                addLogMessage("Railgun needs 100 ammo to fire!", "red");
+                return;
             }
         }
-        updateDisplay();
+
+        gameState.activeEnemy.health -= finalDamage;
+        addLogMessage(`You dealt ${Math.floor(finalDamage)} damage to the ${gameState.activeEnemy.name}.`);
+
+        if (gameState.activeEnemy.health <= 0) {
+            handleEnemyDefeat();
+        } else {
+            enemyTurnLogic();
+        }
+        updateUserInterface();
     }
 
-    function enemyTurn() {
-        let damage = 15 + (state.level * 2);
-        if (state.skills.ironWill === true) {
-            damage = damage * 0.6;
+    function handleEnemyDefeat() {
+        if (gameState.activeEnemy.name === "NARRATOR") {
+            showGameEnding("The author's pen is broken. You are no longer a character, you are free.");
+        } else {
+            addLogMessage("Enemy banished!");
+            gameState.gold += 80;
+            gameState.experience += 50;
+            gameState.activeEnemy = null;
+
+            if (gameState.experience >= gameState.experienceNeeded) {
+                gameState.level += 1;
+                gameState.skillPoints += 1;
+                gameState.experience = 0;
+                gameState.experienceNeeded *= 1.5;
+                addLogMessage(`LEVEL UP! You are now level ${gameState.level}`, "var(--xp)");
+            }
         }
-        state.sanity = state.sanity + Math.floor(damage);
-        if (state.sanity >= 100) {
-            alert("GAME OVER. Darkness took you.");
-            state.gameEnded = true;
+    }
+
+    function enemyTurnLogic() {
+        if (!gameState.activeEnemy) return;
+
+        if (gameState.activeEnemy.name === "NARRATOR") {
+            const randomSpecialMove = Math.random();
+            
+            if (randomSpecialMove > 0.8) {
+                addLogMessage("NARRATOR: 'This chapter needs a rewrite!' - He restores health!", "var(--gold)");
+                gameState.activeEnemy.health = Math.min(gameState.activeEnemy.maxHealth, gameState.activeEnemy.health + 250);
+            } else if (randomSpecialMove > 0.6) {
+                addLogMessage("NARRATOR: 'You are just ink on paper!' - You are stunned!", "purple");
+                gameState.isPlayerStunned = true;
+                gameState.sanity += 10;
+            } else if (randomSpecialMove > 0.4) {
+                addLogMessage("NARRATOR: 'Let's erase your resources!' - Some ammo disappeared!", "red");
+                gameState.ammo = Math.max(0, gameState.ammo - 15);
+            } else {
+                addLogMessage("The Narrator strikes your soul directly.", "var(--blood)");
+                gameState.sanity += 20;
+            }
+        } else {
+            let incomingDamage = 15 + (gameState.level * 2);
+            if (gameState.skillsLearned.ironWill) incomingDamage *= 0.6;
+            gameState.sanity += Math.floor(incomingDamage);
+            addLogMessage("The ghost haunts your thoughts.", "var(--blood)");
+        }
+
+        if (gameState.sanity >= 100) {
+            alert("Insanity has taken over. Game Over.");
             location.reload();
         }
+        updateUserInterface();
     }
 
-    function useItem(index) {
-        const item = state.inventory[index];
-        if (item === 'tnt' && state.enemy) {
-            state.enemy.hp = state.enemy.hp - 300;
-            log("DYNAMITE EXPLODED!", "orange");
-            if (state.enemy.hp <= 0) { state.enemy = null; }
-        } else if (item === 'whiskey') {
-            state.sanity = state.sanity - 35;
-            if (state.sanity < 0) { state.sanity = 0; }
-            log("Whiskey calmed your nerves.");
-        }
-        state.inventory.splice(index, 1);
-        updateDisplay();
-    }
+    function scoutArea() {
+        gameState.sanity += 5;
+        // Шанс на Нарратора только с 10 уровня
+        const narratorChance = gameState.level >= 10 && Math.random() > 0.85;
 
-    function learn(skill) {
-        if (state.sp >= 1 && state.skills[skill] === false) {
-            state.sp = state.sp - 1;
-            state.skills[skill] = true;
-            log("Learned " + skill + "!", "var(--xp)");
-            updateDisplay();
-        }
-    }
-
-    function scout() {
-        state.sanity = state.sanity + 5;
-        if (Math.random() > 0.5) {
-            let hp = 150 + (state.level * 20);
-            state.enemy = { name: "GHOST", icon: "👻", hp: hp, maxHp: hp };
-            log("A spirit emerged from the fog!");
+        if (narratorChance) {
+            gameState.activeEnemy = {
+                name: "NARRATOR",
+                health: 3000,
+                maxHealth: 3000
+            };
+            addLogMessage("THE AUTHOR HAS ARRIVED TO FINISH YOUR STORY!", "var(--gold)");
+        } else if (Math.random() > 0.5) {
+            let ghostHealth = 150 + (gameState.level * 30);
+            gameState.activeEnemy = {
+                name: "GHOST",
+                icon: "👻",
+                health: ghostHealth,
+                maxHealth: ghostHealth
+            };
+            addLogMessage("A shadow takes form in front of you!");
         } else {
-            state.gold = state.gold + 40;
-            log("Found some gold coins.");
+            const foundGold = 40 + (gameState.level * 5);
+            gameState.gold += foundGold;
+            addLogMessage(`You searched the ruins and found ${foundGold} gold.`);
         }
-        updateDisplay();
+        updateUserInterface();
     }
 
-    function startHunt() { state.isNight = true; updateDisplay(); }
-    function returnToTown() { state.isNight = false; state.sanity = 0; updateDisplay(); }
-    function closeUI() { 
-        document.getElementById('skill-menu').style.display = 'none'; 
-        document.getElementById('stable-menu').style.display = 'none'; 
+    function openShop(itemType) {
+        const itemPrices = { ammo: 25, tnt: 50, whiskey: 40, railgun: 3000 };
+        
+        if (gameState.gold < itemPrices[itemType]) {
+            addLogMessage("You don't have enough gold!", "red");
+            return;
+        }
+
+        if ((itemType === 'tnt' || itemType === 'whiskey') && gameState.inventory.length >= gameState.maxInventorySlots) {
+            addLogMessage("Your saddlebags are full!", "red");
+            return;
+        }
+
+        gameState.gold -= itemPrices[itemType];
+
+        if (itemType === 'ammo') {
+            gameState.ammo += 20;
+            addLogMessage("Bought 20 bullets.");
+        } else if (itemType === 'railgun') {
+            gameState.hasRailgun = true;
+            addLogMessage("You now possess the experimental Railgun!", "#00bcd4");
+        } else {
+            gameState.inventory.push(itemType);
+            addLogMessage(`Purchased ${itemType}.`);
+        }
+        updateUserInterface();
     }
 
-    window.onload = load;
-    updateDisplay();
+    function useInventoryItem(index) {
+        const itemName = gameState.inventory[index];
+        if (itemName === 'tnt' && gameState.activeEnemy) {
+            gameState.activeEnemy.health -= 350;
+            addLogMessage("DYNAMITE EXPLOSION! 350 damage!", "orange");
+            if (gameState.activeEnemy.health <= 0) handleEnemyDefeat();
+        } else if (itemName === 'whiskey') {
+            gameState.sanity = Math.max(0, gameState.sanity - 40);
+            addLogMessage("The whiskey calms your mind.");
+        } else {
+            addLogMessage("Can't use that right now.");
+            return;
+        }
+        gameState.inventory.splice(index, 1);
+        updateUserInterface();
+    }
+
+    function learnSkill(skillKey) {
+        if (gameState.skillPoints >= 1 && !gameState.skillsLearned[skillKey]) {
+            gameState.skillPoints -= 1;
+            gameState.skillsLearned[skillKey] = true;
+            addLogMessage(`Mastered: ${skillKey}`, "var(--xp)");
+            updateUserInterface();
+        }
+    }
+
+    function upgradeInventorySize() {
+        if (gameState.skillPoints >= 2) {
+            gameState.skillPoints -= 2;
+            gameState.maxInventorySlots += 1;
+            addLogMessage("Inventory expanded by 1 slot!", "var(--xp)");
+            updateUserInterface();
+        } else {
+            addLogMessage("Expansion costs 2 Skill Points!", "red");
+        }
+    }
+
+    function showGameEnding(finalText) {
+        gameState.isGameFinished = true;
+        document.getElementById('ending-screen').style.display = 'flex';
+        document.getElementById('ending-message').innerText = finalText;
+    }
+
+    function startHuntingNight() { gameState.isNightTime = true; updateUserInterface(); }
+    function returnToSafeTown() { gameState.isNightTime = false; gameState.sanity = 0; updateUserInterface(); }
+    function closeAllMenus() { document.querySelectorAll('.overlay-window').forEach(menu => menu.style.display = 'none'); }
+
+    window.onload = loadGame;
+    updateUserInterface();
 </script>
 </body>
 </html>
