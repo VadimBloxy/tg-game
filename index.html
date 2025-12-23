@@ -424,7 +424,7 @@
 
             failRival() {
                 this.rivalActive = false;
-                const loss = Math.floor(this.bytes * 0.1);
+                const loss = Math.floor(this.bytes * 0.5);
                 this.bytes -= loss;
                 ui.logSys(`BREACH! HACKER STOLE ${loss}B`);
                 ui.renderAll();
