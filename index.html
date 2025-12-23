@@ -506,23 +506,37 @@
             activeTab: 'exe',
 
             enableFS() {
-    // Пытаемся вызвать метод Telegram для расширения окна
+    // 1. Сначала работаем с SDK Telegram
     if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.expand(); // Разворачивает окно на весь экран в ТГ
-        this.logSys("TG_WEBAPP: EXPANDED");
+        try {
+            window.Telegram.WebApp.ready(); // Сообщаем, что приложение готово
+            window.Telegram.WebApp.expand(); // Растягиваем на максимум
+            
+            // Настройка цветов интерфейса ТГ под ваш стиль
+            window.Telegram.WebApp.setHeaderColor('#000000');
+            window.Telegram.WebApp.setBackgroundColor('#000000');
+            
+            this.logSys("TG_SDK: EXPANDED & READY");
+        } catch (e) {
+            console.error("TG SDK Error", e);
+        }
     }
 
-    // Стандартный Fullscreen (на случай, если открыли через браузер)
-    const doc = document.documentElement;
-    try {
-        if (doc.requestFullscreen) doc.requestFullscreen();
-        else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
-    } catch (err) {
-        console.log("Fullscreen blocked by host");
+    // 2. Стандартный Fullscreen (только если мы НЕ в Telegram)
+    if (!window.Telegram || !window.Telegram.WebApp.initData) {
+        const doc = document.documentElement;
+        try {
+            if (doc.requestFullscreen) doc.requestFullscreen();
+            else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
+        } catch (err) {
+            this.logSys("FS: BLOCKED BY BROWSER");
+        }
     }
 
-    document.getElementById('fs-overlay').remove();
-},
+    // 3. Убираем оверлай в любом случае
+    const overlay = document.getElementById('fs-overlay');
+    if (overlay) overlay.remove();
+}
 
             tab(t) {
                 this.activeTab = t;
