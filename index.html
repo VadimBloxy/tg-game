@@ -105,12 +105,13 @@
         .line { margin-bottom: 4px; border-left: 2px solid var(--nb); padding-left: 8px; animation: in 0.2s ease; }
         @keyframes in { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
         
-        .boss-area {
-            background: #200; border: 2px solid var(--err);
+        .event-area {
             padding: 10px; margin-bottom: 10px; text-align: center;
-            display: none;
+            display: none; border: 2px solid;
         }
-        .boss-active { display: block; animation: shake 0.3s infinite; }
+        .boss-active { display: block; background: #200; border-color: var(--err); animation: shake 0.3s infinite; }
+        .rival-active { display: block; background: #220; border-color: var(--gold); }
+        
         @keyframes shake { 0% { margin-left: 0; } 25% { margin-left: 2px; } 50% { margin-left: 0; } 75% { margin-left: -2px; } }
 
         .card {
@@ -159,7 +160,7 @@
         }
         .nav-btn.active { background: var(--n); color: #000; }
 
-        .p { position: absolute; pointer-events: none; animation: p-up 0.8s ease-out forwards; font-weight: bold; z-index: 1000; }
+        .p { position: absolute; pointer-events: none; animation: p-up 0.8s ease-out forwards; font-weight: bold; z-index: 1000; text-shadow: 0 0 5px #000; }
         @keyframes p-up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px) rotate(20deg); } }
 
         .glitch-flash {
@@ -193,13 +194,23 @@
 
         <main class="viewport" id="tap-zone">
             <div id="s-exe" class="screen active">
-                <div id="boss-ui" class="boss-area">
+                <div id="boss-ui" class="event-area">
                     <div style="font-size: 8px; margin-bottom: 5px;">!!! FIREWALL DETECTED !!!</div>
                     <div class="bar-w" style="border-color: var(--err);">
                         <div id="f-boss" class="bar-f" style="background: var(--err);"></div>
                         <div id="t-boss" class="bar-t">HP: 1000</div>
                     </div>
                 </div>
+                
+                <div id="rival-ui" class="event-area">
+                    <div style="font-size: 8px; margin-bottom: 5px; color: var(--gold);">[!] INTRUSION_DETECTED [!]</div>
+                    <div style="font-size: 6px; margin-bottom: 5px;">HACKER STEALING DATA...</div>
+                    <div class="bar-w" style="border-color: var(--gold);">
+                        <div id="f-rival" class="bar-f" style="background: var(--gold);"></div>
+                        <div id="t-rival" class="bar-t">CLOSE PORTS: 15</div>
+                    </div>
+                </div>
+
                 <div id="log"></div>
             </div>
 
@@ -240,6 +251,7 @@
             bytes: 0, spd: 0, pwr: 1, lvl: 1, exp: 0, pts: 0,
             totalClicks: 0, totalEarned: 0,
             bossActive: false, bossHP: 0, bossMaxHP: 0, bossReward: 0,
+            rivalActive: false, rivalClicks: 0, rivalTimer: 0,
             critChance: 0.02,
             ownedHw: [], ownedSkills: [], ownedDark: [],
 
@@ -255,13 +267,15 @@
                 { id: 0, name: 'Multi-Threading', cost: 1, type: 'spd_mult', val: 1.25, desc: '+25% к пассивному доходу.' },
                 { id: 1, name: 'Overclock Click', cost: 2, type: 'pwr_mult', val: 2.0, desc: 'Удваивает силу клика.' },
                 { id: 2, name: 'Root Exploit', cost: 3, type: 'crit', val: 0.15, desc: '+15% шанс крит-кликов (x10).' },
-                { id: 3, name: 'AI Automator', cost: 5, type: 'auto', val: 1, desc: 'Авто-клики каждую секунду.' }
+                { id: 3, name: 'AI Automator', cost: 5, type: 'auto', val: 1, desc: 'Авто-клики каждую секунду.' },
+                { id: 4, name: 'Kernel Overdrive', cost: 5, type: 'lvl_boost', val: 2, desc: 'За каждый LVL: +2 к силе клика.' }
             ],
 
             darkDeals: [
                 { id: 0, name: 'Botnet Rental', cost: 50000, idle: 50, desc: 'Фармит 50 B/сек в офлайне.' },
-                { id: 1, name: 'Shadow Server', cost: 250000, idle: 300, desc: 'Офшорный сервер: 300 B/сек.' },
-                { id: 2, name: 'Neural Miner', cost: 1000000, idle: 1500, desc: 'ИИ-майнер: 1500 B/сек.' }
+                { id: 1, name: 'VPN Tunnel', cost: 100000, idle: 0, desc: 'Снижает частоту атак в 2 раза.' },
+                { id: 2, name: 'Shadow Server', cost: 250000, idle: 300, desc: 'Офшорный сервер: 300 B/сек.' },
+                { id: 3, name: 'Neural Miner', cost: 1000000, idle: 1500, desc: 'ИИ-майнер: 1500 B/сек.' }
             ],
 
             init() {
@@ -283,9 +297,13 @@
                     this.totalEarned += tick;
                 }
 
-                // AI Automator logic
                 if(this.ownedSkills.includes(3)) {
                     if(Math.random() < 0.1) this.tap({auto: true});
+                }
+
+                if(this.rivalActive) {
+                    this.rivalTimer -= 0.1;
+                    if(this.rivalTimer <= 0) this.failRival();
                 }
 
                 ui.update();
@@ -293,11 +311,17 @@
 
             tap(e) {
                 if (this.bossActive) { this.attackBoss(e); return; }
+                if (this.rivalActive) { this.attackRival(e); return; }
 
                 let gain = this.pwr;
                 this.ownedSkills.forEach(sId => {
                     if(this.skills[sId].type === 'pwr_mult') gain *= this.skills[sId].val;
                 });
+
+                // Применяем Kernel Overdrive
+                if(this.ownedSkills.includes(4)) {
+                    gain += (this.lvl * 2);
+                }
 
                 let crit = Math.random() < this.critChance;
                 if(crit) gain *= 10;
@@ -313,7 +337,12 @@
                 }
 
                 if(this.exp >= this.lvl * 100) this.levelUp();
-                if(this.totalClicks % 200 === 0) this.spawnBoss();
+                
+                // Проверка на события (VPN сокращает шанс)
+                let eventTrigger = this.ownedDark.includes(1) ? 400 : 200;
+                if(this.totalClicks % eventTrigger === 0) {
+                    Math.random() > 0.5 ? this.spawnBoss() : this.spawnRival();
+                }
             },
 
             levelUp() {
@@ -321,13 +350,6 @@
                 ui.flash();
                 ui.logSys(`SYSTEM UPGRADE: LEVEL ${this.lvl} REACHED. +2 PTS.`);
                 ui.renderAll();
-            },
-
-            attackBoss(e) {
-                let dmg = this.pwr * 2;
-                this.bossHP -= dmg;
-                ui.particle(e, `DMG: ${Math.floor(dmg)}`, '#ff0033');
-                if(this.bossHP <= 0) this.defeatBoss();
             },
 
             spawnBoss() {
@@ -339,6 +361,14 @@
                 ui.tab('exe');
             },
 
+            attackBoss(e) {
+                let dmg = this.pwr * 2;
+                if(this.ownedSkills.includes(4)) dmg += (this.lvl * 2);
+                this.bossHP -= dmg;
+                ui.particle(e, `DMG: ${Math.floor(dmg)}`, '#ff0033');
+                if(this.bossHP <= 0) this.defeatBoss();
+            },
+
             defeatBoss() {
                 this.bossActive = false;
                 this.bytes += this.bossReward;
@@ -346,6 +376,34 @@
                 this.exp += 50;
                 ui.flash();
                 ui.logSys(`FIREWALL BREACHED! REWARD: ${this.bossReward}B`);
+                ui.renderAll();
+            },
+
+            spawnRival() {
+                this.rivalActive = true;
+                this.rivalClicks = 15;
+                this.rivalTimer = 10;
+                ui.logSys(`ALERT: INTRUSION DETECTED! HACKER FOUND.`);
+                ui.tab('exe');
+            },
+
+            attackRival(e) {
+                this.rivalClicks--;
+                ui.particle(e, 'PORT_CLOSED', '#ffcc00');
+                if(this.rivalClicks <= 0) {
+                    this.rivalActive = false;
+                    const reward = this.lvl * 500;
+                    this.bytes += reward;
+                    ui.logSys("RIVAL REPELLED! DATA SECURED.");
+                    ui.renderAll();
+                }
+            },
+
+            failRival() {
+                this.rivalActive = false;
+                const loss = Math.floor(this.bytes * 0.1);
+                this.bytes -= loss;
+                ui.logSys(`BREACH! HACKER STOLE ${loss}B`);
                 ui.renderAll();
             },
 
@@ -402,7 +460,6 @@
                     this.ownedDark = d.od || [];
                     if(d.hCosts) d.hCosts.forEach((c, i) => { if(this.hardware[i]) this.hardware[i].cost = c; });
 
-                    // Офлайн доход
                     if(d.ts) {
                         const secondsAway = Math.floor((Date.now() - d.ts) / 1000);
                         if(secondsAway > 5) {
@@ -429,7 +486,7 @@
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 document.getElementById(`s-${t}`).classList.add('active');
-                event.currentTarget.classList.add('active');
+                if(event) event.currentTarget.classList.add('active');
                 this.renderAll();
             },
 
@@ -451,26 +508,28 @@
                     document.getElementById('boss-ui').classList.remove('boss-active');
                 }
 
-                // Динамическое обновление доступности кнопок без перерисовки всего списка
+                if(core.rivalActive) {
+                    document.getElementById('rival-ui').classList.add('rival-active');
+                    document.getElementById('f-rival').style.width = (core.rivalTimer / 10 * 100) + '%';
+                    document.getElementById('t-rival').innerText = `PORTS: ${core.rivalClicks} | ${core.rivalTimer.toFixed(1)}s`;
+                } else {
+                    document.getElementById('rival-ui').classList.remove('rival-active');
+                }
+
                 if(this.activeTab === 'shop') {
                     document.querySelectorAll('#shop-list .btn').forEach((btn, i) => {
-                        const cost = core.hardware[i].cost;
-                        btn.disabled = (core.bytes < cost || core.bossActive);
+                        btn.disabled = (core.bytes < core.hardware[i].cost || core.bossActive);
                     });
                 }
                 if(this.activeTab === 'skill') {
                     document.querySelectorAll('#skill-list .btn').forEach((btn, i) => {
-                        const cost = core.skills[i].cost;
-                        const owned = core.ownedSkills.includes(i);
-                        btn.disabled = (owned || core.pts < cost || core.bossActive);
+                        btn.disabled = (core.ownedSkills.includes(i) || core.pts < core.skills[i].cost || core.bossActive);
                     });
                 }
                 if(this.activeTab === 'dark') {
                     document.querySelectorAll('#dark-list .btn').forEach((btn, i) => {
                         if(core.darkDeals[i]) {
-                            const cost = core.darkDeals[i].cost;
-                            const owned = core.ownedDark.includes(i);
-                            btn.disabled = (owned || core.bytes < cost);
+                            btn.disabled = (core.ownedDark.includes(i) || core.bytes < core.darkDeals[i].cost);
                         }
                     });
                 }
@@ -478,7 +537,7 @@
 
             renderShop() {
                 const c = document.getElementById('shop-list');
-                const html = core.hardware.map((h, i) => `
+                c.innerHTML = core.hardware.map((h, i) => `
                     <div class="card">
                         <div class="card-meta">
                             <span class="card-name">${h.name}</span>
@@ -488,12 +547,11 @@
                         <button class="btn" onclick="core.buyHw(${i})">BUY</button>
                     </div>
                 `).join('');
-                c.innerHTML = html;
             },
 
             renderSkills() {
                 const c = document.getElementById('skill-list');
-                const html = core.skills.map((s, i) => {
+                c.innerHTML = core.skills.map((s, i) => {
                     const owned = core.ownedSkills.includes(i);
                     return `
                     <div class="card" style="${owned ? 'border-color: var(--blue)' : ''}">
@@ -505,22 +563,14 @@
                         <button class="btn" onclick="core.learnSkill(${i})">${owned ? 'OK' : 'LRN'}</button>
                     </div>
                 `}).join('');
-                c.innerHTML = html;
             },
 
             renderDark() {
                 const c = document.getElementById('dark-list');
                 if (core.lvl < 10) {
-                    c.innerHTML = `
-                        <div style="text-align:center; padding:30px; border:1px dashed var(--err); color:var(--err);">
-                            <p style="font-size:10px;">[!] ACCESS RESTRICTED</p>
-                            <p style="font-size:7px;">DARKNET UNLOCKS AT LVL 10</p>
-                            <p style="font-size:7px;">CURRENT LVL: ${core.lvl}</p>
-                        </div>
-                    `;
+                    c.innerHTML = `<div style="text-align:center; padding:30px; border:1px dashed var(--err); color:var(--err);">[!] DARKNET UNLOCKS AT LVL 10</div>`;
                     return;
                 }
-
                 c.innerHTML = core.darkDeals.map((d, i) => {
                     const owned = core.ownedDark.includes(i);
                     return `
@@ -530,9 +580,7 @@
                             <span class="card-desc">${d.desc}</span>
                             <span class="card-price">COST: ${d.cost.toLocaleString()}B | IDLE: +${d.idle}/s</span>
                         </div>
-                        <button class="btn" style="background:var(--purp); color:#fff;" onclick="core.buyDark(${i})">
-                            ${owned ? 'ACTIVE' : 'BUY'}
-                        </button>
+                        <button class="btn" style="background:var(--purp); color:#fff;" onclick="core.buyDark(${i})">${owned ? 'ACTIVE' : 'BUY'}</button>
                     </div>
                 `}).join('');
             },
@@ -591,12 +639,10 @@
             }
         };
 
-        // Tap Zone Logic
         document.getElementById('tap-zone').onclick = (e) => { 
             if(ui.activeTab === 'exe') core.tap(e); 
         };
 
-        // Запуск
         core.init();
     </script>
 </body>
