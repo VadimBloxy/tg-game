@@ -377,29 +377,65 @@
         btns.innerHTML = htmlCode;
     }
 
-    function shop(type) {
-        if (type === 'tnt' || type === 'whiskey') {
-            if (state.inventory.length >= state.maxInv) {
-                log("No space in saddlebags!", "red");
-                return;
-            }
+function shop(type) {
+    // 1. ПРОВЕРКА МЕСТА В ИНВЕНТАРЕ (для динамита и виски)
+    if (type === 'tnt' || type === 'whiskey') {
+        if (state.inventory.length >= state.maxInv) {
+            log("No space in saddlebags!", "red");
+            return; // Прекращаем выполнение, покупка не состоится
         }
+    }
 
-        if (type === 'ammo' && state.gold >= 25) {
+    // 2. ПОКУПКА ПАТРОНОВ
+    if (type === 'ammo') {
+        if (state.gold >= 25) {
             state.gold = state.gold - 25;
             state.ammo = state.ammo + 20;
-        } else if (type === 'tnt' && state.gold >= 50) {
+            log("Bought 20 ammo.", "var(--text)");
+        } else {
+            log("Not enough gold for ammo!", "red");
+        }
+    } 
+
+    // 3. ПОКУПКА ДИНАМИТА
+    else if (type === 'tnt') {
+        if (state.gold >= 50) {
             state.gold = state.gold - 50;
             state.inventory.push('tnt');
-        } else if (type === 'whiskey' && state.gold >= 40) {
+            log("Bought Dynamite!", "orange");
+        } else {
+            log("Not enough gold for Dynamite!", "red");
+        }
+    } 
+
+    // 4. ПОКУПКА ВИСКИ
+    else if (type === 'whiskey') {
+        if (state.gold >= 40) {
             state.gold = state.gold - 40;
             state.inventory.push('whiskey');
-        } else if (type === 'railgun' && state.gold >= 1500) {
+            log("Bought Whiskey!", "var(--ghost)");
+        } else {
+            log("Not enough gold for Whiskey!", "red");
+        }
+    } 
+
+    // 5. ПОКУПКА RAILGUN (с защитой от повторной покупки)
+    else if (type === 'railgun') {
+        if (state.hasRailgun === true) {
+            log("You already have the Railgun!", "var(--gold)");
+            return;
+        }
+        if (state.gold >= 1500) {
             state.gold = state.gold - 1500;
             state.hasRailgun = true;
+            log("EQUIPPED: ⚡ RAILGUN.", "#00bcd4");
+        } else {
+            log("Not enough gold for Railgun!", "red");
         }
-        updateDisplay();
     }
+
+    updateDisplay();
+}
 
     function attack(method) {
         let damage = state.baseAtk + (Math.random() * 20);
