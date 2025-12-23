@@ -215,22 +215,29 @@
 
     // ЛОГИКА АПГРЕЙДА ИНВЕНТАРЯ
     function upgradeInventory() {
-        const costs = [2, 4, 8];
-        const currentCost = costs[state.invLevel];
+    const costs = [2, 4, 8];
+    
+    // Если переменная вдруг пропала из сохранения, ставим 0
+    if (state.invLevel === undefined) state.invLevel = 0;
 
-        if (state.invLevel >= 3) return;
-
-        if (state.sp >= currentCost) {
-            state.sp -= currentCost;
-            state.invLevel++;
-            state.maxInv++;
-            log(`INVENTORY EXPANDED! New limit: ${state.maxInv} slots.`, "var(--xp)");
-            updateDisplay();
-        } else {
-            log(`Need ${currentCost} SP for this expansion!`, "red");
-        }
+    // Проверка, не купили ли мы уже максимум
+    if (state.invLevel >= costs.length) {
+        log("Inventory is already at maximum capacity!");
+        return;
     }
 
+    const currentCost = costs[state.invLevel];
+
+    if (state.sp >= currentCost) {
+        state.sp -= currentCost;
+        state.invLevel++;
+        state.maxInv = (state.maxInv || 4) + 1;
+        log(`INVENTORY EXPANDED! New limit: ${state.maxInv} slots.`, "var(--xp)");
+        updateDisplay();
+    } else {
+        log(`Need ${currentCost} SP for this expansion!`, "red");
+    }
+}
     function updateDisplay() {
         if(state.gameEnded) return;
 
