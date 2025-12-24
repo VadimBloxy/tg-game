@@ -2,836 +2,162 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>TERMINAL GOD: DARKNET EDITION 2025</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+    <title>JS MINECRAFT PC</title>
     <style>
-        :root {
-            --n: #00ff00;
-            --nb: #003300;
-            --bg: #000000;
-            --err: #ff0033;
-            --gold: #ffcc00;
-            --blue: #00ccff;
-            --purp: #cc00ff;
+        body { margin: 0; overflow: hidden; font-family: sans-serif; }
+        #crosshair {
+            position: absolute; top: 50%; left: 50%;
+            width: 20px; height: 20px;
+            color: white; transform: translate(-50%, -50%);
+            pointer-events: none; font-size: 20px;
         }
-
-        * {
-            box-sizing: border-box;
-            -webkit-tap-highlight-color: transparent;
-            user-select: none;
-            scrollbar-width: none;
+        #info {
+            position: absolute; top: 10px; left: 10px;
+            color: white; background: rgba(0,0,0,0.5); padding: 10px;
         }
-
-        body {
-            margin: 0;
-            background: var(--bg);
-            color: var(--n);
-            font-family: 'Press Start 2P', cursive;
-            font-size: 10px;
-            overflow: hidden;
-            height: 100vh;
-        }
-
-        .crt::before {
-            content: " ";
-            display: block;
-            position: absolute;
-            top: 0; left: 0; bottom: 0; right: 0;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%),
-                        linear-gradient(90deg, rgba(255, 0, 0, 0.04), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.04));
-            z-index: 9999;
-            background-size: 100% 2px, 3px 100%;
-            pointer-events: none;
-        }
-
-        @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-        }
-
-        .scan {
-            position: absolute; width: 100%; height: 100px;
-            background: linear-gradient(to bottom, transparent, rgba(0, 255, 0, 0.05), transparent);
-            animation: scanline 8s linear infinite;
-            pointer-events: none; z-index: 9998;
-        }
-
-        .app {
-            display: flex;
-            flex-direction: column;
-            height: 100vh;
-            padding: 10px;
-            z-index: 10;
-            position: relative;
-        }
-
-        .hud {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 5px;
-            border: 3px double var(--n);
-            padding: 10px;
-            background: #010;
-            margin-bottom: 10px;
-            box-shadow: 0 0 15px var(--nb);
-        }
-
-        .hud-item { font-size: 7px; line-height: 1.5; }
-        .val { color: #fff; text-shadow: 0 0 8px var(--n); }
-        .bar-w { width: 100%; height: 8px; background: #111; border: 1px solid var(--n); margin-top: 5px; position: relative; }
-        .bar-f { height: 100%; background: var(--n); width: 0%; transition: width 0.3s; }
-        .bar-t { position: absolute; width: 100%; text-align: center; font-size: 5px; top: 1px; color: #fff; mix-blend-mode: difference; }
-
-        .viewport {
-            flex-grow: 1;
-            border: 2px solid var(--n);
-            position: relative;
-            overflow: hidden;
-            background: rgba(0, 10, 0, 0.9);
-            box-shadow: inset 0 0 20px #000;
-        }
-
-        .screen {
-            display: none;
-            height: 100%;
-            padding: 12px;
-            overflow-y: auto;
-        }
-
-        .screen.active { display: block; }
-
-        #log { font-size: 8px; line-height: 1.6; }
-        .line { margin-bottom: 4px; border-left: 2px solid var(--nb); padding-left: 8px; animation: in 0.2s ease; }
-        @keyframes in { from { opacity: 0; transform: translateX(-5px); } to { opacity: 1; transform: translateX(0); } }
-        
-        .event-area {
-            padding: 10px; margin-bottom: 10px; text-align: center;
-            display: none; border: 2px solid;
-        }
-        .boss-active { display: block; background: #200; border-color: var(--err); animation: shake 0.3s infinite; }
-        .rival-active { display: block; background: #220; border-color: var(--gold); }
-        
-        @keyframes shake { 0% { margin-left: 0; } 25% { margin-left: 2px; } 50% { margin-left: 0; } 75% { margin-left: -2px; } }
-
-        .card {
-            border: 1px solid var(--nb);
-            background: #010;
-            padding: 12px;
-            margin-bottom: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: 0.2s;
-        }
-        .card:hover { border-color: var(--n); background: #020; }
-        .card-meta { flex-grow: 1; }
-        .card-name { font-size: 9px; color: var(--n); margin-bottom: 5px; display: block; }
-        .card-desc { font-size: 6px; color: #7a7; line-height: 1.3; }
-        .card-price { font-size: 7px; color: var(--gold); margin-top: 5px; display: block; }
-
-        /* Стили для PvP карточек */
-        .target-card { border-color: var(--err); }
-        .target-card:hover { border-color: #fff; background: #300; }
-        .shield-active { border-color: #555; opacity: 0.7; }
-
-        .btn {
-            background: var(--n);
-            color: #000;
-            border: none;
-            font-family: 'Press Start 2P';
-            font-size: 8px;
-            padding: 10px 15px;
-            cursor: pointer;
-            box-shadow: 3px 3px 0 var(--nb);
-        }
-        .btn:active { transform: translate(2px, 2px); box-shadow: none; }
-        .btn:disabled { background: #222 !important; color: #555 !important; box-shadow: none !important; cursor: not-allowed; }
-
-        .nav {
-            display: grid;
-            grid-template-columns: repeat(6, 1fr);
-            gap: 4px;
-            margin-top: 10px;
-        }
-        .nav-btn {
-            background: #000;
-            border: 1px solid var(--n);
-            color: var(--n);
-            padding: 12px 0;
-            font-family: 'Press Start 2P';
-            font-size: 5px;
-            cursor: pointer;
-        }
-        .nav-btn.active { background: var(--n); color: #000; }
-
-        .p { position: absolute; pointer-events: none; animation: p-up 0.8s ease-out forwards; font-weight: bold; z-index: 1000; text-shadow: 0 0 5px #000; }
-        @keyframes p-up { 0% { opacity: 1; transform: translateY(0); } 100% { opacity: 0; transform: translateY(-80px) rotate(20deg); } }
-
-        .glitch-flash {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: white; opacity: 0; pointer-events: none; z-index: 9999;
-        }
-
-        /* USB Специальные стили */
-        .usb-container { text-align: center; padding: 20px; }
-        .usb-duck { font-size: 10px; color: var(--gold); margin-bottom: 20px; line-height: 1.2; }
-        .usb-warn { color: var(--err); font-size: 7px; margin-top: 10px; animation: blink 0.5s infinite; }
-        .usb-timer { color: var(--blue); font-size: 8px; margin-top: 10px; }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        .override-active { background: #300 !important; animation: shake 0.1s infinite !important; }
     </style>
 </head>
-<body class="crt" id="body-crt">
-    <div class="scan"></div>
-    <div id="flash" class="glitch-flash"></div>
+<body>
+    <div id="crosshair">+</div>
+    <div id="info">Кликни по экрану, чтобы начать<br>WASD - Ходить | SPACE - Прыжок<br>ЛКМ - Сломать | Shift+ЛКМ - Поставить</div>
 
-    <div class="app">
-        <header class="hud">
-            <div class="hud-item">
-                BYTES: <span id="v-bytes" class="val">0</span><br>
-                BPS: <span id="v-spd" class="val">0</span>
-            </div>
-            <div class="hud-item" style="text-align: right;">
-                LVL: <span id="v-lvl" class="val">1</span><br>
-                PTS: <span id="v-pts" class="val">0</span>
-            </div>
-            <div class="hud-item" style="grid-column: span 2;">
-                SYSTEM INTEGRITY (XP):
-                <div class="bar-w">
-                    <div id="f-exp" class="bar-f" style="background: var(--blue);"></div>
-                    <div id="t-exp" class="bar-t">0 / 100</div>
-                </div>
-            </div>
-        </header>
+    <script type="module">
+        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
 
-        <main class="viewport" id="tap-zone">
-            <div id="s-exe" class="screen active">
-                <div id="boss-ui" class="event-area">
-                    <div style="font-size: 8px; margin-bottom: 5px;">!!! FIREWALL DETECTED !!!</div>
-                    <div class="bar-w" style="border-color: var(--err);">
-                        <div id="f-boss" class="bar-f" style="background: var(--err);"></div>
-                        <div id="t-boss" class="bar-t">HP: 1000</div>
-                    </div>
-                </div>
-                
-                <div id="rival-ui" class="event-area">
-                    <div style="font-size: 8px; margin-bottom: 5px; color: var(--gold);">[!] INTRUSION_DETECTED [!]</div>
-                    <div style="font-size: 6px; margin-bottom: 5px;">HACKER STEALING DATA...</div>
-                    <div class="bar-w" style="border-color: var(--gold);">
-                        <div id="f-rival" class="bar-f" style="background: var(--gold);"></div>
-                        <div id="t-rival" class="bar-t">CLOSE PORTS: 15</div>
-                    </div>
-                </div>
+        // --- ИНИЦИАЛИЗАЦИЯ СЦЕНЫ ---
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB);
+        scene.fog = new THREE.Fog(0x87CEEB, 10, 50);
 
-                <div id="log"></div>
-            </div>
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
 
-            <div id="s-shop" class="screen">
-                <h2 style="font-size: 10px; color: var(--gold); border-bottom: 1px solid; padding-bottom: 5px;">HARDWARE_MARKET</h2>
-                <div id="shop-list"></div>
-            </div>
+        // --- СВЕТ ---
+        const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
+        scene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(1, 1, 0.5).normalize();
+        scene.add(directionalLight);
 
-            <div id="s-skill" class="screen">
-                <h2 style="font-size: 10px; color: var(--blue); border-bottom: 1px solid; padding-bottom: 5px;">SKILL_TREE</h2>
-                <div id="skill-list"></div>
-            </div>
+        // --- МИР (ГЕНЕРАЦИЯ БЛОКОВ) ---
+        const geometry = new THREE.BoxGeometry(1, 1, 1);
+        const material = new THREE.MeshLambertMaterial({ color: 0x55aa55 }); // Зеленый блок
+        const blocks = [];
 
-            <div id="s-usb" class="screen">
-                <h2 style="font-size: 10px; color: var(--gold); border-bottom: 1px solid; padding-bottom: 5px;">EXTERNAL_DEVICE</h2>
-                <div class="usb-container">
-                    <div class="usb-duck">
-                        _       <br>
-                     __(.)< (QUACK!) <br>
-                     \___)   <br>
-                     || ||   <br>
-                    [ RUBBER_QUACKER_v1 ]
-                    </div>
-                    
-                    <div id="usb-idle">
-                        <button id="btn-inject" class="btn" style="width:100%;" onclick="usb.inject()">[ INJECT PAYLOAD ]</button>
-                        <div id="usb-cooldown-ui" style="display:none;">
-                            <div class="usb-timer">BOOST ACTIVE: <span id="usb-time-left">30</span>s</div>
-                            <p style="font-size:6px; color:var(--blue); margin-top:5px;">Система перегружена. Ждите завершения.</p>
-                        </div>
-                        <p id="usb-hint" style="font-size:6px; color:#555; margin-top:10px;">Взламывает множитель дохода. Опасно для системы.</p>
-                    </div>
+        for (let x = -10; x < 10; x++) {
+            for (let z = -10; z < 10; z++) {
+                const cube = new THREE.Mesh(geometry, material);
+                cube.position.set(x, 0, z);
+                scene.add(cube);
+                blocks.push(cube);
+            }
+        }
 
-                    <div id="usb-active-ui" style="display:none;">
-                        <div style="font-size:12px; color:var(--gold);">MULT: x<span id="usb-mult">1.0</span></div>
-                        <div class="bar-w" style="border-color: var(--err); height:15px; margin: 15px 0;">
-                            <div id="f-usb-risk" class="bar-f" style="background: var(--err); width:0%;"></div>
-                            <div class="bar-t">SYSTEM_STABILITY</div>
-                        </div>
-                        <button class="btn" style="width:100%; background:var(--gold);" onclick="usb.eject()">[ EJECT DRIVE ]</button>
-                        <div class="usb-warn">ВЫТАЩИ ФЛЕШКУ ПОКА НЕ КРАШНУЛОСЬ!</div>
-                    </div>
-                </div>
-            </div>
+        // --- УПРАВЛЕНИЕ КАМЕРОЙ ---
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
+        let velocity = new THREE.Vector3();
+        let direction = new THREE.Vector3();
 
-            <div id="s-dark" class="screen">
-                <h2 style="font-size: 10px; color: var(--purp); border-bottom: 1px solid; padding-bottom: 5px;">DARKNET_DEALS</h2>
-                <div id="dark-list"></div>
-            </div>
+        document.addEventListener('click', () => document.body.requestPointerLock());
 
-            <div id="s-sys" class="screen">
-                <h3>KERNEL_INFO</h3>
-                <div id="stat-content" style="font-size: 7px; line-height: 2;"></div>
-                <hr style="border: 1px solid var(--nb);">
-                <button class="btn" style="background: var(--err); color: #fff; width: 100%;" onclick="core.format()">FORMAT C: (RESET)</button>
-            </div>
-        </main>
-
-        <nav class="nav">
-            <button class="nav-btn active" data-tab="exe" onclick="ui.tab('exe')">EXE</button>
-            <button class="nav-btn" data-tab="shop" onclick="ui.tab('shop')">SHOP</button>
-            <button class="nav-btn" data-tab="skill" onclick="ui.tab('skill')">SKL</button>
-            <button id="nav-usb" class="nav-btn" data-tab="usb" style="display:none;" onclick="ui.tab('usb')">USB</button>
-            <button class="nav-btn" data-tab="dark" onclick="ui.tab('dark')">NET</button>
-            <button class="nav-btn" data-tab="sys" onclick="ui.tab('sys')">SYS</button>
-        </nav>
-    </div>
-
-    <script>
-        const usb = {
-            active: false,
-            mult: 1,
-            risk: 0,
-            boostTimer: null,
-            inject() {
-                if(core.usbBoost > 1) return;
-                this.active = true;
-                this.mult = 1;
-                this.risk = 0;
-                document.getElementById('usb-idle').style.display = 'none';
-                document.getElementById('usb-active-ui').style.display = 'block';
-                document.getElementById('body-crt').classList.add('override-active');
-                ui.logSys("PAYLOAD DEPLOYED. SYSTEM OVERRIDING...");
-            },
-            tick() {
-                if(!this.active) return;
-                this.risk += 1.5; 
-                if(this.risk >= 100) this.crash();
-                document.getElementById('f-usb-risk').style.width = this.risk + '%';
-                document.getElementById('usb-mult').innerText = this.mult.toFixed(1);
-            },
-            tap() {
-                if(!this.active) return;
-                this.mult += 0.5; 
-                ui.flash();
-            },
-            eject() {
-                if(!this.active) return;
-                const finalMult = this.mult;
-                core.usbBoost = finalMult;
-                ui.logSys(`DRIVE EJECTED. MULTIPLIER x${finalMult.toFixed(1)} SAVED FOR 30s.`);
-                
-                this.startCooldown(30);
-                this.stop();
-            },
-            startCooldown(seconds) {
-                let left = seconds;
-                document.getElementById('btn-inject').style.display = 'none';
-                document.getElementById('usb-hint').style.display = 'none';
-                document.getElementById('usb-cooldown-ui').style.display = 'block';
-                
-                if(this.boostTimer) clearInterval(this.boostTimer);
-                
-                this.boostTimer = setInterval(() => {
-                    left--;
-                    document.getElementById('usb-time-left').innerText = left;
-                    if(left <= 0) {
-                        clearInterval(this.boostTimer);
-                        core.usbBoost = 1;
-                        document.getElementById('btn-inject').style.display = 'block';
-                        document.getElementById('usb-hint').style.display = 'block';
-                        document.getElementById('usb-cooldown-ui').style.display = 'none';
-                        ui.logSys("USB BOOST EXPIRED. READY FOR NEW INJECTION.");
-                    }
-                }, 1000);
-            },
-            crash() {
-                this.stop();
-                const loss = Math.floor(core.bytes * 0.2);
-                core.bytes -= loss;
-                ui.logSys(`CRITICAL ERROR! SYSTEM CRASHED. LOST ${loss}B`);
-                ui.flash();
-                ui.tab('exe');
-            },
-            stop() {
-                this.active = false;
-                document.getElementById('usb-idle').style.display = 'block';
-                document.getElementById('usb-active-ui').style.display = 'none';
-                document.getElementById('body-crt').classList.remove('override-active');
+        const onKeyDown = (e) => {
+            switch (e.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyD': moveRight = true; break;
+                case 'Space': if (canJump) velocity.y += 5; canJump = false; break;
             }
         };
 
-        const core = {
-            bytes: 0, spd: 0, pwr: 1, lvl: 1, exp: 0, pts: 0,
-            totalClicks: 0, totalEarned: 0, usbBoost: 1,
-            bossActive: false, bossHP: 0, bossMaxHP: 0, bossReward: 0,
-            rivalActive: false, rivalClicks: 0, rivalTimer: 0,
-            critChance: 0.02,
-            ownedHw: [], ownedSkills: [], ownedDark: [],
-
-            // --- НОВЫЙ БЛОК: ЦЕЛИ ДЛЯ ВЗЛОМА ---
-            targets: [
-                { id: 0, name: "USER_7734", lvl: 5, reward: 5000, shieldUntil: 0 },
-                { id: 1, name: "CORP_SECU", lvl: 12, reward: 25000, shieldUntil: 0 },
-                { id: 2, name: "X_HACKER_X", lvl: 25, reward: 100000, shieldUntil: 0 },
-                { id: 3, name: "BANK_AI_NODE", lvl: 50, reward: 500000, shieldUntil: 0 }
-            ],
-            // -----------------------------------
-
-            hardware: [
-                { id: 0, name: '9600-Baud Modem', cost: 15, spd: 1, pwr: 1, desc: 'Начальная скорость.' },
-                { id: 1, name: 'Coprocessor 387', cost: 120, spd: 6, pwr: 4, desc: 'Ускоряет вычисления.' },
-                { id: 2, name: 'Voodoo Graphics', cost: 750, spd: 25, pwr: 12, desc: 'Визуализация кода.' },
-                { id: 3, name: 'Fiber Optic Card', cost: 4500, spd: 120, pwr: 50, desc: 'Световая скорость.' },
-                { id: 4, name: 'Quantum Cell', cost: 25000, spd: 600, pwr: 200, desc: 'Взлом реальности.' }
-            ],
-
-            skills: [
-                { id: 0, name: 'Multi-Threading', cost: 1, type: 'spd_mult', val: 1.25, desc: '+25% к пассивному доходу.' },
-                { id: 1, name: 'Overclock Click', cost: 2, type: 'pwr_mult', val: 2.0, desc: 'Удваивает силу клика.' },
-                { id: 2, name: 'Root Exploit', cost: 3, type: 'crit', val: 0.15, desc: '+15% шанс крит-кликов (x10).' },
-                { id: 3, name: 'AI Automator', cost: 5, type: 'auto', val: 1, desc: 'Авто-клики каждую секунду.' },
-                { id: 4, name: 'Kernel Overdrive', cost: 5, type: 'lvl_boost', val: 2, desc: 'За каждый LVL: +2 к силе клика.' },
-                { id: 5, name: 'USB Support', cost: 10, type: 'usb_unlock', val: 0, desc: 'Открывает доступ к RUBBER_QUACKER.' }
-            ],
-
-            darkDeals: [
-                { id: 0, name: 'Botnet Rental', cost: 50000, idle: 50, desc: 'Фармит 50 B/сек в офлайне.' },
-                { id: 1, name: 'VPN Tunnel', cost: 100000, idle: 0, desc: 'Снижает частоту атак в 2 раза.' },
-                { id: 2, name: 'Shadow Server', cost: 250000, idle: 300, desc: 'Офшорный сервер: 300 B/сек.' },
-                { id: 3, name: 'Neural Miner', cost: 1000000, idle: 1500, desc: 'ИИ-майнер: 1500 B/сек.' }
-            ],
-
-            init() {
-                this.load();
-                setInterval(() => this.loop(), 100);
-                setInterval(() => this.save(), 10000);
-                ui.renderAll();
-                if (window.Telegram && window.Telegram.WebApp) {
-                    window.Telegram.WebApp.expand();
-                }
-            },
-
-            loop() {
-                let currentSpd = this.spd;
-                this.ownedSkills.forEach(sId => {
-                    if(this.skills[sId].type === 'spd_mult') currentSpd *= this.skills[sId].val;
-                });
-
-                currentSpd *= this.usbBoost;
-
-                if (currentSpd > 0) {
-                    const tick = currentSpd / 10;
-                    this.bytes += tick;
-                    this.totalEarned += tick;
-                }
-
-                if(this.ownedSkills.includes(3)) {
-                    if(Math.random() < 0.1) this.tap({auto: true});
-                }
-
-                if(this.rivalActive) {
-                    this.rivalTimer -= 0.1;
-                    if(this.rivalTimer <= 0) this.failRival();
-                }
-
-                usb.tick();
-                ui.update();
-            },
-
-            tap(e) {
-                if (usb.active) { usb.tap(); return; } 
-                if (this.bossActive) { this.attackBoss(e); return; }
-                if (this.rivalActive) { this.attackRival(e); return; }
-
-                let gain = this.pwr;
-                this.ownedSkills.forEach(sId => {
-                    if(this.skills[sId].type === 'pwr_mult') gain *= this.skills[sId].val;
-                });
-
-                if(this.ownedSkills.includes(4)) {
-                    gain += (this.lvl * 2);
-                }
-
-                gain *= this.usbBoost;
-
-                let crit = Math.random() < this.critChance;
-                if(crit) gain *= 10;
-
-                this.bytes += gain;
-                this.totalEarned += gain;
-                this.exp += 1; // ОСТАВИЛ БЕЗ ИЗМЕНЕНИЙ (+1 XP)
-                this.totalClicks++;
-
-                if(!e.auto) {
-                    ui.particle(e, `+${Math.floor(gain)}`, crit ? '#ffcc00' : '#fff');
-                    ui.logCmd(crit);
-                }
-
-                if(this.exp >= this.lvl * 100) this.levelUp();
-                
-                let eventTrigger = this.ownedDark.includes(1) ? 400 : 200;
-                if(this.totalClicks % eventTrigger === 0 && !this.bossActive && !this.rivalActive) {
-                    Math.random() > 0.5 ? this.spawnBoss() : this.spawnRival();
-                }
-            },
-
-            levelUp() {
-                this.exp = 0; this.lvl++; this.pts += 2;
-                ui.flash();
-                ui.logSys(`SYSTEM UPGRADE: LEVEL ${this.lvl} REACHED. +2 PTS.`);
-                ui.renderAll();
-            },
-
-            // --- ФУНКЦИЯ ВЗЛОМА С ЗАЩИТОЙ ---
-            hackTarget(id) {
-                const target = this.targets[id];
-                const now = Date.now();
-
-                // 1. ПРОВЕРКА ЩИТА
-                if (target.shieldUntil > now) {
-                    const left = Math.ceil((target.shieldUntil - now) / 60000); // Минуты
-                    alert(`TARGET PROTECTED! SHIELD ACTIVE: ${left} MIN.`);
-                    return;
-                }
-
-                // Шанс взлома зависит от уровня
-                const chance = 0.5 + (this.lvl * 0.02) - (target.lvl * 0.01);
-                
-                if (Math.random() < chance) {
-                    // УСПЕХ
-                    this.bytes += target.reward;
-                    // !!! УСТАНОВКА ЗАЩИТЫ НА 12 ЧАСОВ !!!
-                    target.shieldUntil = now + (12 * 60 * 60 * 1000);
-                    
-                    ui.logSys(`HACK SUCCESS: ${target.name}. +${target.reward}B. TARGET SHIELDED.`);
-                    ui.flash();
-                } else {
-                    // ПРОВАЛ
-                    ui.logSys(`HACK FAILED: ${target.name}. CONNECTION REFUSED.`);
-                }
-                ui.renderDark(); // Перерисовать, чтобы обновить кнопку
-            },
-            // --------------------------------
-
-            spawnBoss() {
-                this.bossActive = true;
-                this.bossMaxHP = this.lvl * 500;
-                this.bossHP = this.bossMaxHP;
-                this.bossReward = this.lvl * 1000;
-                ui.logSys(`WARNING: FIREWALL DETECTED! ACCESS BLOCKED.`);
-                ui.tab('exe');
-            },
-
-            attackBoss(e) {
-                let dmg = this.pwr * 2;
-                if(this.ownedSkills.includes(4)) dmg += (this.lvl * 2);
-                this.bossHP -= (dmg * this.usbBoost);
-                ui.particle(e, `DMG: ${Math.floor(dmg * this.usbBoost)}`, '#ff0033');
-                if(this.bossHP <= 0) this.defeatBoss();
-            },
-
-            defeatBoss() {
-                this.bossActive = false;
-                this.bytes += this.bossReward;
-                this.totalEarned += this.bossReward;
-                this.exp += 50;
-                ui.flash();
-                ui.logSys(`FIREWALL BREACHED! REWARD: ${this.bossReward}B`);
-                ui.renderAll();
-            },
-
-            spawnRival() {
-                this.rivalActive = true;
-                this.rivalClicks = 30;
-                this.rivalTimer = 10;
-                ui.logSys(`ALERT: INTRUSION DETECTED! HACKER FOUND.`);
-                ui.tab('exe');
-            },
-
-            attackRival(e) {
-                this.rivalClicks--;
-                ui.particle(e, 'PORT_CLOSED', '#ffcc00');
-                if(this.rivalClicks <= 0) {
-                    this.rivalActive = false;
-                    const reward = this.lvl * 500;
-                    this.bytes += reward;
-                    ui.logSys("RIVAL REPELLED! DATA SECURED.");
-                    ui.renderAll();
-                }
-            },
-
-            failRival() {
-                this.rivalActive = false;
-                const loss = Math.floor(this.bytes * 0.5);
-                this.bytes -= loss;
-                ui.logSys(`BREACH! HACKER STOLE ${loss}B`);
-                ui.renderAll();
-            },
-
-            buyHw(id) {
-                const h = this.hardware[id];
-                if(this.bytes >= h.cost && !this.bossActive) {
-                    this.bytes -= h.cost;
-                    this.spd += h.spd;
-                    this.pwr += h.pwr;
-                    this.ownedHw.push(id);
-                    h.cost = Math.floor(h.cost * 1.55);
-                    ui.renderAll();
-                }
-            },
-
-            learnSkill(id) {
-                const s = this.skills[id];
-                if(this.pts >= s.cost && !this.ownedSkills.includes(id) && !this.bossActive) {
-                    this.pts -= s.cost;
-                    this.ownedSkills.push(id);
-                    if(s.type === 'crit') this.critChance += s.val;
-                    if(s.type === 'usb_unlock') document.getElementById('nav-usb').style.display = 'block';
-                    ui.renderAll();
-                }
-            },
-
-            buyDark(id) {
-                const d = this.darkDeals[id];
-                if(this.bytes >= d.cost && !this.ownedDark.includes(id)) {
-                    this.bytes -= d.cost;
-                    this.ownedDark.push(id);
-                    ui.logSys(`DARKNET: ${d.name} ACTIVATED.`);
-                    ui.renderAll();
-                }
-            },
-
-            save() {
-                const d = {
-                    b: this.bytes, s: this.spd, p: this.pwr, l: this.lvl, e: this.exp, pt: this.pts,
-                    tc: this.totalClicks, te: this.totalEarned, oh: this.ownedHw, os: this.ownedSkills,
-                    od: this.ownedDark,
-                    targets: this.targets, // СОХРАНЯЕМ СОСТОЯНИЕ ЩИТОВ
-                    hCosts: this.hardware.map(h => h.cost),
-                    ts: Date.now()
-                };
-                localStorage.setItem('tg_god_save', JSON.stringify(d));
-            },
-
-            load() {
-                const s = localStorage.getItem('tg_god_save');
-                if(s) {
-                    const d = JSON.parse(s);
-                    this.bytes = d.b; this.spd = d.s; this.pwr = d.p; this.lvl = d.l;
-                    this.exp = d.e; this.pts = d.pt; this.totalClicks = d.tc;
-                    this.totalEarned = d.te || d.b; this.ownedHw = d.oh; this.ownedSkills = d.os;
-                    this.ownedDark = d.od || [];
-                    if(d.targets) this.targets = d.targets; // ЗАГРУЖАЕМ ЦЕЛИ
-                    if(d.hCosts) d.hCosts.forEach((c, i) => { if(this.hardware[i]) this.hardware[i].cost = c; });
-                    if(this.ownedSkills.includes(5)) document.getElementById('nav-usb').style.display = 'block';
-
-                    if(d.ts) {
-                        const secondsAway = Math.floor((Date.now() - d.ts) / 1000);
-                        if(secondsAway > 5) {
-                            let idleRate = 0;
-                            this.ownedDark.forEach(id => idleRate += this.darkDeals[id].idle);
-                            const gained = secondsAway * idleRate;
-                            if(gained > 0) {
-                                this.bytes += gained;
-                                this.totalEarned += gained;
-                                setTimeout(() => alert(`ОФЛАЙН ДОХОД: ${Math.floor(gained)}B`), 500);
-                            }
-                        }
-                    }
-                }
-            },
-
-            format() { if(confirm("FORMAT C:? Это удалит весь прогресс!")) { localStorage.clear(); location.reload(); } }
-        };
-
-        const ui = {
-            activeTab: 'exe',
-
-            tab(t) {
-                this.activeTab = t;
-                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-                document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-                
-                document.getElementById(`s-${t}`).classList.add('active');
-                const activeBtn = document.querySelector(`.nav-btn[data-tab="${t}"]`);
-                if (activeBtn) activeBtn.classList.add('active');
-                
-                this.renderAll();
-            },
-
-            update() {
-                document.getElementById('v-bytes').innerText = Math.floor(core.bytes).toLocaleString();
-                document.getElementById('v-spd').innerText = Math.floor(core.spd * core.usbBoost).toLocaleString();
-                document.getElementById('v-lvl').innerText = core.lvl;
-                document.getElementById('v-pts').innerText = core.pts;
-                
-                const xpNext = core.lvl * 100;
-                document.getElementById('f-exp').style.width = (core.exp / xpNext * 100) + '%';
-                document.getElementById('t-exp').innerText = `${core.exp} / ${xpNext} XP`;
-
-                if(core.bossActive) {
-                    document.getElementById('boss-ui').classList.add('boss-active');
-                    document.getElementById('f-boss').style.width = (core.bossHP / core.bossMaxHP * 100) + '%';
-                    document.getElementById('t-boss').innerText = `HP: ${Math.floor(core.bossHP)}`;
-                } else {
-                    document.getElementById('boss-ui').classList.remove('boss-active');
-                }
-
-                if(core.rivalActive) {
-                    document.getElementById('rival-ui').classList.add('rival-active');
-                    document.getElementById('f-rival').style.width = (core.rivalTimer / 10 * 100) + '%';
-                    document.getElementById('t-rival').innerText = `PORTS: ${core.rivalClicks} | ${core.rivalTimer.toFixed(1)}s`;
-                } else {
-                    document.getElementById('rival-ui').classList.remove('rival-active');
-                }
-
-                if(this.activeTab === 'shop') {
-                    document.querySelectorAll('#shop-list .btn').forEach((btn, i) => {
-                        btn.disabled = (core.bytes < core.hardware[i].cost || core.bossActive);
-                    });
-                }
-                if(this.activeTab === 'skill') {
-                    document.querySelectorAll('#skill-list .btn').forEach((btn, i) => {
-                        btn.disabled = (core.ownedSkills.includes(i) || core.pts < core.skills[i].cost || core.bossActive);
-                    });
-                }
-            },
-
-            renderShop() {
-                const c = document.getElementById('shop-list');
-                c.innerHTML = core.hardware.map((h, i) => `
-                    <div class="card">
-                        <div class="card-meta">
-                            <span class="card-name">${h.name}</span>
-                            <span class="card-desc">${h.desc}</span>
-                            <span class="card-price">COST: ${h.cost.toLocaleString()}B | SPD+${h.spd}</span>
-                        </div>
-                        <button class="btn" onclick="core.buyHw(${i})">BUY</button>
-                    </div>
-                `).join('');
-            },
-
-            renderSkills() {
-                const c = document.getElementById('skill-list');
-                c.innerHTML = core.skills.map((s, i) => {
-                    const owned = core.ownedSkills.includes(i);
-                    return `
-                    <div class="card ${owned ? 'shield-active' : ''}">
-                        <div class="card-meta">
-                            <span class="card-name">${s.name}</span>
-                            <span class="card-desc">${s.desc}</span>
-                            <span class="card-price">COST: ${s.cost} PTS</span>
-                        </div>
-                        <button class="btn" onclick="core.learnSkill(${i})">${owned ? 'OWNED' : 'LEARN'}</button>
-                    </div>`;
-                }).join('');
-            },
-
-            renderDark() {
-                const c = document.getElementById('dark-list');
-                // Отрисовка сделок даркнета
-                let html = core.darkDeals.map((d, i) => {
-                    const owned = core.ownedDark.includes(i);
-                    return `
-                    <div class="card" style="border-color: var(--purp)">
-                        <div class="card-meta">
-                            <span class="card-name">${d.name}</span>
-                            <span class="card-desc">${d.desc}</span>
-                            <span class="card-price">COST: ${d.cost.toLocaleString()}B</span>
-                        </div>
-                        <button class="btn" style="background:var(--purp)" onclick="core.buyDark(${i})" ${owned ? 'disabled' : ''}>${owned ? 'ACTIVE' : 'BUY'}</button>
-                    </div>`;
-                }).join('');
-
-                html += `<h3 style="font-size:8px; color:var(--err); margin-top:20px;">HACK_TARGETS (12H COOLDOWN)</h3>`;
-
-                // Отрисовка целей для взлома
-                html += core.targets.map((t, i) => {
-                    const isShielded = t.shieldUntil > Date.now();
-                    return `
-                    <div class="card target-card ${isShielded ? 'shield-active' : ''}">
-                        <div class="card-meta">
-                            <span class="card-name">${t.name} (LVL ${t.lvl})</span>
-                            <span class="card-desc">ESTIMATED REWARD: ${t.reward}B</span>
-                            ${isShielded ? `<span class="usb-warn" style="font-size:5px;">SHIELD_ACTIVE</span>` : ''}
-                        </div>
-                        <button class="btn" style="background:var(--err); color:#fff;" 
-                                onclick="core.hackTarget(${i})" ${isShielded ? 'disabled' : ''}>
-                                ${isShielded ? 'LOCKED' : 'EXPLOIT'}
-                        </button>
-                    </div>`;
-                }).join('');
-                
-                c.innerHTML = html;
-            },
-
-            renderAll() {
-                this.renderShop();
-                this.renderSkills();
-                this.renderDark();
-                this.renderStats();
-            },
-
-            renderStats() {
-                const c = document.getElementById('stat-content');
-                c.innerHTML = `
-                    TOTAL BYTES EARNED: ${Math.floor(core.totalEarned).toLocaleString()}<br>
-                    TOTAL CLICKS: ${core.totalClicks}<br>
-                    CRIT CHANCE: ${(core.critChance * 100).toFixed(0)}%<br>
-                    HARDWARE INSTALLED: ${core.ownedHw.length}<br>
-                    ACTIVE BUFFS: ${core.usbBoost > 1 ? 'USB_OVERRIDE' : 'NONE'}
-                `;
-            },
-
-            logCmd(isCrit) {
-                const logs = ["ACCESSING...", "ENCRYPTING...", "PINGING...", "FETCHING...", "DECODING..."];
-                this.log(logs[Math.floor(Math.random() * logs.length)], isCrit ? 'var(--gold)' : 'var(--nb)');
-            },
-
-            logSys(msg) { this.log(`[SYS] ${msg}`, 'var(--blue)'); },
-
-            log(msg, color) {
-                const l = document.getElementById('log');
-                const div = document.createElement('div');
-                div.className = 'line';
-                div.style.color = color;
-                div.innerText = `> ${msg}`;
-                l.prepend(div);
-                if(l.childNodes.length > 15) l.removeChild(l.lastChild);
-            },
-
-            flash() {
-                const f = document.getElementById('flash');
-                f.style.opacity = 0.3;
-                setTimeout(() => f.style.opacity = 0, 50);
-            },
-
-            particle(e, text, color) {
-                const p = document.createElement('div');
-                p.className = 'p';
-                p.style.left = (e.pageX || window.innerWidth/2) + 'px';
-                p.style.top = (e.pageY || window.innerHeight/2) + 'px';
-                p.style.color = color;
-                p.innerText = text;
-                document.body.appendChild(p);
-                setTimeout(() => p.remove(), 800);
+        const onKeyUp = (e) => {
+            switch (e.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyD': moveRight = false; break;
             }
         };
 
-        // Запуск системы
-        core.init();
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
 
-        // Обработка клика по всей зоне
-        document.getElementById('tap-zone').addEventListener('click', (e) => {
-            core.tap(e);
+        // Вращение мышкой
+        document.addEventListener('mousemove', (e) => {
+            if (document.pointerLockElement === document.body) {
+                camera.rotation.y -= e.movementX * 0.002;
+                camera.rotation.x -= e.movementY * 0.002;
+                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
+            }
         });
+
+        // --- ВЗАИМОДЕЙСТВИЕ (БЛОКИ) ---
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2(0, 0); // Центр экрана
+
+        document.addEventListener('mousedown', (e) => {
+            if (document.pointerLockElement !== document.body) return;
+            
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(blocks);
+
+            if (intersects.length > 0) {
+                const intersect = intersects[0];
+                
+                if (e.shiftKey) { // Ставим блок
+                    const newBlock = new THREE.Mesh(geometry, material);
+                    newBlock.position.copy(intersect.object.position).add(intersect.face.normal);
+                    scene.add(newBlock);
+                    blocks.push(newBlock);
+                } else { // Ломаем блок
+                    scene.remove(intersect.object);
+                    blocks.splice(blocks.indexOf(intersect.object), 1);
+                }
+            }
+        });
+
+        camera.position.y = 2;
+        camera.rotation.order = 'YXZ'; // Важно для корректного поворота головы
+
+        // --- ИГРОВОЙ ЦИКЛ ---
+        let prevTime = performance.now();
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+
+            if (document.pointerLockElement === document.body) {
+                // Гравитация и физика
+                velocity.y -= 9.8 * delta; 
+                velocity.x -= velocity.x * 10.0 * delta;
+                velocity.z -= velocity.z * 10.0 * delta;
+
+                direction.z = Number(moveForward) - Number(moveBackward);
+                direction.x = Number(moveRight) - Number(moveLeft);
+                direction.normalize();
+
+                if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
+                if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
+
+                camera.translateX(-velocity.x * delta);
+                camera.translateZ(velocity.z * delta);
+                camera.position.y += velocity.y * delta;
+
+                // Пол
+                if (camera.position.y < 2) {
+                    velocity.y = 0;
+                    camera.position.y = 2;
+                    canJump = true;
+                }
+            }
+
+            renderer.render(scene, camera);
+            prevTime = time;
+        }
+        animate();
     </script>
 </body>
 </html>
