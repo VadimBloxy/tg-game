@@ -2,165 +2,161 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>STRATEGY LOBBY</title>
+    <title>TD LOBBY - INVENTORY</title>
     <style>
         body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background: #0a0d12;
-            color: #e0e6ed;
-            font-family: 'Segoe UI', Roboto, sans-serif;
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: #0a0d12; color: #fff; font-family: 'Segoe UI', sans-serif;
+            overflow: hidden; display: flex; justify-content: center; align-items: center;
         }
 
-        /* Канвас для живого фона */
-        #bg-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            z-index: 0;
-        }
+        #bg-canvas { position: absolute; top: 0; left: 0; z-index: 0; }
 
-        /* Контейнер интерфейса */
-        .lobby-ui {
-            position: relative;
-            z-index: 10;
-            text-align: center;
-            width: 400px;
-        }
+        /* ГЛАВНОЕ МЕНЮ */
+        .lobby-ui { position: relative; z-index: 10; text-align: center; width: 400px; transition: 0.5s; }
+        .title-box { margin-bottom: 50px; }
+        h1 { font-size: 3rem; letter-spacing: 5px; margin: 0; }
+        .subtitle { color: #4a90e2; font-size: 0.8rem; letter-spacing: 3px; text-transform: uppercase; }
 
-        .title-box {
-            margin-bottom: 60px;
-        }
-
-        h1 {
-            font-size: 3.5rem;
-            margin: 0;
-            letter-spacing: 8px;
-            color: #ffffff;
-            text-shadow: 0 0 15px rgba(255,255,255,0.2);
-        }
-
-        .subtitle {
-            font-size: 0.9rem;
-            color: #4a90e2;
-            text-transform: uppercase;
-            letter-spacing: 4px;
-        }
-
-        /* Кнопки */
-        .menu-nav {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
+        .menu-nav { display: flex; flex-direction: column; gap: 15px; }
         .btn {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(74, 144, 226, 0.3);
-            color: #fff;
-            padding: 18px;
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            cursor: pointer;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(74, 144, 226, 0.3);
+            color: #fff; padding: 15px; font-size: 1rem; text-transform: uppercase;
+            cursor: pointer; transition: 0.3s;
+        }
+        .btn:hover { background: rgba(74, 144, 226, 0.2); border-color: #4a90e2; transform: translateX(5px); }
+
+        /* ОКНО ИНВЕНТАРЯ (ADVANCE БАШНИ) */
+        #inventory-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
+            z-index: 100; justify-content: center; align-items: center;
         }
 
-        .btn:hover {
-            background: rgba(74, 144, 226, 0.2);
-            border-color: #4a90e2;
-            transform: translateX(10px);
-            box-shadow: -5px 0 0 #4a90e2;
+        .inventory-window {
+            width: 450px; height: 500px;
+            background: rgba(15, 20, 25, 0.9); /* Тот самый черный прозрачный фон */
+            border: 1px solid #4a90e2; box-shadow: 0 0 30px rgba(0,0,0,0.5);
+            display: flex; flex-direction: column; position: relative;
         }
 
-        .btn-start {
-            background: #4a90e2;
-            font-weight: bold;
-            border: none;
+        .inv-header {
+            padding: 20px; background: rgba(74, 144, 226, 0.1);
+            border-bottom: 1px solid rgba(74, 144, 226, 0.3);
+            font-size: 1.2rem; font-weight: bold; letter-spacing: 2px;
         }
 
-        .btn-start:hover {
-            background: #357abd;
-            box-shadow: 0 0 25px rgba(74, 144, 226, 0.5);
-            transform: scale(1.05);
+        /* СПИСОК С ПРОКРУТКОЙ */
+        .tower-list {
+            flex-grow: 1; overflow-y: auto; padding: 15px;
+            scrollbar-width: thin; scrollbar-color: #4a90e2 #0a0d12;
         }
 
-        /* Декоративные элементы по углам */
-        .corner {
-            position: absolute;
-            width: 40px;
-            height: 40px;
-            border: 2px solid #4a90e2;
-            opacity: 0.5;
+        .tower-item {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
+            margin-bottom: 10px; padding: 15px; display: flex; align-items: center;
+            transition: 0.2s; cursor: pointer;
         }
-        .top-left { top: -20px; left: -20px; border-right: none; border-bottom: none; }
-        .bottom-right { bottom: -20px; right: -20px; border-left: none; border-top: none; }
+        .tower-item:hover { background: rgba(74, 144, 226, 0.15); border-color: #4a90e2; }
 
+        .tower-icon { width: 50px; height: 50px; background: #222; margin-right: 15px; border: 1px solid #444; }
+        .tower-info h3 { margin: 0; font-size: 1rem; color: #4a90e2; }
+        .tower-info p { margin: 5px 0 0; font-size: 0.8rem; color: #888; }
+
+        .close-btn {
+            background: #4a90e2; border: none; color: white; padding: 10px;
+            cursor: pointer; text-transform: uppercase; font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
     <canvas id="bg-canvas"></canvas>
 
-    <div class="lobby-ui">
+    <div class="lobby-ui" id="main-menu">
         <div class="title-box">
-            <div class="top-left corner"></div>
             <div class="subtitle">Tactical Defense System</div>
             <h1>DEFENDER</h1>
-            <div class="bottom-right corner"></div>
         </div>
-
         <nav class="menu-nav">
-            <button class="btn btn-start" onclick="console.log('Запуск игры...')">В бой</button>
-            <button class="btn">Арсенал</button>
+            <button class="btn" style="background: #4a90e2;">В бой</button>
+            <button class="btn" onclick="openInventory()">Инвентарь</button>
             <button class="btn">Карта уровней</button>
             <button class="btn">Выход</button>
         </nav>
     </div>
 
+    <div id="inventory-overlay">
+        <div class="inventory-window">
+            <div class="inv-header">ADVANCE БАШНИ</div>
+            
+            <div class="tower-list">
+                <div class="tower-item">
+                    <div class="tower-icon"></div>
+                    <div class="tower-info"><h3>Plasma Cannon v1</h3><p>Высокий урон, малая скорость.</p></div>
+                </div>
+                <div class="tower-item">
+                    <div class="tower-icon"></div>
+                    <div class="tower-info"><h3>Frost Ray</h3><p>Замедляет врагов на 40%.</p></div>
+                </div>
+                <div class="tower-item">
+                    <div class="tower-icon"></div>
+                    <div class="tower-info"><h3>Tesla Tower</h3><p>Бьет цепной молнией по 3 целям.</p></div>
+                </div>
+                <div class="tower-item">
+                    <div class="tower-icon"></div>
+                    <div class="tower-info"><h3>Rocket Launcher</h3><p>Урон по площади (AoE).</p></div>
+                </div>
+                <div class="tower-item">
+                    <div class="tower-icon"></div>
+                    <div class="tower-info"><h3>Sniper Railgun</h3><p>Огромная дальность стрельбы.</p></div>
+                </div>
+                <div class="tower-item">
+                    <div class="tower-icon"></div>
+                    <div class="tower-info"><h3>Laser Gatling</h3><p>Бешеная скорость атаки.</p></div>
+                </div>
+                <div class="tower-item">
+                    <div class="tower-icon"></div>
+                    <div class="tower-info"><h3>Acid Spitter</h3><p>Периодический урон ядом.</p></div>
+                </div>
+            </div>
+
+            <button class="close-btn" onclick="closeInventory()">Закрыть</button>
+        </div>
+    </div>
+
     <script>
-        // Простой движок частиц для фона
+        function openInventory() {
+            document.getElementById('inventory-overlay').style.display = 'flex';
+            document.getElementById('main-menu').style.filter = 'blur(5px) scale(0.9)';
+        }
+
+        function closeInventory() {
+            document.getElementById('inventory-overlay').style.display = 'none';
+            document.getElementById('main-menu').style.filter = 'none';
+        }
+
+        // Фон (частицы)
         const canvas = document.getElementById('bg-canvas');
         const ctx = canvas.getContext('2d');
         let particles = [];
-
         function init() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            for (let i = 0; i < 80; i++) {
-                particles.push({
-                    x: Math.random() * canvas.width,
-                    y: Math.random() * canvas.height,
-                    size: Math.random() * 2,
-                    speed: Math.random() * 0.5 + 0.1
-                });
+            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            particles = [];
+            for (let i = 0; i < 60; i++) {
+                particles.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2, sp: Math.random()*0.4 + 0.1});
             }
         }
-
         function draw() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = 'rgba(74, 144, 226, 0.4)';
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            ctx.fillStyle = 'rgba(74, 144, 226, 0.3)';
             particles.forEach(p => {
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-                ctx.fill();
-                p.y -= p.speed;
-                if (p.y < 0) p.y = canvas.height;
+                ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill();
+                p.y -= p.sp; if (p.y < 0) p.y = canvas.height;
             });
             requestAnimationFrame(draw);
         }
-
-        window.onresize = init;
-        init();
-        draw();
+        window.onresize = init; init(); draw();
     </script>
 </body>
 </html>
