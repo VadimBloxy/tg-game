@@ -173,6 +173,7 @@
         .usb-container { text-align: center; padding: 20px; }
         .usb-duck { font-size: 10px; color: var(--gold); margin-bottom: 20px; line-height: 1.2; }
         .usb-warn { color: var(--err); font-size: 7px; margin-top: 10px; animation: blink 0.5s infinite; }
+        .usb-timer { color: var(--blue); font-size: 8px; margin-top: 10px; }
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
         .override-active { background: #300 !important; animation: shake 0.1s infinite !important; }
     </style>
@@ -244,8 +245,12 @@
                     </div>
                     
                     <div id="usb-idle">
-                        <button class="btn" style="width:100%;" onclick="usb.inject()">[ INJECT PAYLOAD ]</button>
-                        <p style="font-size:6px; color:#555; margin-top:10px;">Взламывает множитель дохода. Опасно для системы.</p>
+                        <button id="btn-inject" class="btn" style="width:100%;" onclick="usb.inject()">[ INJECT PAYLOAD ]</button>
+                        <div id="usb-cooldown-ui" style="display:none;">
+                            <div class="usb-timer">BOOST ACTIVE: <span id="usb-time-left">30</span>s</div>
+                            <p style="font-size:6px; color:var(--blue); margin-top:5px;">Система перегружена. Ждите завершения.</p>
+                        </div>
+                        <p id="usb-hint" style="font-size:6px; color:#555; margin-top:10px;">Взламывает множитель дохода. Опасно для системы.</p>
                     </div>
 
                     <div id="usb-active-ui" style="display:none;">
@@ -288,7 +293,9 @@
             active: false,
             mult: 1,
             risk: 0,
+            boostTimer: null,
             inject() {
+                if(core.usbBoost > 1) return;
                 this.active = true;
                 this.mult = 1;
                 this.risk = 0;
@@ -299,26 +306,45 @@
             },
             tick() {
                 if(!this.active) return;
-                this.risk += 1.5; // Скорость падения стабильности
+                this.risk += 1.5; 
                 if(this.risk >= 100) this.crash();
                 document.getElementById('f-usb-risk').style.width = this.risk + '%';
                 document.getElementById('usb-mult').innerText = this.mult.toFixed(1);
             },
             tap() {
                 if(!this.active) return;
-                this.mult += 0.5; // Каждый клик по флешке растит множитель
+                this.mult += 0.5; 
                 ui.flash();
             },
             eject() {
                 if(!this.active) return;
-                ui.logSys(`DRIVE EJECTED. MULTIPLIER x${this.mult.toFixed(1)} SAVED FOR 30s.`);
                 const finalMult = this.mult;
                 core.usbBoost = finalMult;
+                ui.logSys(`DRIVE EJECTED. MULTIPLIER x${finalMult.toFixed(1)} SAVED FOR 30s.`);
+                
+                this.startCooldown(30);
                 this.stop();
-                setTimeout(() => {
-                    core.usbBoost = 1;
-                    ui.logSys("USB BOOST EXPIRED.");
-                }, 30000);
+            },
+            startCooldown(seconds) {
+                let left = seconds;
+                document.getElementById('btn-inject').style.display = 'none';
+                document.getElementById('usb-hint').style.display = 'none';
+                document.getElementById('usb-cooldown-ui').style.display = 'block';
+                
+                if(this.boostTimer) clearInterval(this.boostTimer);
+                
+                this.boostTimer = setInterval(() => {
+                    left--;
+                    document.getElementById('usb-time-left').innerText = left;
+                    if(left <= 0) {
+                        clearInterval(this.boostTimer);
+                        core.usbBoost = 1;
+                        document.getElementById('btn-inject').style.display = 'block';
+                        document.getElementById('usb-hint').style.display = 'block';
+                        document.getElementById('usb-cooldown-ui').style.display = 'none';
+                        ui.logSys("USB BOOST EXPIRED. READY FOR NEW INJECTION.");
+                    }
+                }, 1000);
             },
             crash() {
                 this.stop();
@@ -384,7 +410,6 @@
                     if(this.skills[sId].type === 'spd_mult') currentSpd *= this.skills[sId].val;
                 });
 
-                // Применяем буст от флешки
                 currentSpd *= this.usbBoost;
 
                 if (currentSpd > 0) {
@@ -407,7 +432,7 @@
             },
 
             tap(e) {
-                if (usb.active) { usb.tap(); return; } // Если флешка активна, клики идут в неё
+                if (usb.active) { usb.tap(); return; } 
                 if (this.bossActive) { this.attackBoss(e); return; }
                 if (this.rivalActive) { this.attackRival(e); return; }
 
@@ -420,7 +445,6 @@
                     gain += (this.lvl * 2);
                 }
 
-                // Применяем буст от флешки
                 gain *= this.usbBoost;
 
                 let crit = Math.random() < this.critChance;
