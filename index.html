@@ -723,76 +723,53 @@
                 c.innerHTML = core.skills.map((s, i) => {
                     const owned = core.ownedSkills.includes(i);
                     return `
-                    <div class="card" style="${owned ? 'border-color: var(--blue)' : ''}">
+                    <div class="card ${owned ? 'shield-active' : ''}">
                         <div class="card-meta">
-                            <span class="card-name">${s.name} ${owned ? '[MAX]' : ''}</span>
+                            <span class="card-name">${s.name}</span>
                             <span class="card-desc">${s.desc}</span>
-                            <span class="card-price" style="color: var(--blue)">COST: ${s.cost} PTS</span>
+                            <span class="card-price">COST: ${s.cost} PTS</span>
                         </div>
-                        <button class="btn" onclick="core.learnSkill(${i})">${owned ? 'OK' : 'LRN'}</button>
-                    </div>
-                `}).join('');
+                        <button class="btn" onclick="core.learnSkill(${i})">${owned ? 'OWNED' : 'LEARN'}</button>
+                    </div>`;
+                }).join('');
             },
 
             renderDark() {
                 const c = document.getElementById('dark-list');
-                if (core.lvl < 10) {
-                    c.innerHTML = `<div style="text-align:center; padding:30px; border:1px dashed var(--err); color:var(--err);">[!] DARKNET UNLOCKS AT LVL 10</div>`;
-                    return;
-                }
-                
-                // РЕНДЕР ДИЛОВ (старое)
+                // Отрисовка сделок даркнета
                 let html = core.darkDeals.map((d, i) => {
                     const owned = core.ownedDark.includes(i);
                     return `
-                    <div class="card" style="border-color: ${owned ? 'var(--purp)' : '#333'}">
+                    <div class="card" style="border-color: var(--purp)">
                         <div class="card-meta">
-                            <span class="card-name" style="color:var(--purp)">${d.name} ${owned ? '[ONLINE]' : ''}</span>
+                            <span class="card-name">${d.name}</span>
                             <span class="card-desc">${d.desc}</span>
-                            <span class="card-price">COST: ${d.cost.toLocaleString()}B | IDLE: +${d.idle}/s</span>
+                            <span class="card-price">COST: ${d.cost.toLocaleString()}B</span>
                         </div>
-                        <button class="btn" style="background:var(--purp); color:#fff;" onclick="core.buyDark(${i})">${owned ? 'ACTIVE' : 'BUY'}</button>
-                    </div>
-                `}).join('');
+                        <button class="btn" style="background:var(--purp)" onclick="core.buyDark(${i})" ${owned ? 'disabled' : ''}>${owned ? 'ACTIVE' : 'BUY'}</button>
+                    </div>`;
+                }).join('');
 
-                // РЕНДЕР ЦЕЛЕЙ ДЛЯ ВЗЛОМА (новое)
-                html += `<h3 style="color:var(--err); margin-top:20px; border-bottom:1px solid;">GLOBAL_TARGETS</h3>`;
-                
+                html += `<h3 style="font-size:8px; color:var(--err); margin-top:20px;">HACK_TARGETS (12H COOLDOWN)</h3>`;
+
+                // Отрисовка целей для взлома
                 html += core.targets.map((t, i) => {
                     const isShielded = t.shieldUntil > Date.now();
                     return `
                     <div class="card target-card ${isShielded ? 'shield-active' : ''}">
                         <div class="card-meta">
-                            <span class="card-name" style="color:${isShielded ? '#555' : 'var(--err)'}">
-                                ${t.name} [LVL ${t.lvl}]
-                            </span>
-                            <span class="card-desc">
-                                ${isShielded ? 'SHIELD ACTIVE' : 'VULNERABLE'}
-                            </span>
-                            <span class="card-price" style="color:#fff">
-                                REWARD: ${t.reward.toLocaleString()} B
-                            </span>
+                            <span class="card-name">${t.name} (LVL ${t.lvl})</span>
+                            <span class="card-desc">ESTIMATED REWARD: ${t.reward}B</span>
+                            ${isShielded ? `<span class="usb-warn" style="font-size:5px;">SHIELD_ACTIVE</span>` : ''}
                         </div>
-                        <button class="btn" 
-                                style="background:${isShielded ? '#333' : 'var(--err)'}; color:#fff;" 
-                                onclick="core.hackTarget(${i})">
-                                ${isShielded ? 'LOCKED' : 'HACK'}
+                        <button class="btn" style="background:var(--err); color:#fff;" 
+                                onclick="core.hackTarget(${i})" ${isShielded ? 'disabled' : ''}>
+                                ${isShielded ? 'LOCKED' : 'EXPLOIT'}
                         </button>
-                    </div>
-                    `;
+                    </div>`;
                 }).join('');
-
+                
                 c.innerHTML = html;
-            },
-
-            renderStats() {
-                document.getElementById('stat-content').innerHTML = `
-                    SESSION_ID: ${Math.floor(Math.random()*999999)}<br>
-                    CLICKS: ${core.totalClicks}<br>
-                    TOTAL_EARNED: ${Math.floor(core.totalEarned).toLocaleString()} B<br>
-                    USB_MULTIPLIER: x${core.usbBoost.toFixed(1)}<br>
-                    SKILLS_UNLOCKED: ${core.ownedSkills.length}/${core.skills.length}<br>
-                `;
             },
 
             renderAll() {
@@ -800,58 +777,61 @@
                 this.renderSkills();
                 this.renderDark();
                 this.renderStats();
-                this.update();
             },
 
-            logSys(msg) {
-                const log = document.getElementById('log');
-                const line = document.createElement('div');
-                line.className = 'line';
-                line.innerHTML = `<span style="color:#555">[SYS]</span> ${msg}`;
-                log.prepend(line);
-                if(log.children.length > 20) log.lastChild.remove();
+            renderStats() {
+                const c = document.getElementById('stat-content');
+                c.innerHTML = `
+                    TOTAL BYTES EARNED: ${Math.floor(core.totalEarned).toLocaleString()}<br>
+                    TOTAL CLICKS: ${core.totalClicks}<br>
+                    CRIT CHANCE: ${(core.critChance * 100).toFixed(0)}%<br>
+                    HARDWARE INSTALLED: ${core.ownedHw.length}<br>
+                    ACTIVE BUFFS: ${core.usbBoost > 1 ? 'USB_OVERRIDE' : 'NONE'}
+                `;
             },
 
-            logCmd(crit) {
-                const log = document.getElementById('log');
-                const line = document.createElement('div');
-                line.className = 'line';
-                line.style.borderColor = crit ? 'var(--gold)' : 'var(--nb)';
-                line.innerHTML = `> exec_click_(${Math.floor(Math.random()*999)}) ${crit ? '<span style="color:var(--gold)">[CRIT]</span>' : ''}`;
-                log.prepend(line);
-                if(log.children.length > 20) log.lastChild.remove();
+            logCmd(isCrit) {
+                const logs = ["ACCESSING...", "ENCRYPTING...", "PINGING...", "FETCHING...", "DECODING..."];
+                this.log(logs[Math.floor(Math.random() * logs.length)], isCrit ? 'var(--gold)' : 'var(--nb)');
+            },
+
+            logSys(msg) { this.log(`[SYS] ${msg}`, 'var(--blue)'); },
+
+            log(msg, color) {
+                const l = document.getElementById('log');
+                const div = document.createElement('div');
+                div.className = 'line';
+                div.style.color = color;
+                div.innerText = `> ${msg}`;
+                l.prepend(div);
+                if(l.childNodes.length > 15) l.removeChild(l.lastChild);
             },
 
             flash() {
                 const f = document.getElementById('flash');
-                f.style.opacity = 0.5;
+                f.style.opacity = 0.3;
                 setTimeout(() => f.style.opacity = 0, 50);
             },
 
             particle(e, text, color) {
-                const el = document.createElement('div');
-                el.className = 'p';
-                el.innerText = text;
-                el.style.color = color;
-                
-                let x, y;
-                if (e.auto) {
-                    const zone = document.getElementById('tap-zone').getBoundingClientRect();
-                    x = zone.left + Math.random() * zone.width;
-                    y = zone.top + Math.random() * zone.height;
-                } else {
-                    x = e.clientX;
-                    y = e.clientY;
-                }
-                
-                el.style.left = x + 'px';
-                el.style.top = y + 'px';
-                document.body.appendChild(el);
-                setTimeout(() => el.remove(), 800);
+                const p = document.createElement('div');
+                p.className = 'p';
+                p.style.left = (e.pageX || window.innerWidth/2) + 'px';
+                p.style.top = (e.pageY || window.innerHeight/2) + 'px';
+                p.style.color = color;
+                p.innerText = text;
+                document.body.appendChild(p);
+                setTimeout(() => p.remove(), 800);
             }
         };
 
-        window.onload = () => core.init();
+        // Запуск системы
+        core.init();
+
+        // Обработка клика по всей зоне
+        document.getElementById('tap-zone').addEventListener('click', (e) => {
+            core.tap(e);
+        });
     </script>
 </body>
 </html>
