@@ -146,7 +146,7 @@
 
         .nav {
             display: grid;
-            grid-template-columns: repeat(5, 1fr);
+            grid-template-columns: repeat(6, 1fr);
             gap: 4px;
             margin-top: 10px;
         }
@@ -156,7 +156,7 @@
             color: var(--n);
             padding: 12px 0;
             font-family: 'Press Start 2P';
-            font-size: 6px;
+            font-size: 5px;
             cursor: pointer;
         }
         .nav-btn.active { background: var(--n); color: #000; }
@@ -168,9 +168,16 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: white; opacity: 0; pointer-events: none; z-index: 9999;
         }
+
+        /* USB Специальные стили */
+        .usb-container { text-align: center; padding: 20px; }
+        .usb-duck { font-size: 10px; color: var(--gold); margin-bottom: 20px; line-height: 1.2; }
+        .usb-warn { color: var(--err); font-size: 7px; margin-top: 10px; animation: blink 0.5s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        .override-active { background: #300 !important; animation: shake 0.1s infinite !important; }
     </style>
 </head>
-<body class="crt">
+<body class="crt" id="body-crt">
     <div class="scan"></div>
     <div id="flash" class="glitch-flash"></div>
 
@@ -225,6 +232,34 @@
                 <div id="skill-list"></div>
             </div>
 
+            <div id="s-usb" class="screen">
+                <h2 style="font-size: 10px; color: var(--gold); border-bottom: 1px solid; padding-bottom: 5px;">EXTERNAL_DEVICE</h2>
+                <div class="usb-container">
+                    <div class="usb-duck">
+                        _      <br>
+                     __(.)&lt; (QUACK!) <br>
+                     \___)   <br>
+                     || ||   <br>
+                    [ RUBBER_QUACKER_v1 ]
+                    </div>
+                    
+                    <div id="usb-idle">
+                        <button class="btn" style="width:100%;" onclick="usb.inject()">[ INJECT PAYLOAD ]</button>
+                        <p style="font-size:6px; color:#555; margin-top:10px;">Взламывает множитель дохода. Опасно для системы.</p>
+                    </div>
+
+                    <div id="usb-active-ui" style="display:none;">
+                        <div style="font-size:12px; color:var(--gold);">MULT: x<span id="usb-mult">1.0</span></div>
+                        <div class="bar-w" style="border-color: var(--err); height:15px; margin: 15px 0;">
+                            <div id="f-usb-risk" class="bar-f" style="background: var(--err); width:0%;"></div>
+                            <div class="bar-t">SYSTEM_STABILITY</div>
+                        </div>
+                        <button class="btn" style="width:100%; background:var(--gold);" onclick="usb.eject()">[ EJECT DRIVE ]</button>
+                        <div class="usb-warn">ВЫТАЩИ ФЛЕШКУ ПОКА НЕ КРАШНУЛОСЬ!</div>
+                    </div>
+                </div>
+            </div>
+
             <div id="s-dark" class="screen">
                 <h2 style="font-size: 10px; color: var(--purp); border-bottom: 1px solid; padding-bottom: 5px;">DARKNET_DEALS</h2>
                 <div id="dark-list"></div>
@@ -242,15 +277,68 @@
             <button class="nav-btn active" data-tab="exe" onclick="ui.tab('exe')">EXE</button>
             <button class="nav-btn" data-tab="shop" onclick="ui.tab('shop')">SHOP</button>
             <button class="nav-btn" data-tab="skill" onclick="ui.tab('skill')">SKL</button>
+            <button id="nav-usb" class="nav-btn" data-tab="usb" style="display:none;" onclick="ui.tab('usb')">USB</button>
             <button class="nav-btn" data-tab="dark" onclick="ui.tab('dark')">NET</button>
             <button class="nav-btn" data-tab="sys" onclick="ui.tab('sys')">SYS</button>
         </nav>
     </div>
 
     <script>
+        const usb = {
+            active: false,
+            mult: 1,
+            risk: 0,
+            inject() {
+                this.active = true;
+                this.mult = 1;
+                this.risk = 0;
+                document.getElementById('usb-idle').style.display = 'none';
+                document.getElementById('usb-active-ui').style.display = 'block';
+                document.getElementById('body-crt').classList.add('override-active');
+                ui.logSys("PAYLOAD DEPLOYED. SYSTEM OVERRIDING...");
+            },
+            tick() {
+                if(!this.active) return;
+                this.risk += 1.5; // Скорость падения стабильности
+                if(this.risk >= 100) this.crash();
+                document.getElementById('f-usb-risk').style.width = this.risk + '%';
+                document.getElementById('usb-mult').innerText = this.mult.toFixed(1);
+            },
+            tap() {
+                if(!this.active) return;
+                this.mult += 0.5; // Каждый клик по флешке растит множитель
+                ui.flash();
+            },
+            eject() {
+                if(!this.active) return;
+                ui.logSys(`DRIVE EJECTED. MULTIPLIER x${this.mult.toFixed(1)} SAVED FOR 30s.`);
+                const finalMult = this.mult;
+                core.usbBoost = finalMult;
+                this.stop();
+                setTimeout(() => {
+                    core.usbBoost = 1;
+                    ui.logSys("USB BOOST EXPIRED.");
+                }, 30000);
+            },
+            crash() {
+                this.stop();
+                const loss = Math.floor(core.bytes * 0.2);
+                core.bytes -= loss;
+                ui.logSys(`CRITICAL ERROR! SYSTEM CRASHED. LOST ${loss}B`);
+                ui.flash();
+                ui.tab('exe');
+            },
+            stop() {
+                this.active = false;
+                document.getElementById('usb-idle').style.display = 'block';
+                document.getElementById('usb-active-ui').style.display = 'none';
+                document.getElementById('body-crt').classList.remove('override-active');
+            }
+        };
+
         const core = {
             bytes: 0, spd: 0, pwr: 1, lvl: 1, exp: 0, pts: 0,
-            totalClicks: 0, totalEarned: 0,
+            totalClicks: 0, totalEarned: 0, usbBoost: 1,
             bossActive: false, bossHP: 0, bossMaxHP: 0, bossReward: 0,
             rivalActive: false, rivalClicks: 0, rivalTimer: 0,
             critChance: 0.02,
@@ -269,7 +357,8 @@
                 { id: 1, name: 'Overclock Click', cost: 2, type: 'pwr_mult', val: 2.0, desc: 'Удваивает силу клика.' },
                 { id: 2, name: 'Root Exploit', cost: 3, type: 'crit', val: 0.15, desc: '+15% шанс крит-кликов (x10).' },
                 { id: 3, name: 'AI Automator', cost: 5, type: 'auto', val: 1, desc: 'Авто-клики каждую секунду.' },
-                { id: 4, name: 'Kernel Overdrive', cost: 5, type: 'lvl_boost', val: 2, desc: 'За каждый LVL: +2 к силе клика.' }
+                { id: 4, name: 'Kernel Overdrive', cost: 5, type: 'lvl_boost', val: 2, desc: 'За каждый LVL: +2 к силе клика.' },
+                { id: 5, name: 'USB Support', cost: 10, type: 'usb_unlock', val: 0, desc: 'Открывает доступ к RUBBER_QUACKER.' }
             ],
 
             darkDeals: [
@@ -284,7 +373,6 @@
                 setInterval(() => this.loop(), 100);
                 setInterval(() => this.save(), 10000);
                 ui.renderAll();
-                // Авто-старт для телеграма, так как убрали кнопку
                 if (window.Telegram && window.Telegram.WebApp) {
                     window.Telegram.WebApp.expand();
                 }
@@ -295,6 +383,9 @@
                 this.ownedSkills.forEach(sId => {
                     if(this.skills[sId].type === 'spd_mult') currentSpd *= this.skills[sId].val;
                 });
+
+                // Применяем буст от флешки
+                currentSpd *= this.usbBoost;
 
                 if (currentSpd > 0) {
                     const tick = currentSpd / 10;
@@ -311,10 +402,12 @@
                     if(this.rivalTimer <= 0) this.failRival();
                 }
 
+                usb.tick();
                 ui.update();
             },
 
             tap(e) {
+                if (usb.active) { usb.tap(); return; } // Если флешка активна, клики идут в неё
                 if (this.bossActive) { this.attackBoss(e); return; }
                 if (this.rivalActive) { this.attackRival(e); return; }
 
@@ -326,6 +419,9 @@
                 if(this.ownedSkills.includes(4)) {
                     gain += (this.lvl * 2);
                 }
+
+                // Применяем буст от флешки
+                gain *= this.usbBoost;
 
                 let crit = Math.random() < this.critChance;
                 if(crit) gain *= 10;
@@ -367,8 +463,8 @@
             attackBoss(e) {
                 let dmg = this.pwr * 2;
                 if(this.ownedSkills.includes(4)) dmg += (this.lvl * 2);
-                this.bossHP -= dmg;
-                ui.particle(e, `DMG: ${Math.floor(dmg)}`, '#ff0033');
+                this.bossHP -= (dmg * this.usbBoost);
+                ui.particle(e, `DMG: ${Math.floor(dmg * this.usbBoost)}`, '#ff0033');
                 if(this.bossHP <= 0) this.defeatBoss();
             },
 
@@ -428,6 +524,7 @@
                     this.pts -= s.cost;
                     this.ownedSkills.push(id);
                     if(s.type === 'crit') this.critChance += s.val;
+                    if(s.type === 'usb_unlock') document.getElementById('nav-usb').style.display = 'block';
                     ui.renderAll();
                 }
             },
@@ -462,6 +559,7 @@
                     this.totalEarned = d.te || d.b; this.ownedHw = d.oh; this.ownedSkills = d.os;
                     this.ownedDark = d.od || [];
                     if(d.hCosts) d.hCosts.forEach((c, i) => { if(this.hardware[i]) this.hardware[i].cost = c; });
+                    if(this.ownedSkills.includes(5)) document.getElementById('nav-usb').style.display = 'block';
 
                     if(d.ts) {
                         const secondsAway = Math.floor((Date.now() - d.ts) / 1000);
@@ -472,7 +570,7 @@
                             if(gained > 0) {
                                 this.bytes += gained;
                                 this.totalEarned += gained;
-                                setTimeout(() => alert(`ВРЕМЯ ОТСУТСТВИЯ: ${secondsAway}с\nВАШИ БОТНЕТЫ ДОБЫЛИ: ${Math.floor(gained)}B`), 500);
+                                setTimeout(() => alert(`ОФЛАЙН ДОХОД: ${Math.floor(gained)}B`), 500);
                             }
                         }
                     }
@@ -485,40 +583,12 @@
         const ui = {
             activeTab: 'exe',
 
-            enableFS() {
-                if (window.Telegram && window.Telegram.WebApp) {
-                    try {
-                        window.Telegram.WebApp.ready();
-                        window.Telegram.WebApp.expand();
-                        window.Telegram.WebApp.setHeaderColor('#000000');
-                        window.Telegram.WebApp.setBackgroundColor('#000000');
-                        this.logSys("TG_SDK: EXPANDED & READY");
-                    } catch (e) {
-                        console.error("TG SDK Error", e);
-                    }
-                }
-
-                if (!window.Telegram || !window.Telegram.WebApp.initData) {
-                    const doc = document.documentElement;
-                    try {
-                        if (doc.requestFullscreen) doc.requestFullscreen();
-                        else if (doc.webkitRequestFullscreen) doc.webkitRequestFullscreen();
-                    } catch (err) {
-                        this.logSys("FS: BLOCKED BY BROWSER");
-                    }
-                }
-
-                const overlay = document.getElementById('fs-overlay');
-                if (overlay) overlay.remove();
-            },
-
             tab(t) {
                 this.activeTab = t;
                 document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
                 document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
                 
                 document.getElementById(`s-${t}`).classList.add('active');
-                
                 const activeBtn = document.querySelector(`.nav-btn[data-tab="${t}"]`);
                 if (activeBtn) activeBtn.classList.add('active');
                 
@@ -527,7 +597,7 @@
 
             update() {
                 document.getElementById('v-bytes').innerText = Math.floor(core.bytes).toLocaleString();
-                document.getElementById('v-spd').innerText = Math.floor(core.spd).toLocaleString();
+                document.getElementById('v-spd').innerText = Math.floor(core.spd * core.usbBoost).toLocaleString();
                 document.getElementById('v-lvl').innerText = core.lvl;
                 document.getElementById('v-pts').innerText = core.pts;
                 
@@ -559,13 +629,6 @@
                 if(this.activeTab === 'skill') {
                     document.querySelectorAll('#skill-list .btn').forEach((btn, i) => {
                         btn.disabled = (core.ownedSkills.includes(i) || core.pts < core.skills[i].cost || core.bossActive);
-                    });
-                }
-                if(this.activeTab === 'dark') {
-                    document.querySelectorAll('#dark-list .btn').forEach((btn, i) => {
-                        if(core.darkDeals[i]) {
-                            btn.disabled = (core.ownedDark.includes(i) || core.bytes < core.darkDeals[i].cost);
-                        }
                     });
                 }
             },
@@ -676,7 +739,7 @@
         };
 
         document.getElementById('tap-zone').onclick = (e) => { 
-            if(ui.activeTab === 'exe') core.tap(e); 
+            if(ui.activeTab === 'exe' || usb.active) core.tap(e); 
         };
 
         core.init();
