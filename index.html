@@ -2,161 +2,176 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>TD LOBBY - INVENTORY</title>
+    <title>TD ADVANCED INVENTORY</title>
     <style>
         body, html {
             margin: 0; padding: 0; width: 100%; height: 100%;
-            background: #0a0d12; color: #fff; font-family: 'Segoe UI', sans-serif;
-            overflow: hidden; display: flex; justify-content: center; align-items: center;
+            background: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif;
+            overflow: hidden;
         }
 
-        #bg-canvas { position: absolute; top: 0; left: 0; z-index: 0; }
-
-        /* ГЛАВНОЕ МЕНЮ */
-        .lobby-ui { position: relative; z-index: 10; text-align: center; width: 400px; transition: 0.5s; }
-        .title-box { margin-bottom: 50px; }
-        h1 { font-size: 3rem; letter-spacing: 5px; margin: 0; }
-        .subtitle { color: #4a90e2; font-size: 0.8rem; letter-spacing: 3px; text-transform: uppercase; }
-
-        .menu-nav { display: flex; flex-direction: column; gap: 15px; }
-        .btn {
-            background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(74, 144, 226, 0.3);
-            color: #fff; padding: 15px; font-size: 1rem; text-transform: uppercase;
-            cursor: pointer; transition: 0.3s;
-        }
-        .btn:hover { background: rgba(74, 144, 226, 0.2); border-color: #4a90e2; transform: translateX(5px); }
-
-        /* ОКНО ИНВЕНТАРЯ (ADVANCE БАШНИ) */
-        #inventory-overlay {
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px);
-            z-index: 100; justify-content: center; align-items: center;
+        #inventory-screen {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.9); display: flex; justify-content: center; align-items: center;
         }
 
-        .inventory-window {
-            width: 450px; height: 500px;
-            background: rgba(15, 20, 25, 0.9); /* Тот самый черный прозрачный фон */
-            border: 1px solid #4a90e2; box-shadow: 0 0 30px rgba(0,0,0,0.5);
-            display: flex; flex-direction: column; position: relative;
+        .main-container {
+            width: 95%; height: 85%; display: flex; gap: 20px;
+            background: #15171a; border: 1px solid #333; padding: 25px;
+            border-radius: 4px; position: relative;
         }
 
-        .inv-header {
-            padding: 20px; background: rgba(74, 144, 226, 0.1);
-            border-bottom: 1px solid rgba(74, 144, 226, 0.3);
-            font-size: 1.2rem; font-weight: bold; letter-spacing: 2px;
+        /* ЛЕВАЯ ПАНЕЛЬ (ПРЕВЬЮ) */
+        .preview-panel {
+            flex: 0.8; background: #1c1f24; border-radius: 4px;
+            padding: 20px; display: flex; flex-direction: column; align-items: center;
+            border-bottom: 4px solid #444;
         }
 
-        /* СПИСОК С ПРОКРУТКОЙ */
-        .tower-list {
-            flex-grow: 1; overflow-y: auto; padding: 15px;
-            scrollbar-width: thin; scrollbar-color: #4a90e2 #0a0d12;
+        .model-view {
+            width: 100%; height: 300px; background: radial-gradient(#2c3e50, #000);
+            border-radius: 4px; margin-bottom: 20px; display: flex; 
+            align-items: center; justify-content: center; font-size: 6rem;
         }
 
-        .tower-item {
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1);
-            margin-bottom: 10px; padding: 15px; display: flex; align-items: center;
-            transition: 0.2s; cursor: pointer;
+        .stats-area h2 { margin: 0; font-size: 1.8rem; letter-spacing: 1px; }
+        .rarity-tag { 
+            padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; 
+            text-transform: uppercase; font-weight: bold; margin-top: 5px; display: inline-block;
         }
-        .tower-item:hover { background: rgba(74, 144, 226, 0.15); border-color: #4a90e2; }
 
-        .tower-icon { width: 50px; height: 50px; background: #222; margin-right: 15px; border: 1px solid #444; }
-        .tower-info h3 { margin: 0; font-size: 1rem; color: #4a90e2; }
-        .tower-info p { margin: 5px 0 0; font-size: 0.8rem; color: #888; }
-
-        .close-btn {
-            background: #4a90e2; border: none; color: white; padding: 10px;
-            cursor: pointer; text-transform: uppercase; font-weight: bold;
+        /* ПРАВАЯ ПАНЕЛЬ (СКРОЛЛ) */
+        .scroll-panel {
+            flex: 2; display: flex; flex-direction: column;
+            overflow-y: auto; padding-right: 15px;
         }
+
+        .category-section { margin-bottom: 30px; }
+        .category-title {
+            font-size: 1.2rem; font-weight: bold; margin-bottom: 15px;
+            padding-left: 10px; border-left: 4px solid #fff;
+            text-transform: uppercase; letter-spacing: 2px;
+        }
+
+        .tower-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px;
+        }
+
+        /* КАРТОЧКИ ТИПОВ */
+        .item {
+            aspect-ratio: 1/1.1; background: #1c1f24; border: 2px solid #333;
+            cursor: pointer; transition: 0.2s; position: relative;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .item:hover { transform: translateY(-3px); }
+        .item-name { font-size: 0.75rem; margin-top: 8px; font-weight: bold; text-align: center; }
+
+        /* ЦВЕТА РЕДКОСТИ */
+        .starter { border-color: #ffffff; } .starter .item-name { color: #fff; }
+        .intermediate { border-color: #2ecc71; } .intermediate .item-name { color: #2ecc71; }
+        .advance { border-color: #3498db; } .advance .item-name { color: #3498db; }
+        .exclusive { border-color: #e74c3c; box-shadow: inset 0 0 10px rgba(231, 76, 60, 0.2); } 
+        .exclusive .item-name { color: #e74c3c; }
+
+        /* КНОПКИ */
+        .equip-btn {
+            width: 100%; padding: 15px; background: #f1c40f; border: none;
+            color: #000; font-weight: bold; cursor: pointer; margin-top: auto;
+            text-transform: uppercase; border-radius: 2px;
+        }
+
+        /* СКРОЛЛБАР */
+        .scroll-panel::-webkit-scrollbar { width: 6px; }
+        .scroll-panel::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <canvas id="bg-canvas"></canvas>
-
-    <div class="lobby-ui" id="main-menu">
-        <div class="title-box">
-            <div class="subtitle">Tactical Defense System</div>
-            <h1>DEFENDER</h1>
-        </div>
-        <nav class="menu-nav">
-            <button class="btn" style="background: #4a90e2;">В бой</button>
-            <button class="btn" onclick="openInventory()">Инвентарь</button>
-            <button class="btn">Карта уровней</button>
-            <button class="btn">Выход</button>
-        </nav>
-    </div>
-
-    <div id="inventory-overlay">
-        <div class="inventory-window">
-            <div class="inv-header">ADVANCE БАШНИ</div>
+    <div id="inventory-screen">
+        <div class="main-container">
             
-            <div class="tower-list">
-                <div class="tower-item">
-                    <div class="tower-icon"></div>
-                    <div class="tower-info"><h3>Plasma Cannon v1</h3><p>Высокий урон, малая скорость.</p></div>
+            <div class="preview-panel">
+                <div class="model-view" id="p-icon">?</div>
+                <div class="stats-area">
+                    <span id="p-rarity-tag" class="rarity-tag" style="background: #555;">Select</span>
+                    <h2 id="p-name">Выберите юнита</h2>
+                    <p id="p-desc" style="color: #888; font-size: 0.9rem;">Нажмите на башню в списке, чтобы увидеть её параметры.</p>
                 </div>
-                <div class="tower-item">
-                    <div class="tower-icon"></div>
-                    <div class="tower-info"><h3>Frost Ray</h3><p>Замедляет врагов на 40%.</p></div>
-                </div>
-                <div class="tower-item">
-                    <div class="tower-icon"></div>
-                    <div class="tower-info"><h3>Tesla Tower</h3><p>Бьет цепной молнией по 3 целям.</p></div>
-                </div>
-                <div class="tower-item">
-                    <div class="tower-icon"></div>
-                    <div class="tower-info"><h3>Rocket Launcher</h3><p>Урон по площади (AoE).</p></div>
-                </div>
-                <div class="tower-item">
-                    <div class="tower-icon"></div>
-                    <div class="tower-info"><h3>Sniper Railgun</h3><p>Огромная дальность стрельбы.</p></div>
-                </div>
-                <div class="tower-item">
-                    <div class="tower-icon"></div>
-                    <div class="tower-info"><h3>Laser Gatling</h3><p>Бешеная скорость атаки.</p></div>
-                </div>
-                <div class="tower-item">
-                    <div class="tower-icon"></div>
-                    <div class="tower-info"><h3>Acid Spitter</h3><p>Периодический урон ядом.</p></div>
-                </div>
+                <button class="equip-btn">ЭКИПИРОВАТЬ</button>
             </div>
 
-            <button class="close-btn" onclick="closeInventory()">Закрыть</button>
+            <div class="scroll-panel">
+                
+                <div class="category-section">
+                    <div class="category-title" style="border-color: #fff;">Starter Units</div>
+                    <div class="tower-grid" id="starter-grid"></div>
+                </div>
+
+                <div class="category-section">
+                    <div class="category-title" style="border-color: #2ecc71;">Intermediate Units</div>
+                    <div class="tower-grid" id="inter-grid"></div>
+                </div>
+
+                <div class="category-section">
+                    <div class="category-title" style="border-color: #3498db;">Advance Units</div>
+                    <div class="tower-grid" id="advance-grid"></div>
+                </div>
+
+                <div class="category-section">
+                    <div class="category-title" style="border-color: #e74c3c;">Exclusive Units</div>
+                    <div class="tower-grid" id="exclusive-grid"></div>
+                </div>
+
+            </div>
         </div>
     </div>
 
     <script>
-        function openInventory() {
-            document.getElementById('inventory-overlay').style.display = 'flex';
-            document.getElementById('main-menu').style.filter = 'blur(5px) scale(0.9)';
+        const data = {
+            starter: [
+                { name: "Scout", icon: "🔫", color: "#fff", desc: "Дешевый базовый юнит." },
+                { name: "Soldier", icon: "🎖️", color: "#fff", desc: "Средний урон, хорошая скорострельность." }
+            ],
+            inter: [
+                { name: "Sniper", icon: "🎯", color: "#2ecc71", desc: "Бьет далеко, но редко." },
+                { name: "Medic", icon: "💉", color: "#2ecc71", desc: "Лечит другие башни." }
+            ],
+            advance: [
+                { name: "Minigunner", icon: "⚙️", color: "#3498db", desc: "Огромный DPS по одиночным целям." },
+                { name: "Tesla", icon: "⚡", color: "#3498db", desc: "Цепная молния по врагам." }
+            ],
+            exclusive: [
+                { name: "Golden Titan",color: "#e74c3c", desc: "Ультимативный защитник ядра." },
+                { name: "Void Reaver",color: "#e74c3c", desc: "Стирает врагов из реальности." }
+            ]
+        };
+
+        function createItem(unit, type) {
+            const div = document.createElement('div');
+            div.className = `item ${type}`;
+            div.innerHTML = `<span style="font-size: 2.5rem">${unit.icon}</span><div class="item-name">${unit.name}</div>`;
+            div.onclick = () => {
+                document.getElementById('p-icon').innerText = unit.icon;
+                document.getElementById('p-name').innerText = unit.name;
+                document.getElementById('p-name').style.color = unit.color;
+                document.getElementById('p-desc').innerText = unit.desc;
+                const tag = document.getElementById('p-rarity-tag');
+                tag.innerText = type;
+                tag.style.background = unit.color;
+                tag.style.color = (type === 'starter') ? '#000' : '#fff';
+            };
+            return div;
         }
 
-        function closeInventory() {
-            document.getElementById('inventory-overlay').style.display = 'none';
-            document.getElementById('main-menu').style.filter = 'none';
-        }
-
-        // Фон (частицы)
-        const canvas = document.getElementById('bg-canvas');
-        const ctx = canvas.getContext('2d');
-        let particles = [];
-        function init() {
-            canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-            particles = [];
-            for (let i = 0; i < 60; i++) {
-                particles.push({x: Math.random()*canvas.width, y: Math.random()*canvas.height, s: Math.random()*2, sp: Math.random()*0.4 + 0.1});
-            }
-        }
-        function draw() {
-            ctx.clearRect(0,0,canvas.width,canvas.height);
-            ctx.fillStyle = 'rgba(74, 144, 226, 0.3)';
-            particles.forEach(p => {
-                ctx.beginPath(); ctx.arc(p.x, p.y, p.s, 0, Math.PI*2); ctx.fill();
-                p.y -= p.sp; if (p.y < 0) p.y = canvas.height;
+        // Заполняем сетки
+        Object.keys(data).forEach(key => {
+            const gridId = key === 'starter' ? 'starter-grid' : key === 'inter' ? 'inter-grid' : key === 'advance' ? 'advance-grid' : 'exclusive-grid';
+            const grid = document.getElementById(gridId);
+            data[key].forEach(unit => {
+                grid.appendChild(createItem(unit, key === 'inter' ? 'intermediate' : key));
             });
-            requestAnimationFrame(draw);
-        }
-        window.onresize = init; init(); draw();
+        });
     </script>
 </body>
 </html>
