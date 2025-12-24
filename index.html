@@ -131,6 +131,11 @@
         .card-desc { font-size: 6px; color: #7a7; line-height: 1.3; }
         .card-price { font-size: 7px; color: var(--gold); margin-top: 5px; display: block; }
 
+        /* Стили для PvP карточек */
+        .target-card { border-color: var(--err); }
+        .target-card:hover { border-color: #fff; background: #300; }
+        .shield-active { border-color: #555; opacity: 0.7; }
+
         .btn {
             background: var(--n);
             color: #000;
@@ -237,8 +242,8 @@
                 <h2 style="font-size: 10px; color: var(--gold); border-bottom: 1px solid; padding-bottom: 5px;">EXTERNAL_DEVICE</h2>
                 <div class="usb-container">
                     <div class="usb-duck">
-                        _      <br>
-                     __(.)&lt; (QUACK!) <br>
+                        _       <br>
+                     __(.)< (QUACK!) <br>
                      \___)   <br>
                      || ||   <br>
                     [ RUBBER_QUACKER_v1 ]
@@ -370,6 +375,15 @@
             critChance: 0.02,
             ownedHw: [], ownedSkills: [], ownedDark: [],
 
+            // --- НОВЫЙ БЛОК: ЦЕЛИ ДЛЯ ВЗЛОМА ---
+            targets: [
+                { id: 0, name: "USER_7734", lvl: 5, reward: 5000, shieldUntil: 0 },
+                { id: 1, name: "CORP_SECU", lvl: 12, reward: 25000, shieldUntil: 0 },
+                { id: 2, name: "X_HACKER_X", lvl: 25, reward: 100000, shieldUntil: 0 },
+                { id: 3, name: "BANK_AI_NODE", lvl: 50, reward: 500000, shieldUntil: 0 }
+            ],
+            // -----------------------------------
+
             hardware: [
                 { id: 0, name: '9600-Baud Modem', cost: 15, spd: 1, pwr: 1, desc: 'Начальная скорость.' },
                 { id: 1, name: 'Coprocessor 387', cost: 120, spd: 6, pwr: 4, desc: 'Ускоряет вычисления.' },
@@ -452,7 +466,7 @@
 
                 this.bytes += gain;
                 this.totalEarned += gain;
-                this.exp += 1;
+                this.exp += 1; // ОСТАВИЛ БЕЗ ИЗМЕНЕНИЙ (+1 XP)
                 this.totalClicks++;
 
                 if(!e.auto) {
@@ -474,6 +488,37 @@
                 ui.logSys(`SYSTEM UPGRADE: LEVEL ${this.lvl} REACHED. +2 PTS.`);
                 ui.renderAll();
             },
+
+            // --- ФУНКЦИЯ ВЗЛОМА С ЗАЩИТОЙ ---
+            hackTarget(id) {
+                const target = this.targets[id];
+                const now = Date.now();
+
+                // 1. ПРОВЕРКА ЩИТА
+                if (target.shieldUntil > now) {
+                    const left = Math.ceil((target.shieldUntil - now) / 60000); // Минуты
+                    alert(`TARGET PROTECTED! SHIELD ACTIVE: ${left} MIN.`);
+                    return;
+                }
+
+                // Шанс взлома зависит от уровня
+                const chance = 0.5 + (this.lvl * 0.02) - (target.lvl * 0.01);
+                
+                if (Math.random() < chance) {
+                    // УСПЕХ
+                    this.bytes += target.reward;
+                    // !!! УСТАНОВКА ЗАЩИТЫ НА 12 ЧАСОВ !!!
+                    target.shieldUntil = now + (12 * 60 * 60 * 1000);
+                    
+                    ui.logSys(`HACK SUCCESS: ${target.name}. +${target.reward}B. TARGET SHIELDED.`);
+                    ui.flash();
+                } else {
+                    // ПРОВАЛ
+                    ui.logSys(`HACK FAILED: ${target.name}. CONNECTION REFUSED.`);
+                }
+                ui.renderDark(); // Перерисовать, чтобы обновить кнопку
+            },
+            // --------------------------------
 
             spawnBoss() {
                 this.bossActive = true;
@@ -568,6 +613,7 @@
                     b: this.bytes, s: this.spd, p: this.pwr, l: this.lvl, e: this.exp, pt: this.pts,
                     tc: this.totalClicks, te: this.totalEarned, oh: this.ownedHw, os: this.ownedSkills,
                     od: this.ownedDark,
+                    targets: this.targets, // СОХРАНЯЕМ СОСТОЯНИЕ ЩИТОВ
                     hCosts: this.hardware.map(h => h.cost),
                     ts: Date.now()
                 };
@@ -582,6 +628,7 @@
                     this.exp = d.e; this.pts = d.pt; this.totalClicks = d.tc;
                     this.totalEarned = d.te || d.b; this.ownedHw = d.oh; this.ownedSkills = d.os;
                     this.ownedDark = d.od || [];
+                    if(d.targets) this.targets = d.targets; // ЗАГРУЖАЕМ ЦЕЛИ
                     if(d.hCosts) d.hCosts.forEach((c, i) => { if(this.hardware[i]) this.hardware[i].cost = c; });
                     if(this.ownedSkills.includes(5)) document.getElementById('nav-usb').style.display = 'block';
 
@@ -693,7 +740,9 @@
                     c.innerHTML = `<div style="text-align:center; padding:30px; border:1px dashed var(--err); color:var(--err);">[!] DARKNET UNLOCKS AT LVL 10</div>`;
                     return;
                 }
-                c.innerHTML = core.darkDeals.map((d, i) => {
+                
+                // РЕНДЕР ДИЛОВ (старое)
+                let html = core.darkDeals.map((d, i) => {
                     const owned = core.ownedDark.includes(i);
                     return `
                     <div class="card" style="border-color: ${owned ? 'var(--purp)' : '#333'}">
@@ -705,68 +754,104 @@
                         <button class="btn" style="background:var(--purp); color:#fff;" onclick="core.buyDark(${i})">${owned ? 'ACTIVE' : 'BUY'}</button>
                     </div>
                 `}).join('');
+
+                // РЕНДЕР ЦЕЛЕЙ ДЛЯ ВЗЛОМА (новое)
+                html += `<h3 style="color:var(--err); margin-top:20px; border-bottom:1px solid;">GLOBAL_TARGETS</h3>`;
+                
+                html += core.targets.map((t, i) => {
+                    const isShielded = t.shieldUntil > Date.now();
+                    return `
+                    <div class="card target-card ${isShielded ? 'shield-active' : ''}">
+                        <div class="card-meta">
+                            <span class="card-name" style="color:${isShielded ? '#555' : 'var(--err)'}">
+                                ${t.name} [LVL ${t.lvl}]
+                            </span>
+                            <span class="card-desc">
+                                ${isShielded ? 'SHIELD ACTIVE' : 'VULNERABLE'}
+                            </span>
+                            <span class="card-price" style="color:#fff">
+                                REWARD: ${t.reward.toLocaleString()} B
+                            </span>
+                        </div>
+                        <button class="btn" 
+                                style="background:${isShielded ? '#333' : 'var(--err)'}; color:#fff;" 
+                                onclick="core.hackTarget(${i})">
+                                ${isShielded ? 'LOCKED' : 'HACK'}
+                        </button>
+                    </div>
+                    `;
+                }).join('');
+
+                c.innerHTML = html;
             },
 
             renderStats() {
                 document.getElementById('stat-content').innerHTML = `
-                    TOTAL_EARNED: ${Math.floor(core.totalEarned).toLocaleString()}B<br>
-                    KEY_STROKES: ${core.totalClicks}<br>
-                    HARDWARE_UNITS: ${core.ownedHw.length}<br>
-                    ACTIVE_SKILLS: ${core.ownedSkills.length}<br>
-                    DARKNET_NODES: ${core.ownedDark.length}
+                    SESSION_ID: ${Math.floor(Math.random()*999999)}<br>
+                    CLICKS: ${core.totalClicks}<br>
+                    TOTAL_EARNED: ${Math.floor(core.totalEarned).toLocaleString()} B<br>
+                    USB_MULTIPLIER: x${core.usbBoost.toFixed(1)}<br>
+                    SKILLS_UNLOCKED: ${core.ownedSkills.length}/${core.skills.length}<br>
                 `;
             },
 
+            renderAll() {
+                this.renderShop();
+                this.renderSkills();
+                this.renderDark();
+                this.renderStats();
+                this.update();
+            },
+
+            logSys(msg) {
+                const log = document.getElementById('log');
+                const line = document.createElement('div');
+                line.className = 'line';
+                line.innerHTML = `<span style="color:#555">[SYS]</span> ${msg}`;
+                log.prepend(line);
+                if(log.children.length > 20) log.lastChild.remove();
+            },
+
             logCmd(crit) {
-                const l = document.getElementById('log');
-                const d = document.createElement('div');
-                d.className = 'line';
-                if(crit) d.style.color = '#ffcc00';
-                d.innerText = `> ${crit ? 'CRITICAL_VULN_EXPLOITED' : 'DATA_PACKET_SENT'}`;
-                l.appendChild(d);
-                if(l.children.length > 15) l.removeChild(l.firstChild);
-                l.scrollTop = l.scrollHeight;
-            },
-
-            logSys(m) {
-                const l = document.getElementById('log');
-                if (!l) return;
-                const d = document.createElement('div');
-                d.className = 'line'; d.style.color = '#00ccff';
-                d.innerText = `[SYS]: ${m}`;
-                l.appendChild(d);
-                l.scrollTop = l.scrollHeight;
-            },
-
-            particle(e, t, c) {
-                const p = document.createElement('div');
-                p.className = 'p'; p.innerText = t; p.style.color = c;
-                p.style.left = (e && e.clientX ? e.clientX : window.innerWidth/2) + 'px';
-                p.style.top = (e && e.clientY ? e.clientY : window.innerHeight/2) + 'px';
-                document.body.appendChild(p);
-                setTimeout(() => p.remove(), 800);
+                const log = document.getElementById('log');
+                const line = document.createElement('div');
+                line.className = 'line';
+                line.style.borderColor = crit ? 'var(--gold)' : 'var(--nb)';
+                line.innerHTML = `> exec_click_(${Math.floor(Math.random()*999)}) ${crit ? '<span style="color:var(--gold)">[CRIT]</span>' : ''}`;
+                log.prepend(line);
+                if(log.children.length > 20) log.lastChild.remove();
             },
 
             flash() {
                 const f = document.getElementById('flash');
-                f.style.opacity = '0.5';
-                setTimeout(() => f.style.opacity = '0', 100);
+                f.style.opacity = 0.5;
+                setTimeout(() => f.style.opacity = 0, 50);
             },
 
-            renderAll() { 
-                this.renderShop(); 
-                this.renderSkills(); 
-                this.renderDark(); 
-                this.renderStats();
-                this.update(); 
+            particle(e, text, color) {
+                const el = document.createElement('div');
+                el.className = 'p';
+                el.innerText = text;
+                el.style.color = color;
+                
+                let x, y;
+                if (e.auto) {
+                    const zone = document.getElementById('tap-zone').getBoundingClientRect();
+                    x = zone.left + Math.random() * zone.width;
+                    y = zone.top + Math.random() * zone.height;
+                } else {
+                    x = e.clientX;
+                    y = e.clientY;
+                }
+                
+                el.style.left = x + 'px';
+                el.style.top = y + 'px';
+                document.body.appendChild(el);
+                setTimeout(() => el.remove(), 800);
             }
         };
 
-        document.getElementById('tap-zone').onclick = (e) => { 
-            if(ui.activeTab === 'exe' || usb.active) core.tap(e); 
-        };
-
-        core.init();
+        window.onload = () => core.init();
     </script>
 </body>
 </html>
