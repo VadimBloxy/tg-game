@@ -2,105 +2,165 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>TD LOBBY</title>
+    <title>STRATEGY LOBBY</title>
     <style>
         body, html {
             margin: 0;
             padding: 0;
             width: 100%;
             height: 100%;
+            background: #0a0d12;
+            color: #e0e6ed;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
             display: flex;
             justify-content: center;
             align-items: center;
-            /* Глубокий темно-синий градиент */
-            background: radial-gradient(circle, #1e2a38 0%, #0d1117 100%);
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            overflow: hidden;
         }
 
-        /* Тактическая сетка на фоне */
-        .grid-bg {
+        /* Канвас для живого фона */
+        #bg-canvas {
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 50px 50px;
             z-index: 0;
         }
 
-        .lobby-card {
+        /* Контейнер интерфейса */
+        .lobby-ui {
             position: relative;
-            z-index: 1;
+            z-index: 10;
             text-align: center;
-            background: rgba(255, 255, 255, 0.03);
-            padding: 50px 80px;
-            border-radius: 15px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            width: 400px;
+        }
+
+        .title-box {
+            margin-bottom: 60px;
         }
 
         h1 {
+            font-size: 3.5rem;
+            margin: 0;
+            letter-spacing: 8px;
             color: #ffffff;
-            font-size: 3rem;
-            margin-bottom: 40px;
-            text-transform: uppercase;
-            letter-spacing: 5px;
-            font-weight: 300;
+            text-shadow: 0 0 15px rgba(255,255,255,0.2);
         }
 
-        .btn-group {
+        .subtitle {
+            font-size: 0.9rem;
+            color: #4a90e2;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+        }
+
+        /* Кнопки */
+        .menu-nav {
             display: flex;
             flex-direction: column;
-            gap: 15px;
+            gap: 20px;
         }
 
-        .menu-btn {
-            background: transparent;
-            border: 1px solid #4a90e2;
-            color: #4a90e2;
-            padding: 15px 50px;
-            font-size: 1.2rem;
+        .btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(74, 144, 226, 0.3);
+            color: #fff;
+            padding: 18px;
+            font-size: 1.1rem;
             text-transform: uppercase;
             letter-spacing: 2px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            border-radius: 4px;
+            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
         }
 
-        .menu-btn:hover {
+        .btn:hover {
+            background: rgba(74, 144, 226, 0.2);
+            border-color: #4a90e2;
+            transform: translateX(10px);
+            box-shadow: -5px 0 0 #4a90e2;
+        }
+
+        .btn-start {
             background: #4a90e2;
-            color: #fff;
-            box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+            font-weight: bold;
+            border: none;
         }
 
-        .menu-btn.primary {
-            background: #4a90e2;
-            color: #fff;
-        }
-
-        .menu-btn.primary:hover {
+        .btn-start:hover {
             background: #357abd;
+            box-shadow: 0 0 25px rgba(74, 144, 226, 0.5);
+            transform: scale(1.05);
         }
+
+        /* Декоративные элементы по углам */
+        .corner {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid #4a90e2;
+            opacity: 0.5;
+        }
+        .top-left { top: -20px; left: -20px; border-right: none; border-bottom: none; }
+        .bottom-right { bottom: -20px; right: -20px; border-left: none; border-top: none; }
+
     </style>
 </head>
 <body>
 
-    <div class="grid-bg"></div>
+    <canvas id="bg-canvas"></canvas>
 
-    <div class="lobby-card">
-        <h1>Tower Defense</h1>
-        <div class="btn-group">
-            <button class="menu-btn primary">Начать игру</button>
-            <button class="menu-btn">Выбор уровня</button>
-            <button class="menu-btn">Магазин</button>
-            <button class="menu-btn">Настройки</button>
+    <div class="lobby-ui">
+        <div class="title-box">
+            <div class="top-left corner"></div>
+            <div class="subtitle">Tactical Defense System</div>
+            <h1>DEFENDER</h1>
+            <div class="bottom-right corner"></div>
         </div>
+
+        <nav class="menu-nav">
+            <button class="btn btn-start" onclick="console.log('Запуск игры...')">В бой</button>
+            <button class="btn">Арсенал</button>
+            <button class="btn">Карта уровней</button>
+            <button class="btn">Выход</button>
+        </nav>
     </div>
 
+    <script>
+        // Простой движок частиц для фона
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function init() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            for (let i = 0; i < 80; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    size: Math.random() * 2,
+                    speed: Math.random() * 0.5 + 0.1
+                });
+            }
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = 'rgba(74, 144, 226, 0.4)';
+            particles.forEach(p => {
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                p.y -= p.speed;
+                if (p.y < 0) p.y = canvas.height;
+            });
+            requestAnimationFrame(draw);
+        }
+
+        window.onresize = init;
+        init();
+        draw();
+    </script>
 </body>
 </html>
