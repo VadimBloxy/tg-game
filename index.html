@@ -2,158 +2,105 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>2D NEON DEFENSE</title>
+    <title>TD LOBBY</title>
     <style>
-        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
-        canvas { border: 2px solid #0f0; background: #050505; cursor: crosshair; margin-top: 20px; }
-        .stats { font-size: 20px; margin-top: 10px; }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            /* Глубокий темно-синий градиент */
+            background: radial-gradient(circle, #1e2a38 0%, #0d1117 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Тактическая сетка на фоне */
+        .grid-bg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: 0;
+        }
+
+        .lobby-card {
+            position: relative;
+            z-index: 1;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.03);
+            padding: 50px 80px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+        }
+
+        h1 {
+            color: #ffffff;
+            font-size: 3rem;
+            margin-bottom: 40px;
+            text-transform: uppercase;
+            letter-spacing: 5px;
+            font-weight: 300;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .menu-btn {
+            background: transparent;
+            border: 1px solid #4a90e2;
+            color: #4a90e2;
+            padding: 15px 50px;
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .menu-btn:hover {
+            background: #4a90e2;
+            color: #fff;
+            box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+        }
+
+        .menu-btn.primary {
+            background: #4a90e2;
+            color: #fff;
+        }
+
+        .menu-btn.primary:hover {
+            background: #357abd;
+        }
     </style>
 </head>
 <body>
-    <div class="stats">CASH: $<span id="money">100</span> | HP: <span id="hp">10</span></div>
-    <canvas id="gameCanvas"></canvas>
 
-    <script>
-        const canvas = document.getElementById('gameCanvas');
-        const ctx = canvas.getContext('2d');
-        canvas.width = 600;
-        canvas.height = 400;
+    <div class="grid-bg"></div>
 
-        let money = 100;
-        let hp = 10;
-        const cellSize = 40;
-        const enemies = [];
-        const towers = [];
-        const towerCost = 30;
+    <div class="lobby-card">
+        <h1>Tower Defense</h1>
+        <div class="btn-group">
+            <button class="menu-btn primary">Начать игру</button>
+            <button class="menu-btn">Выбор уровня</button>
+            <button class="menu-btn">Магазин</button>
+            <button class="menu-btn">Настройки</button>
+        </div>
+    </div>
 
-        // Путь врагов (координаты клеток x, y)
-        const path = [
-            {x: 0, y: 1}, {x: 1, y: 1}, {x: 2, y: 1}, {x: 3, y: 1}, {x: 4, y: 1},
-            {x: 4, y: 2}, {x: 4, y: 3}, {x: 4, y: 4}, {x: 5, y: 4}, {x: 6, y: 4},
-            {x: 7, y: 4}, {x: 8, y: 4}, {x: 9, y: 4}, {x: 10, y: 4}, {x: 11, y: 4},
-            {x: 12, y: 4}, {x: 13, y: 4}, {x: 14, y: 4}
-        ];
-
-        class Enemy {
-            constructor() {
-                this.pathIndex = 0;
-                this.x = path[0].x * cellSize;
-                this.y = path[0].y * cellSize;
-                this.hp = 3;
-                this.speed = 1.5;
-            }
-            update() {
-                const target = path[this.pathIndex];
-                const tx = target.x * cellSize;
-                const ty = target.y * cellSize;
-
-                if (this.x < tx) this.x += this.speed;
-                else if (this.x > tx) this.x -= this.speed;
-                if (this.y < ty) this.y += this.speed;
-                else if (this.y > ty) this.y -= this.speed;
-
-                if (Math.abs(this.x - tx) < 2 && Math.abs(this.y - ty) < 2) {
-                    this.pathIndex++;
-                }
-            }
-            draw() {
-                ctx.fillStyle = '#f00';
-                ctx.fillRect(this.x + 10, this.y + 10, 20, 20);
-                ctx.strokeStyle = '#fff';
-                ctx.strokeRect(this.x + 10, this.y + 10, 20, 20);
-            }
-        }
-
-        class Tower {
-            constructor(x, y) {
-                this.x = x;
-                this.y = y;
-                this.range = 120;
-                this.lastShot = 0;
-            }
-            draw() {
-                ctx.fillStyle = '#0cf';
-                ctx.beginPath();
-                ctx.arc(this.x + 20, this.y + 20, 15, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            shoot() {
-                const now = Date.now();
-                if (now - this.lastShot < 600) return;
-
-                const target = enemies.find(e => {
-                    const dist = Math.hypot(e.x - this.x, e.y - this.y);
-                    return dist < this.range;
-                });
-
-                if (target) {
-                    this.lastShot = now;
-                    target.hp--;
-                    // Рисуем выстрел
-                    ctx.strokeStyle = '#0ff';
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(this.x + 20, this.y + 20);
-                    ctx.lineTo(target.x + 20, target.y + 20);
-                    ctx.stroke();
-                }
-            }
-        }
-
-        canvas.addEventListener('click', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = Math.floor((e.clientX - rect.left) / cellSize) * cellSize;
-            const y = Math.floor((e.clientY - rect.top) / cellSize) * cellSize;
-
-            // Проверка: не ставим ли на путь?
-            const onPath = path.some(p => p.x * cellSize === x && p.y * cellSize === y);
-            if (!onPath && money >= towerCost) {
-                towers.push(new Tower(x, y));
-                money -= towerCost;
-                document.getElementById('money').innerText = money;
-            }
-        });
-
-        function spawnEnemy() {
-            enemies.push(new Enemy());
-        }
-        setInterval(spawnEnemy, 1500);
-
-        function gameLoop() {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // Рисуем путь
-            ctx.fillStyle = '#111';
-            path.forEach(p => ctx.fillRect(p.x * cellSize, p.y * cellSize, cellSize, cellSize));
-
-            // Башни
-            towers.forEach(t => {
-                t.draw();
-                t.shoot();
-            });
-
-            // Враги
-            for (let i = enemies.length - 1; i >= 0; i--) {
-                const e = enemies[i];
-                e.update();
-                e.draw();
-
-                if (e.hp <= 0) {
-                    enemies.splice(i, 1);
-                    money += 10;
-                    document.getElementById('money').innerText = money;
-                } else if (e.pathIndex >= path.length) {
-                    enemies.splice(i, 1);
-                    hp--;
-                    document.getElementById('hp').innerText = hp;
-                }
-            }
-
-            if (hp > 0) requestAnimationFrame(gameLoop);
-            else alert("GAME OVER! SYSTEM BREACHED.");
-        }
-
-        gameLoop();
-    </script>
 </body>
 </html>
