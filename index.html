@@ -2,162 +2,158 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>JS MINECRAFT PC</title>
+    <title>2D NEON DEFENSE</title>
     <style>
-        body { margin: 0; overflow: hidden; font-family: sans-serif; }
-        #crosshair {
-            position: absolute; top: 50%; left: 50%;
-            width: 20px; height: 20px;
-            color: white; transform: translate(-50%, -50%);
-            pointer-events: none; font-size: 20px;
-        }
-        #info {
-            position: absolute; top: 10px; left: 10px;
-            color: white; background: rgba(0,0,0,0.5); padding: 10px;
-        }
+        body { margin: 0; background: #000; color: #0f0; font-family: monospace; overflow: hidden; display: flex; flex-direction: column; align-items: center; }
+        canvas { border: 2px solid #0f0; background: #050505; cursor: crosshair; margin-top: 20px; }
+        .stats { font-size: 20px; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div id="crosshair">+</div>
-    <div id="info">Кликни по экрану, чтобы начать<br>WASD - Ходить | SPACE - Прыжок<br>ЛКМ - Сломать | Shift+ЛКМ - Поставить</div>
+    <div class="stats">CASH: $<span id="money">100</span> | HP: <span id="hp">10</span></div>
+    <canvas id="gameCanvas"></canvas>
 
-    <script type="module">
-        import * as THREE from 'https://cdn.skypack.dev/three@0.132.2';
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        canvas.width = 600;
+        canvas.height = 400;
 
-        // --- ИНИЦИАЛИЗАЦИЯ СЦЕНЫ ---
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x87CEEB);
-        scene.fog = new THREE.Fog(0x87CEEB, 10, 50);
+        let money = 100;
+        let hp = 10;
+        const cellSize = 40;
+        const enemies = [];
+        const towers = [];
+        const towerCost = 30;
 
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(window.innerWidth, window.innerHeight);
-        document.body.appendChild(renderer.domElement);
+        // Путь врагов (координаты клеток x, y)
+        const path = [
+            {x: 0, y: 1}, {x: 1, y: 1}, {x: 2, y: 1}, {x: 3, y: 1}, {x: 4, y: 1},
+            {x: 4, y: 2}, {x: 4, y: 3}, {x: 4, y: 4}, {x: 5, y: 4}, {x: 6, y: 4},
+            {x: 7, y: 4}, {x: 8, y: 4}, {x: 9, y: 4}, {x: 10, y: 4}, {x: 11, y: 4},
+            {x: 12, y: 4}, {x: 13, y: 4}, {x: 14, y: 4}
+        ];
 
-        // --- СВЕТ ---
-        const ambientLight = new THREE.AmbientLight(0xcccccc, 0.4);
-        scene.add(ambientLight);
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(1, 1, 0.5).normalize();
-        scene.add(directionalLight);
+        class Enemy {
+            constructor() {
+                this.pathIndex = 0;
+                this.x = path[0].x * cellSize;
+                this.y = path[0].y * cellSize;
+                this.hp = 3;
+                this.speed = 1.5;
+            }
+            update() {
+                const target = path[this.pathIndex];
+                const tx = target.x * cellSize;
+                const ty = target.y * cellSize;
 
-        // --- МИР (ГЕНЕРАЦИЯ БЛОКОВ) ---
-        const geometry = new THREE.BoxGeometry(1, 1, 1);
-        const material = new THREE.MeshLambertMaterial({ color: 0x55aa55 }); // Зеленый блок
-        const blocks = [];
+                if (this.x < tx) this.x += this.speed;
+                else if (this.x > tx) this.x -= this.speed;
+                if (this.y < ty) this.y += this.speed;
+                else if (this.y > ty) this.y -= this.speed;
 
-        for (let x = -10; x < 10; x++) {
-            for (let z = -10; z < 10; z++) {
-                const cube = new THREE.Mesh(geometry, material);
-                cube.position.set(x, 0, z);
-                scene.add(cube);
-                blocks.push(cube);
+                if (Math.abs(this.x - tx) < 2 && Math.abs(this.y - ty) < 2) {
+                    this.pathIndex++;
+                }
+            }
+            draw() {
+                ctx.fillStyle = '#f00';
+                ctx.fillRect(this.x + 10, this.y + 10, 20, 20);
+                ctx.strokeStyle = '#fff';
+                ctx.strokeRect(this.x + 10, this.y + 10, 20, 20);
             }
         }
 
-        // --- УПРАВЛЕНИЕ КАМЕРОЙ ---
-        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false, canJump = false;
-        let velocity = new THREE.Vector3();
-        let direction = new THREE.Vector3();
-
-        document.addEventListener('click', () => document.body.requestPointerLock());
-
-        const onKeyDown = (e) => {
-            switch (e.code) {
-                case 'KeyW': moveForward = true; break;
-                case 'KeyA': moveLeft = true; break;
-                case 'KeyS': moveBackward = true; break;
-                case 'KeyD': moveRight = true; break;
-                case 'Space': if (canJump) velocity.y += 5; canJump = false; break;
+        class Tower {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.range = 120;
+                this.lastShot = 0;
             }
-        };
-
-        const onKeyUp = (e) => {
-            switch (e.code) {
-                case 'KeyW': moveForward = false; break;
-                case 'KeyA': moveLeft = false; break;
-                case 'KeyS': moveBackward = false; break;
-                case 'KeyD': moveRight = false; break;
+            draw() {
+                ctx.fillStyle = '#0cf';
+                ctx.beginPath();
+                ctx.arc(this.x + 20, this.y + 20, 15, 0, Math.PI * 2);
+                ctx.fill();
             }
-        };
+            shoot() {
+                const now = Date.now();
+                if (now - this.lastShot < 600) return;
 
-        document.addEventListener('keydown', onKeyDown);
-        document.addEventListener('keyup', onKeyUp);
+                const target = enemies.find(e => {
+                    const dist = Math.hypot(e.x - this.x, e.y - this.y);
+                    return dist < this.range;
+                });
 
-        // Вращение мышкой
-        document.addEventListener('mousemove', (e) => {
-            if (document.pointerLockElement === document.body) {
-                camera.rotation.y -= e.movementX * 0.002;
-                camera.rotation.x -= e.movementY * 0.002;
-                camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x));
-            }
-        });
-
-        // --- ВЗАИМОДЕЙСТВИЕ (БЛОКИ) ---
-        const raycaster = new THREE.Raycaster();
-        const mouse = new THREE.Vector2(0, 0); // Центр экрана
-
-        document.addEventListener('mousedown', (e) => {
-            if (document.pointerLockElement !== document.body) return;
-            
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(blocks);
-
-            if (intersects.length > 0) {
-                const intersect = intersects[0];
-                
-                if (e.shiftKey) { // Ставим блок
-                    const newBlock = new THREE.Mesh(geometry, material);
-                    newBlock.position.copy(intersect.object.position).add(intersect.face.normal);
-                    scene.add(newBlock);
-                    blocks.push(newBlock);
-                } else { // Ломаем блок
-                    scene.remove(intersect.object);
-                    blocks.splice(blocks.indexOf(intersect.object), 1);
+                if (target) {
+                    this.lastShot = now;
+                    target.hp--;
+                    // Рисуем выстрел
+                    ctx.strokeStyle = '#0ff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 20, this.y + 20);
+                    ctx.lineTo(target.x + 20, target.y + 20);
+                    ctx.stroke();
                 }
             }
-        });
-
-        camera.position.y = 2;
-        camera.rotation.order = 'YXZ'; // Важно для корректного поворота головы
-
-        // --- ИГРОВОЙ ЦИКЛ ---
-        let prevTime = performance.now();
-        function animate() {
-            requestAnimationFrame(animate);
-
-            const time = performance.now();
-            const delta = (time - prevTime) / 1000;
-
-            if (document.pointerLockElement === document.body) {
-                // Гравитация и физика
-                velocity.y -= 9.8 * delta; 
-                velocity.x -= velocity.x * 10.0 * delta;
-                velocity.z -= velocity.z * 10.0 * delta;
-
-                direction.z = Number(moveForward) - Number(moveBackward);
-                direction.x = Number(moveRight) - Number(moveLeft);
-                direction.normalize();
-
-                if (moveForward || moveBackward) velocity.z -= direction.z * 400.0 * delta;
-                if (moveLeft || moveRight) velocity.x -= direction.x * 400.0 * delta;
-
-                camera.translateX(-velocity.x * delta);
-                camera.translateZ(velocity.z * delta);
-                camera.position.y += velocity.y * delta;
-
-                // Пол
-                if (camera.position.y < 2) {
-                    velocity.y = 0;
-                    camera.position.y = 2;
-                    canJump = true;
-                }
-            }
-
-            renderer.render(scene, camera);
-            prevTime = time;
         }
-        animate();
+
+        canvas.addEventListener('click', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = Math.floor((e.clientX - rect.left) / cellSize) * cellSize;
+            const y = Math.floor((e.clientY - rect.top) / cellSize) * cellSize;
+
+            // Проверка: не ставим ли на путь?
+            const onPath = path.some(p => p.x * cellSize === x && p.y * cellSize === y);
+            if (!onPath && money >= towerCost) {
+                towers.push(new Tower(x, y));
+                money -= towerCost;
+                document.getElementById('money').innerText = money;
+            }
+        });
+
+        function spawnEnemy() {
+            enemies.push(new Enemy());
+        }
+        setInterval(spawnEnemy, 1500);
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Рисуем путь
+            ctx.fillStyle = '#111';
+            path.forEach(p => ctx.fillRect(p.x * cellSize, p.y * cellSize, cellSize, cellSize));
+
+            // Башни
+            towers.forEach(t => {
+                t.draw();
+                t.shoot();
+            });
+
+            // Враги
+            for (let i = enemies.length - 1; i >= 0; i--) {
+                const e = enemies[i];
+                e.update();
+                e.draw();
+
+                if (e.hp <= 0) {
+                    enemies.splice(i, 1);
+                    money += 10;
+                    document.getElementById('money').innerText = money;
+                } else if (e.pathIndex >= path.length) {
+                    enemies.splice(i, 1);
+                    hp--;
+                    document.getElementById('hp').innerText = hp;
+                }
+            }
+
+            if (hp > 0) requestAnimationFrame(gameLoop);
+            else alert("GAME OVER! SYSTEM BREACHED.");
+        }
+
+        gameLoop();
     </script>
 </body>
 </html>
