@@ -2,176 +2,264 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>TD ADVANCED INVENTORY</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon TD: Evolution - Part 1</title>
     <style>
-        body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background: #0a0a0a; color: #fff; font-family: 'Segoe UI', sans-serif;
+        :root {
+            --bg: #0a0a12;
+            --panel: #16213e;
+            --accent: #e94560;
+            --gold: #fbc531;
+            --green: #4ecca3;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg);
+            color: white;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
             overflow: hidden;
         }
 
-        #inventory-screen {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.9); display: flex; justify-content: center; align-items: center;
+        #game-container {
+            width: 900px;
+            height: 600px;
+            background: var(--panel);
+            border: 3px solid #0f3460;
+            position: relative;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+            border-radius: 10px;
         }
 
-        .main-container {
-            width: 95%; height: 85%; display: flex; gap: 20px;
-            background: #15171a; border: 1px solid #333; padding: 25px;
-            border-radius: 4px; position: relative;
+        /* Экраны */
+        .screen {
+            display: none;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            position: absolute;
         }
 
-        /* ЛЕВАЯ ПАНЕЛЬ (ПРЕВЬЮ) */
-        .preview-panel {
-            flex: 0.8; background: #1c1f24; border-radius: 4px;
-            padding: 20px; display: flex; flex-direction: column; align-items: center;
-            border-bottom: 4px solid #444;
+        .active { display: flex; }
+
+        /* Интерфейс */
+        h1 { font-size: 4rem; margin: 0 0 30px 0; color: var(--accent); text-shadow: 3px 3px 0px #533483; letter-spacing: 5px; }
+        
+        .stats-bar {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            font-size: 1.5rem;
+            color: var(--gold);
+            font-weight: bold;
+            z-index: 10;
+            background: rgba(0,0,0,0.3);
+            padding: 5px 15px;
+            border-radius: 20px;
         }
 
-        .model-view {
-            width: 100%; height: 300px; background: radial-gradient(#2c3e50, #000);
-            border-radius: 4px; margin-bottom: 20px; display: flex; 
-            align-items: center; justify-content: center; font-size: 6rem;
+        .btn {
+            background: #0f3460;
+            color: white;
+            border: 2px solid var(--accent);
+            padding: 15px 50px;
+            margin: 10px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            font-weight: bold;
+            transition: 0.2s;
+            text-transform: uppercase;
+            border-radius: 5px;
+            width: 250px;
         }
 
-        .stats-area h2 { margin: 0; font-size: 1.8rem; letter-spacing: 1px; }
-        .rarity-tag { 
-            padding: 4px 12px; border-radius: 2px; font-size: 0.7rem; 
-            text-transform: uppercase; font-weight: bold; margin-top: 5px; display: inline-block;
+        .btn:hover {
+            background: var(--accent);
+            box-shadow: 0 0 15px var(--accent);
+            transform: scale(1.05);
         }
 
-        /* ПРАВАЯ ПАНЕЛЬ (СКРОЛЛ) */
-        .scroll-panel {
-            flex: 2; display: flex; flex-direction: column;
-            overflow-y: auto; padding-right: 15px;
+        /* Магазин и Инвентарь */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            width: 90%;
+            max-height: 400px;
+            overflow-y: auto;
+            padding: 10px;
         }
 
-        .category-section { margin-bottom: 30px; }
-        .category-title {
-            font-size: 1.2rem; font-weight: bold; margin-bottom: 15px;
-            padding-left: 10px; border-left: 4px solid #fff;
-            text-transform: uppercase; letter-spacing: 2px;
+        .card {
+            background: #1a1a2e;
+            border: 2px solid #0f3460;
+            padding: 20px;
+            border-radius: 10px;
+            transition: 0.3s;
         }
 
-        .tower-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px;
+        .card:hover { border-color: var(--green); }
+
+        .card h3 { margin-top: 0; color: var(--green); }
+
+        .price { color: var(--gold); font-size: 1.2rem; margin-bottom: 15px; }
+
+        /* Анимация открытия кейса */
+        #loot-anim {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9);
+            width: 100%;
+            height: 100%;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
         }
-
-        /* КАРТОЧКИ ТИПОВ */
-        .item {
-            aspect-ratio: 1/1.1; background: #1c1f24; border: 2px solid #333;
-            cursor: pointer; transition: 0.2s; position: relative;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-        }
-
-        .item:hover { transform: translateY(-3px); }
-        .item-name { font-size: 0.75rem; margin-top: 8px; font-weight: bold; text-align: center; }
-
-        /* ЦВЕТА РЕДКОСТИ */
-        .starter { border-color: #ffffff; } .starter .item-name { color: #fff; }
-        .intermediate { border-color: #2ecc71; } .intermediate .item-name { color: #2ecc71; }
-        .advance { border-color: #3498db; } .advance .item-name { color: #3498db; }
-        .exclusive { border-color: #e74c3c; box-shadow: inset 0 0 10px rgba(231, 76, 60, 0.2); } 
-        .exclusive .item-name { color: #e74c3c; }
-
-        /* КНОПКИ */
-        .equip-btn {
-            width: 100%; padding: 15px; background: #f1c40f; border: none;
-            color: #000; font-weight: bold; cursor: pointer; margin-top: auto;
-            text-transform: uppercase; border-radius: 2px;
-        }
-
-        /* СКРОЛЛБАР */
-        .scroll-panel::-webkit-scrollbar { width: 6px; }
-        .scroll-panel::-webkit-scrollbar-thumb { background: #444; border-radius: 10px; }
     </style>
 </head>
 <body>
 
-    <div id="inventory-screen">
-        <div class="main-container">
-            
-            <div class="preview-panel">
-                <div class="model-view" id="p-icon">?</div>
-                <div class="stats-area">
-                    <span id="p-rarity-tag" class="rarity-tag" style="background: #555;">Select</span>
-                    <h2 id="p-name">Выберите юнита</h2>
-                    <p id="p-desc" style="color: #888; font-size: 0.9rem;">Нажмите на башню в списке, чтобы увидеть её параметры.</p>
-                </div>
-                <button class="equip-btn">ЭКИПИРОВАТЬ</button>
-            </div>
+<div id="game-container">
+    <div class="stats-bar">💰 <span id="coins">1000</span></div>
 
-            <div class="scroll-panel">
-                
-                <div class="category-section">
-                    <div class="category-title" style="border-color: #fff;">Starter Units</div>
-                    <div class="tower-grid" id="starter-grid"></div>
-                </div>
-
-                <div class="category-section">
-                    <div class="category-title" style="border-color: #2ecc71;">Intermediate Units</div>
-                    <div class="tower-grid" id="inter-grid"></div>
-                </div>
-
-                <div class="category-section">
-                    <div class="category-title" style="border-color: #3498db;">Advance Units</div>
-                    <div class="tower-grid" id="advance-grid"></div>
-                </div>
-
-                <div class="category-section">
-                    <div class="category-title" style="border-color: #e74c3c;">Exclusive Units</div>
-                    <div class="tower-grid" id="exclusive-grid"></div>
-                </div>
-
-            </div>
-        </div>
+    <div id="menu" class="screen active">
+        <h1>NEON TD</h1>
+        <button class="btn" onclick="goTo('play')">В БОЙ</button>
+        <button class="btn" onclick="goTo('inventory')">ИНВЕНТАРЬ</button>
+        <button class="btn" onclick="goTo('shop')">МАГАЗИН</button>
     </div>
 
-    <script>
-        const data = {
-            starter: [
-                { name: "Scout", icon: "🔫", color: "#fff", desc: "Дешевый базовый юнит." },
-                { name: "Soldier", icon: "🎖️", color: "#fff", desc: "Средний урон, хорошая скорострельность." }
-            ],
-            inter: [
-                { name: "Sniper", icon: "🎯", color: "#2ecc71", desc: "Бьет далеко, но редко." },
-                { name: "Medic", icon: "💉", color: "#2ecc71", desc: "Лечит другие башни." }
-            ],
-            advance: [
-                { name: "Minigunner", icon: "⚙️", color: "#3498db", desc: "Огромный DPS по одиночным целям." },
-                { name: "Tesla", icon: "⚡", color: "#3498db", desc: "Цепная молния по врагам." }
-            ],
-            exclusive: [
-                { name: "Golden Titan",color: "#e74c3c", desc: "Ультимативный защитник ядра." },
-                { name: "Void Reaver",color: "#e74c3c", desc: "Стирает врагов из реальности." }
-            ]
-        };
+    <div id="shop" class="screen">
+        <h2>СЕКРЕТНЫЕ КЕЙСЫ</h2>
+        <div class="grid">
+            <div class="card">
+                <h3>Деревянный ящик</h3>
+                <div class="price">100 💰</div>
+                <button class="btn" style="width:100%; padding:10px;" onclick="buyBox('Wood', 100)">ОТКРЫТЬ</button>
+            </div>
+            <div class="card">
+                <h3>Стальной сейф</h3>
+                <div class="price">300 💰</div>
+                <button class="btn" style="width:100%; padding:10px;" onclick="buyBox('Steel', 300)">ОТКРЫТЬ</button>
+            </div>
+            <div class="card" style="border-color: var(--gold);">
+                <h3>Квантовый бокс</h3>
+                <div class="price">750 💰</div>
+                <button class="btn" style="width:100%; padding:10px;" onclick="buyBox('Quantum', 750)">ОТКРЫТЬ</button>
+            </div>
+        </div>
+        <button class="btn" onclick="goTo('menu')">НАЗАД</button>
+    </div>
 
-        function createItem(unit, type) {
-            const div = document.createElement('div');
-            div.className = `item ${type}`;
-            div.innerHTML = `<span style="font-size: 2.5rem">${unit.icon}</span><div class="item-name">${unit.name}</div>`;
-            div.onclick = () => {
-                document.getElementById('p-icon').innerText = unit.icon;
-                document.getElementById('p-name').innerText = unit.name;
-                document.getElementById('p-name').style.color = unit.color;
-                document.getElementById('p-desc').innerText = unit.desc;
-                const tag = document.getElementById('p-rarity-tag');
-                tag.innerText = type;
-                tag.style.background = unit.color;
-                tag.style.color = (type === 'starter') ? '#000' : '#fff';
-            };
-            return div;
+    <div id="inventory" class="screen">
+        <h2>ВАШ АРСЕНАЛ</h2>
+        <div id="inv-list" class="grid">
+            </div>
+        <button class="btn" onclick="goTo('menu')">НАЗАД</button>
+    </div>
+
+    <div id="play" class="screen">
+        <h2>УРОВЕНЬ 1: ПУСТОШЬ</h2>
+        <div style="width:80%; height:300px; border:2px dashed var(--accent); display:flex; justify-content:center; align-items:center;">
+            ЗДЕСЬ БУДЕТ КАРТА В ЧАСТИ №2
+        </div>
+        <button class="btn" onclick="goTo('menu')">ВЫЙТИ В МЕНЮ</button>
+    </div>
+
+    <div id="loot-anim">
+        <h2 id="loot-status" style="color: var(--gold);">ОТКРЫТИЕ...</h2>
+        <h1 id="loot-name">???</h1>
+        <button class="btn" onclick="closeLoot()">ЗАБРАТЬ</button>
+    </div>
+</div>
+
+<script>
+    // Состояние игры
+    let gameState = {
+        coins: 1000,
+        inventory: []
+    };
+
+    // Названия башен по типам кейсов
+    const towerPool = {
+        'Wood': ['Пулеметчик', 'Лучник'],
+        'Steel': ['Снайпер', 'Огнемет'],
+        'Quantum': ['Лазер', 'Тесла-вышка']
+    };
+
+    function goTo(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+
+        if(screenId === 'inventory') renderInventory();
+    }
+
+    function buyBox(type, price) {
+        if (gameState.coins >= price) {
+            gameState.coins -= price;
+            updateUI();
+            openBox(type);
+        } else {
+            alert("Маловато золотишка!");
+        }
+    }
+
+    function openBox(type) {
+        const items = towerPool[type];
+        const winItem = items[Math.floor(Math.random() * items.length)];
+        
+        // Показ анимации
+        const animScreen = document.getElementById('loot-anim');
+        const nameText = document.getElementById('loot-name');
+        
+        animScreen.style.display = 'flex';
+        nameText.innerText = '???';
+        
+        setTimeout(() => {
+            nameText.innerText = winItem;
+            gameState.inventory.push(winItem);
+        }, 800);
+    }
+
+    function closeLoot() {
+        document.getElementById('loot-anim').style.display = 'none';
+    }
+
+    function renderInventory() {
+        const list = document.getElementById('inv-list');
+        list.innerHTML = '';
+        
+        if(gameState.inventory.length === 0) {
+            list.innerHTML = '<p style="grid-column: 1/4">У вас пока нет башен. Купите их в магазине!</p>';
+            return;
         }
 
-        // Заполняем сетки
-        Object.keys(data).forEach(key => {
-            const gridId = key === 'starter' ? 'starter-grid' : key === 'inter' ? 'inter-grid' : key === 'advance' ? 'advance-grid' : 'exclusive-grid';
-            const grid = document.getElementById(gridId);
-            data[key].forEach(unit => {
-                grid.appendChild(createItem(unit, key === 'inter' ? 'intermediate' : key));
-            });
+        gameState.inventory.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<h3>${item}</h3><p>Готов к бою</p>`;
+            list.appendChild(card);
         });
-    </script>
+    }
+
+    function updateUI() {
+        document.getElementById('coins').innerText = gameState.coins;
+    }
+
+    // Инициализация
+    updateUI();
+</script>
+
 </body>
 </html>
