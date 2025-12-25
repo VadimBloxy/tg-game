@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon TD: Evolution - Part 1</title>
+    <title>Neon TD: Evolution - Part 2</title>
     <style>
         :root {
             --bg: #0a0a12;
@@ -11,6 +11,7 @@
             --accent: #e94560;
             --gold: #fbc531;
             --green: #4ecca3;
+            --cell: #1a1a2e; /* Новый цвет для клеток */
         }
 
         body {
@@ -50,7 +51,7 @@
         .active { display: flex; }
 
         /* Интерфейс */
-        h1 { font-size: 4rem; margin: 0 0 30px 0; color: var(--accent); text-shadow: 3px 3px 0px #533483; letter-spacing: 5px; }
+        h1 { font-size: 4rem; margin: 0 0 10px 0; color: var(--accent); text-shadow: 3px 3px 0px #533483; letter-spacing: 5px; }
         
         .stats-bar {
             position: absolute;
@@ -106,10 +107,53 @@
         }
 
         .card:hover { border-color: var(--green); }
-
         .card h3 { margin-top: 0; color: var(--green); }
-
         .price { color: var(--gold); font-size: 1.2rem; margin-bottom: 15px; }
+
+        /* ИГРОВОЕ ПОЛЕ (Новое) */
+        #map {
+            display: grid;
+            grid-template-columns: repeat(12, 50px);
+            grid-template-rows: repeat(8, 50px);
+            gap: 2px;
+            background: #0f3460;
+            padding: 5px;
+            border: 2px solid var(--accent);
+        }
+
+        .cell {
+            width: 50px; height: 50px; background: var(--cell);
+            display: flex; justify-content: center; align-items: center;
+            cursor: pointer; font-size: 0.6rem; text-align: center; color: #555;
+        }
+        .cell:hover { background: #232344; }
+        .cell.path { background: #2e2e4d; color: var(--gold); cursor: default; } /* Дорога */
+        .cell.tower-placed { background: var(--green); color: black; font-weight: bold; font-size: 0.8rem; }
+
+        /* Селектор башен в бою */
+        #battle-ui {
+            margin-top: 15px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            background: rgba(0,0,0,0.4);
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .tower-option {
+            padding: 8px 15px;
+            border: 1px solid var(--green);
+            cursor: pointer;
+            font-size: 0.9rem;
+            border-radius: 4px;
+        }
+
+        .tower-option.selected {
+            background: var(--green);
+            color: black;
+            box-shadow: 0 0 10px var(--green);
+        }
 
         /* Анимация открытия кейса */
         #loot-anim {
@@ -164,17 +208,19 @@
 
     <div id="inventory" class="screen">
         <h2>ВАШ АРСЕНАЛ</h2>
-        <div id="inv-list" class="grid">
-            </div>
+        <div id="inv-list" class="grid"></div>
         <button class="btn" onclick="goTo('menu')">НАЗАД</button>
     </div>
 
     <div id="play" class="screen">
-        <h2>УРОВЕНЬ 1: ПУСТОШЬ</h2>
-        <div style="width:80%; height:300px; border:2px dashed var(--accent); display:flex; justify-content:center; align-items:center;">
-            ЗДЕСЬ БУДЕТ КАРТА В ЧАСТИ №2
+        <div id="map"></div>
+        
+        <div id="battle-ui">
+            <span>Выбрать башню:</span>
+            <div id="tower-select-list" style="display: flex; gap: 10px;"></div>
         </div>
-        <button class="btn" onclick="goTo('menu')">ВЫЙТИ В МЕНЮ</button>
+
+        <button class="btn" onclick="goTo('menu')" style="margin-top:10px; padding: 5px 20px; width: auto;">В МЕНЮ</button>
     </div>
 
     <div id="loot-anim">
@@ -185,24 +231,91 @@
 </div>
 
 <script>
-    // Состояние игры
     let gameState = {
         coins: 1000,
-        inventory: []
+        inventory: ["Пулеметчик"], // Даем одну на старт
+        selectedTower: null
     };
 
-    // Названия башен по типам кейсов
     const towerPool = {
         'Wood': ['Пулеметчик', 'Лучник'],
         'Steel': ['Снайпер', 'Огнемет'],
         'Quantum': ['Лазер', 'Тесла-вышка']
     };
 
+    // ПУТЬ ВРАГА (индексы клеток)
+    const enemyPath = [12,13,14,26,38,50,51,52,40,28,16,17,18,19,31,43,55,67,68,69];
+
+    function createMap() {
+        const mapDiv = document.getElementById('map');
+        mapDiv.innerHTML = '';
+        for (let i = 0; i < 96; i++) { // 12x8 = 96 клеток
+            const cell = document.createElement('div');
+            cell.className = 'cell';
+            cell.id = `c-${i}`;
+            
+            if (enemyPath.includes(i)) {
+                cell.classList.add('path');
+                cell.innerText = '•';
+            } else {
+                cell.onclick = () => placeTower(i);
+            }
+            mapDiv.appendChild(cell);
+        }
+    }
+
+    function updateBattleUI() {
+        const list = document.getElementById('tower-select-list');
+        list.innerHTML = '';
+        
+        // Получаем уникальные башни из инвентаря
+        const uniqueTowers = [...new Set(gameState.inventory)];
+        
+        uniqueTowers.forEach(tName => {
+            const count = gameState.inventory.filter(x => x === tName).length;
+            const opt = document.createElement('div');
+            opt.className = 'tower-option' + (gameState.selectedTower === tName ? ' selected' : '');
+            opt.innerText = `${tName} (x${count})`;
+            opt.onclick = () => {
+                gameState.selectedTower = tName;
+                updateBattleUI();
+            };
+            list.appendChild(opt);
+        });
+
+        if(uniqueTowers.length === 0) list.innerHTML = '<small>Нет башен в инвентаре!</small>';
+    }
+
+    function placeTower(index) {
+        if (!gameState.selectedTower) {
+            alert("Выберите башню в панели внизу!");
+            return;
+        }
+
+        const cell = document.getElementById(`c-${index}`);
+        if (cell.classList.contains('tower-placed')) return;
+
+        // Ставим башню
+        cell.classList.add('tower-placed');
+        cell.innerText = gameState.selectedTower;
+
+        // Удаляем одну штуку из инвентаря
+        const itemIdx = gameState.inventory.indexOf(gameState.selectedTower);
+        gameState.inventory.splice(itemIdx, 1);
+        
+        gameState.selectedTower = null; // Сбрасываем выбор
+        updateBattleUI();
+    }
+
     function goTo(screenId) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
 
         if(screenId === 'inventory') renderInventory();
+        if(screenId === 'play') {
+            createMap();
+            updateBattleUI();
+        }
     }
 
     function buyBox(type, price) {
@@ -218,8 +331,6 @@
     function openBox(type) {
         const items = towerPool[type];
         const winItem = items[Math.floor(Math.random() * items.length)];
-        
-        // Показ анимации
         const animScreen = document.getElementById('loot-anim');
         const nameText = document.getElementById('loot-name');
         
@@ -239,12 +350,10 @@
     function renderInventory() {
         const list = document.getElementById('inv-list');
         list.innerHTML = '';
-        
         if(gameState.inventory.length === 0) {
             list.innerHTML = '<p style="grid-column: 1/4">У вас пока нет башен. Купите их в магазине!</p>';
             return;
         }
-
         gameState.inventory.forEach(item => {
             const card = document.createElement('div');
             card.className = 'card';
@@ -257,9 +366,7 @@
         document.getElementById('coins').innerText = gameState.coins;
     }
 
-    // Инициализация
     updateUI();
 </script>
-
 </body>
 </html>
