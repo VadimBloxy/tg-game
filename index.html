@@ -21,7 +21,7 @@
         .tc-logo { width: 48px; height: 48px; background: var(--accent); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
 
         /* ЧАТ (ЦЕНТР) */
-        .chat-container { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); min-width: 0; }
+        .chat-container { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); min-width: 0; position: relative; }
         .chat-header { height: 56px; padding: 0 16px; display: flex; align-items: center; border-bottom: 1px solid #27272a; justify-content: space-between; }
         .messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         
@@ -34,26 +34,27 @@
         .input-area { padding: 16px; border-top: 1px solid #27272a; }
         .input-wrap { background: #09090a; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid #27272a; }
         input { background: transparent; border: none; color: white; flex: 1; outline: none; font-size: 14px; }
+        input:disabled { opacity: 0.3; cursor: not-allowed; }
 
         /* ПРАВАЯ ПАНЕЛЬ (УЧАСТНИКИ) */
         .sidebar-right { width: 220px; background: var(--bg-sidebar); border-left: 1px solid #27272a; display: flex; flex-direction: column; flex-shrink: 0; }
-        .sidebar-header { padding: 16px; font-size: 14px; font-weight: 700; border-bottom: 1px solid #27272a; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+        .sidebar-header { padding: 16px; font-size: 12px; font-weight: 700; border-bottom: 1px solid #27272a; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
         .member-list { flex: 1; overflow-y: auto; padding: 12px; }
         .role-group { margin-bottom: 16px; }
-        .role-title { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+        .role-title { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; color: var(--text-muted); }
         
         .user-block { padding: 6px; border-radius: 4px; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; cursor: pointer; }
         .user-block:hover { background: rgba(255,255,255,0.05); }
         .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
 
         /* ЦВЕТА РОЛЕЙ */
-        .owner-t { color: #000000; text-shadow: 0 0 8px rgba(255,255,255,0.3); font-weight: 800; }
+        .owner-t { color: #ffffff; text-shadow: 0 0 8px rgba(255,255,255,0.3); font-weight: 800; }
         .admin-t { color: var(--role-admin); }
         .bot-t { color: #3b82f6; }
         .mem-t { color: var(--role-member); }
 
         /* ЭКРАН БАНА */
-        #banScreen { display:none; position:fixed; inset:0; background:black; z-index:9999; flex-direction:column; align-items:center; justify-content:center; }
+        #banScreen { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; backdrop-filter: blur(10px); }
         
         .typing-indicator { font-size: 11px; color: var(--text-muted); padding: 4px 16px; display: none; }
     </style>
@@ -61,9 +62,10 @@
 <body>
 
 <div id="banScreen">
-    <i class="fa-solid fa-gavel" style="font-size: 50px; color: red;"></i>
-    <h1 style="color: white;">ДОСТУП ОГРАНИЧЕН</h1>
-    <p id="banText" style="color: gray;"></p>
+    <i class="fa-solid fa-gavel" style="font-size: 60px; color: #ef4444; margin-bottom: 20px;"></i>
+    <h1 style="color: white; font-family: sans-serif;">ДОСТУП ОГРАНИЧЕН</h1>
+    <p id="banText" style="color: #a1a1aa; text-align: center; max-width: 80%; line-height: 1.5;"></p>
+    <button onclick="location.reload()" style="margin-top:20px; padding:10px 25px; background:var(--accent); border:none; border-radius:8px; color:white; font-weight:bold; cursor:pointer;">Перезагрузить систему</button>
 </div>
 
 <div class="server-rail">
@@ -72,20 +74,20 @@
 
 <div class="chat-container">
     <div class="chat-header">
-        <div><i class="fa-solid fa-hashtag"></i> <b>общее_обсуждение</b></div>
-        <i class="fa-solid fa-gear" id="settingsIcon" style="cursor:pointer; display:none;" onclick="alert('Настройки Owner открыты')"></i>
+        <div><i class="fa-solid fa-hashtag" style="color: var(--text-muted);"></i> <b>общее_обсуждение</b></div>
+        <i class="fa-solid fa-gear" id="settingsIcon" style="cursor:pointer; display:none; color: var(--text-muted);" onclick="alert('Настройки Owner открыты')"></i>
     </div>
     <div class="messages" id="chat">
         <div class="msg-bubble" style="border-left-color: var(--accent)">
-            <div class="msg-meta">System • 12:00</div>
-            <div>Telecord запущен. Добро пожаловать, **Овнер**.</div>
+            <div class="msg-meta">System • Online</div>
+            <div>Telecord Ultimate запущен. Используйте **/help** для просмотра команд.</div>
         </div>
     </div>
     <div class="typing-indicator" id="typing">Кто-то печатает...</div>
     <div class="input-area">
-        <div class="input-wrap">
+        <div class="input-wrap" id="inputBox">
             <input type="text" id="msgInput" placeholder="Напишите сообщение...">
-            <i class="fa-solid fa-paper-plane" style="color: var(--accent); cursor: pointer;" onclick="send()"></i>
+            <i class="fa-solid fa-paper-plane" id="sendBtn" style="color: var(--accent); cursor: pointer;" onclick="send()"></i>
         </div>
     </div>
 </div>
@@ -111,8 +113,7 @@
 
         <div class="role-group">
             <div class="role-title mem-t">Member</div>
-            <div id="memberContainer">
-                </div>
+            <div id="memberContainer"></div>
         </div>
     </div>
 </div>
@@ -125,15 +126,16 @@
     const input = document.getElementById('msgInput');
     const user = tg.initDataUnsafe?.user || { first_name: "Owner", id: 0 };
     
-    // ПРОВЕРКА: ТЫ ОВНЕР?
+    // Глобальное состояние
     const isOwner = true; 
+    let isLocked = false;
+    let xp = 0;
+    let lvl = 1;
+
     if(isOwner) {
         document.getElementById('settingsIcon').style.display = 'block';
         document.getElementById('ownerDisplay').innerText = user.first_name;
     }
-
-    let xp = 0;
-    let lvl = 1;
 
     function botReply(text, isError = false) {
         const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
@@ -145,16 +147,31 @@
         `;
         chat.insertAdjacentHTML('beforeend', html);
         chat.scrollTop = chat.scrollHeight;
+        tg.HapticFeedback.notificationOccurred(isError ? 'error' : 'success');
     }
 
     function mention(name) {
+        if(isLocked) return;
         input.value += `@${name} `;
         input.focus();
     }
 
+    function triggerBan(target, time) {
+        isLocked = true;
+        input.disabled = true;
+        input.placeholder = "СВЯЗЬ ПРЕРВАНА - BAN";
+        document.getElementById('sendBtn').style.pointerEvents = "none";
+        document.getElementById('inputBox').style.opacity = "0.4";
+
+        setTimeout(() => {
+            document.getElementById('banScreen').style.display = 'flex';
+            document.getElementById('banText').innerText = `Пользователь ${target} был удален из системы.\nСрок действия: ${time}\nПричина: Нарушение протоколов Owner.`;
+        }, 1200);
+    }
+
     function handleCommand(val) {
         if(!isOwner) {
-            botReply("У вас нет прав для использования команд!", true);
+            botReply("Критическая ошибка: Отказано в доступе.", true);
             return;
         }
 
@@ -164,27 +181,27 @@
         const time = parts.slice(2).join(' ') || "бессрочно";
 
         if (cmd === '/ban') {
-            botReply(`🔨 Игрок **${target || 'unknown'}** забанен. Срок: **${time}**`, true);
-            if(target === user.first_name || target === "@" + user.first_name) {
-                setTimeout(() => {
-                    document.getElementById('banScreen').style.display = 'flex';
-                    document.getElementById('banText').innerText = `Причина: Самоблокировка\nСрок: ${time}`;
-                }, 1000);
+            botReply(`🔨 Инициирована блокировка игрока **${target || 'unknown'}**...`, true);
+            // Если банишь свой же ник
+            if(target === user.first_name || target === "@" + user.first_name || target === "Owner") {
+                triggerBan(target, time);
             }
         } 
         else if (cmd === '/role') {
-            botReply(`✨ Игроку **${target}** выдана роль **${parts[2] || 'Member'}**`);
+            botReply(`✨ Права доступа игрока **${target}** изменены на **${parts[2] || 'Member'}**`);
         }
         else if (cmd === '/help') {
-            botReply("Команды Owner:<br>/ban [ник] [время]<br>/role [ник] [роль]<br>/clear");
+            botReply("<b>Доступные директивы:</b><br>/ban [ник] [время]<br>/role [ник] [роль]<br>/clear - очистка терминала");
         }
         else if (cmd === '/clear') {
             chat.innerHTML = '';
-            botReply("Чат очищен.");
+            botReply("Логи чата успешно очищены.");
         }
     }
 
     function send() {
+        if(isLocked) return; // Запрет отправки если бан
+
         const val = input.value.trim();
         if (!val) return;
 
@@ -196,8 +213,6 @@
 
         const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         const isPing = val.includes('@');
-        
-        // Рендер сообщения с поддержкой **жирного**
         let text = val.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 
         const msg = `
@@ -214,16 +229,19 @@
         chat.scrollTop = chat.scrollHeight;
         input.value = '';
 
-        // Опыт
-        xp += 25;
-        if(xp >= 100) { xp = 0; lvl++; botReply(`🎉 Уровень повышен! Ваш уровень: **${lvl}**`); }
+        // Прокачка
+        xp += 20;
+        if(xp >= 100) { xp = 0; lvl++; botReply(`⚡ Уровень повышен! Текущий ранг: **${lvl}**`); }
+        tg.HapticFeedback.selectionChanged();
     }
 
     input.addEventListener('input', () => {
         document.getElementById('typing').style.display = input.value ? 'block' : 'none';
     });
 
-    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') send(); });
+    input.addEventListener('keypress', (e) => { 
+        if (e.key === 'Enter' && !isLocked) send(); 
+    });
 </script>
 
 </body>
