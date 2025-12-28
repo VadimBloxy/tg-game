@@ -2,371 +2,265 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Neon TD: Evolution - Part 2</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Discord Mobile Pro</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg: #0a0a12;
-            --panel: #16213e;
-            --accent: #e94560;
-            --gold: #fbc531;
-            --green: #4ecca3;
-            --cell: #1a1a2e; /* Новый цвет для клеток */
+            --bg-darker: #111214; --bg-dark: #1e1f22; --bg-sidebar: #2b2d31; --bg-main: #313338;
+            --text-muted: #949ba4; --text-light: #dbdee1; --accent: #5865f2; --success: #23a55a;
+            --danger: #ed4245; --warning: #f1c40f;
         }
 
-        body {
-            margin: 0;
-            padding: 0;
-            background: var(--bg);
-            color: white;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: 'gg sans', 'Noto Sans', sans-serif; background: var(--bg-dark); color: white; display: flex; height: 100vh; overflow: hidden; }
 
-        #game-container {
-            width: 900px;
-            height: 600px;
-            background: var(--panel);
-            border: 3px solid #0f3460;
-            position: relative;
-            box-shadow: 0 0 30px rgba(0,0,0,0.8);
-            border-radius: 10px;
-        }
+        /* --- ЛЕВАЯ ПАНЕЛЬ: СЕРВЕРЫ --- */
+        .server-rail { width: 72px; background: var(--bg-darker); display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; flex-shrink: 0; z-index: 10; }
+        .server-btn { width: 48px; height: 48px; background: var(--bg-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; color: var(--text-light); font-size: 20px; }
+        .server-btn:hover, .server-btn.active { border-radius: 16px; background: var(--accent); color: white; }
+        .server-btn.active::before { content: ''; position: absolute; left: -12px; width: 8px; height: 40px; background: white; border-radius: 0 4px 4px 0; }
+        .server-btn i { pointer-events: none; }
 
-        /* Экраны */
-        .screen {
-            display: none;
-            width: 100%;
-            height: 100%;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            position: absolute;
-        }
+        /* --- САЙДБАР: КАНАЛЫ --- */
+        .sidebar { width: 240px; background: var(--bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; }
+        .server-info-header { height: 48px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; font-weight: bold; box-shadow: 0 1px 0 rgba(0,0,0,0.2); cursor: pointer; }
+        .server-info-header:hover { background: rgba(255,255,255,0.05); }
 
-        .active { display: flex; }
+        .content-scrollable { flex: 1; overflow-y: auto; padding: 8px; }
+        .category-item { color: var(--text-muted); font-size: 12px; font-weight: bold; margin: 18px 0 4px 8px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; }
+        .channel-link { padding: 6px 8px; border-radius: 4px; display: flex; align-items: center; gap: 8px; color: var(--text-muted); cursor: pointer; margin-bottom: 2px; }
+        .channel-link:hover { background: rgba(78, 80, 88, 0.3); color: var(--text-light); }
+        .channel-link.active { background: rgba(78, 80, 88, 0.6); color: white; }
+        .channel-link i { font-size: 18px; opacity: 0.6; }
 
-        /* Интерфейс */
-        h1 { font-size: 4rem; margin: 0 0 10px 0; color: var(--accent); text-shadow: 3px 3px 0px #533483; letter-spacing: 5px; }
+        /* --- ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ --- */
+        .user-controls { height: 52px; background: #232428; padding: 0 8px; display: flex; align-items: center; gap: 8px; }
+        .user-avatar-stack { position: relative; width: 32px; height: 32px; cursor: pointer; }
+        .user-avatar-stack img, .static-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .online-status { width: 14px; height: 14px; background: var(--success); border-radius: 50%; position: absolute; bottom: -2px; right: -2px; border: 3px solid #232428; }
+
+        /* --- ЧАТ (ОСНОВНОЕ ОКНО) --- */
+        .main-chat { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; position: relative; }
+        .top-nav { height: 48px; border-bottom: 1px solid rgba(0,0,0,0.2); display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 5; }
+        .messages-container { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
         
-        .stats-bar {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            font-size: 1.5rem;
-            color: var(--gold);
-            font-weight: bold;
-            z-index: 10;
-            background: rgba(0,0,0,0.3);
-            padding: 5px 15px;
-            border-radius: 20px;
-        }
+        /* Сообщения */
+        .msg-row { display: flex; gap: 16px; animation: slideIn 0.2s ease-out; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+        .msg-body { display: flex; flex-direction: column; }
+        .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
+        .msg-author { font-weight: 600; font-size: 15px; cursor: pointer; }
+        .msg-author:hover { text-decoration: underline; }
+        .msg-time { color: var(--text-muted); font-size: 11px; }
+        .msg-text { color: var(--text-light); font-size: 15px; line-height: 1.375; white-space: pre-wrap; }
+        .badge { font-size: 10px; padding: 1px 4px; border-radius: 3px; text-transform: uppercase; font-weight: bold; }
+        .badge-admin { background: var(--danger); }
 
-        .btn {
-            background: #0f3460;
-            color: white;
-            border: 2px solid var(--accent);
-            padding: 15px 50px;
-            margin: 10px;
-            cursor: pointer;
-            font-size: 1.2rem;
-            font-weight: bold;
-            transition: 0.2s;
-            text-transform: uppercase;
-            border-radius: 5px;
-            width: 250px;
-        }
+        /* Ввод сообщения */
+        .chat-input-area { padding: 0 16px 20px 16px; }
+        .input-pill { background: #383a40; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
+        .input-pill input { background: transparent; border: none; color: white; flex: 1; outline: none; font-size: 15px; height: 24px; }
 
-        .btn:hover {
-            background: var(--accent);
-            box-shadow: 0 0 15px var(--accent);
-            transform: scale(1.05);
-        }
+        /* --- МОДАЛКИ (ПРОФИЛЬ) --- */
+        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; backdrop-filter: blur(2px); }
+        .profile-card { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; background: #111214; border-radius: 12px; overflow: hidden; z-index: 101; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid #333; }
+        .profile-banner { height: 80px; background: var(--accent); position: relative; }
+        .profile-pfp { width: 80px; height: 80px; border-radius: 50%; border: 6px solid #111214; background: var(--bg-main); position: absolute; top: 40px; left: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; }
+        .profile-info { padding: 50px 16px 16px 16px; }
+        .profile-name { font-size: 20px; font-weight: bold; }
+        .profile-tag { color: var(--text-muted); font-size: 14px; margin-bottom: 12px; }
+        .profile-btn { width: 100%; padding: 10px; border-radius: 4px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
 
-        /* Магазин и Инвентарь */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            width: 90%;
-            max-height: 400px;
-            overflow-y: auto;
-            padding: 10px;
-        }
-
-        .card {
-            background: #1a1a2e;
-            border: 2px solid #0f3460;
-            padding: 20px;
-            border-radius: 10px;
-            transition: 0.3s;
-        }
-
-        .card:hover { border-color: var(--green); }
-        .card h3 { margin-top: 0; color: var(--green); }
-        .price { color: var(--gold); font-size: 1.2rem; margin-bottom: 15px; }
-
-        /* ИГРОВОЕ ПОЛЕ (Новое) */
-        #map {
-            display: grid;
-            grid-template-columns: repeat(12, 50px);
-            grid-template-rows: repeat(8, 50px);
-            gap: 2px;
-            background: #0f3460;
-            padding: 5px;
-            border: 2px solid var(--accent);
-        }
-
-        .cell {
-            width: 50px; height: 50px; background: var(--cell);
-            display: flex; justify-content: center; align-items: center;
-            cursor: pointer; font-size: 0.6rem; text-align: center; color: #555;
-        }
-        .cell:hover { background: #232344; }
-        .cell.path { background: #2e2e4d; color: var(--gold); cursor: default; } /* Дорога */
-        .cell.tower-placed { background: var(--green); color: black; font-weight: bold; font-size: 0.8rem; }
-
-        /* Селектор башен в бою */
-        #battle-ui {
-            margin-top: 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            background: rgba(0,0,0,0.4);
-            padding: 10px;
-            border-radius: 10px;
-        }
-
-        .tower-option {
-            padding: 8px 15px;
-            border: 1px solid var(--green);
-            cursor: pointer;
-            font-size: 0.9rem;
-            border-radius: 4px;
-        }
-
-        .tower-option.selected {
-            background: var(--green);
-            color: black;
-            box-shadow: 0 0 10px var(--green);
-        }
-
-        /* Анимация открытия кейса */
-        #loot-anim {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.9);
-            width: 100%;
-            height: 100%;
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 100;
+        /* Mobile Adjustments */
+        @media (max-width: 600px) {
+            .sidebar { width: 0; overflow: hidden; position: absolute; height: 100%; z-index: 8; }
+            .sidebar.open { width: 240px; }
         }
     </style>
 </head>
 <body>
 
-<div id="game-container">
-    <div class="stats-bar">💰 <span id="coins">1000</span></div>
+<div class="server-rail">
+    <div class="server-btn active" data-server="main" title="Discord Clone"><i class="fa-brands fa-discord"></i></div>
+    <div class="server-btn" data-server="dev" title="Developer Base"><i class="fa-solid fa-code"></i></div>
+    <div class="server-btn" data-server="gaming" title="Gamer Zone"><i class="fa-solid fa-ghost"></i></div>
+    <div style="width: 32px; height: 2px; background: #35373c;"></div>
+    <div class="server-btn"><i class="fa-solid fa-plus"></i></div>
+</div>
 
-    <div id="menu" class="screen active">
-        <h1>NEON TD</h1>
-        <button class="btn" onclick="goTo('play')">В БОЙ</button>
-        <button class="btn" onclick="goTo('inventory')">ИНВЕНТАРЬ</button>
-        <button class="btn" onclick="goTo('shop')">МАГАЗИН</button>
+<div class="sidebar" id="sidebar">
+    <div class="server-info-header">
+        <span id="serverNameDisp">Discord Clone</span>
+        <i class="fa-solid fa-chevron-down"></i>
     </div>
+    <div class="content-scrollable" id="channelList">
+        </div>
+    <div class="user-controls">
+        <div class="user-avatar-stack" onclick="openProfile()">
+            <div class="static-avatar" id="navAvatar">?</div>
+            <div class="online-status"></div>
+        </div>
+        <div style="flex: 1; min-width: 0;">
+            <div id="navUser" style="font-weight: bold; font-size: 14px; overflow: hidden; text-overflow: ellipsis;">User</div>
+            <div style="font-size: 12px; color: var(--text-muted);">Online</div>
+        </div>
+        <i class="fa-solid fa-microphone" style="color: var(--text-muted); cursor: pointer; padding: 5px;"></i>
+        <i class="fa-solid fa-gear" style="color: var(--text-muted); cursor: pointer; padding: 5px;" onclick="openProfile()"></i>
+    </div>
+</div>
 
-    <div id="shop" class="screen">
-        <h2>СЕКРЕТНЫЕ КЕЙСЫ</h2>
-        <div class="grid">
-            <div class="card">
-                <h3>Деревянный ящик</h3>
-                <div class="price">100 💰</div>
-                <button class="btn" style="width:100%; padding:10px;" onclick="buyBox('Wood', 100)">ОТКРЫТЬ</button>
-            </div>
-            <div class="card">
-                <h3>Стальной сейф</h3>
-                <div class="price">300 💰</div>
-                <button class="btn" style="width:100%; padding:10px;" onclick="buyBox('Steel', 300)">ОТКРЫТЬ</button>
-            </div>
-            <div class="card" style="border-color: var(--gold);">
-                <h3>Квантовый бокс</h3>
-                <div class="price">750 💰</div>
-                <button class="btn" style="width:100%; padding:10px;" onclick="buyBox('Quantum', 750)">ОТКРЫТЬ</button>
+<div class="main-chat">
+    <div class="top-nav">
+        <i class="fa-solid fa-hashtag" style="color: var(--text-muted); font-size: 20px;"></i>
+        <span id="chanTitle" style="font-weight: bold;">general</span>
+    </div>
+    <div class="messages-container" id="messages">
+        <div class="msg-row">
+            <div class="msg-avatar" style="background: #e91e63;">B</div>
+            <div class="msg-body">
+                <div class="msg-header">
+                    <span class="msg-author msg-admin">Bot Helper <span class="badge badge-admin">BOT</span></span>
+                    <span class="msg-time">Today at 10:00 AM</span>
+                </div>
+                <div class="msg-text">Welcome! This is a high-level Discord implementation. Switch servers, check profiles, and chat away!</div>
             </div>
         </div>
-        <button class="btn" onclick="goTo('menu')">НАЗАД</button>
     </div>
-
-    <div id="inventory" class="screen">
-        <h2>ВАШ АРСЕНАЛ</h2>
-        <div id="inv-list" class="grid"></div>
-        <button class="btn" onclick="goTo('menu')">НАЗАД</button>
-    </div>
-
-    <div id="play" class="screen">
-        <div id="map"></div>
-        
-        <div id="battle-ui">
-            <span>Выбрать башню:</span>
-            <div id="tower-select-list" style="display: flex; gap: 10px;"></div>
+    <div class="chat-input-area">
+        <div class="input-pill">
+            <i class="fa-solid fa-circle-plus" style="color: var(--text-muted); font-size: 22px; cursor: pointer;"></i>
+            <input type="text" id="chatInput" placeholder="Message #general">
+            <i class="fa-solid fa-gift" style="color: var(--text-muted); cursor: pointer;"></i>
+            <i class="fa-solid fa-face-smile" style="color: var(--text-muted); cursor: pointer;"></i>
         </div>
-
-        <button class="btn" onclick="goTo('menu')" style="margin-top:10px; padding: 5px 20px; width: auto;">В МЕНЮ</button>
     </div>
+</div>
 
-    <div id="loot-anim">
-        <h2 id="loot-status" style="color: var(--gold);">ОТКРЫТИЕ...</h2>
-        <h1 id="loot-name">???</h1>
-        <button class="btn" onclick="closeLoot()">ЗАБРАТЬ</button>
+<div class="overlay" id="overlay" onclick="closeProfile()"></div>
+<div class="profile-card" id="profileCard">
+    <div class="profile-banner"></div>
+    <div class="profile-pfp" id="profPfp">?</div>
+    <div class="profile-info">
+        <div class="profile-name" id="profName">User</div>
+        <div class="profile-tag" id="profTag">@user_tg</div>
+        <div style="font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px;">About Me</div>
+        <div style="font-size: 14px; color: var(--text-light); margin-bottom: 16px;">Exploring Telegram Mini Apps. Making things happen!</div>
+        <div style="font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px;">Member Since</div>
+        <div style="font-size: 14px; color: var(--text-light); margin-bottom: 16px;">Dec 2025</div>
+        <button class="profile-btn">Edit Profile</button>
     </div>
 </div>
 
 <script>
-    let gameState = {
-        coins: 1000,
-        inventory: ["Пулеметчик"], // Даем одну на старт
-        selectedTower: null
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    tg.ready();
+
+    // --- ДАННЫЕ ПРИЛОЖЕНИЯ ---
+    const servers = {
+        main: { name: 'Discord Clone', channels: ['general', 'rules', 'news', 'offtopic'] },
+        dev: { name: 'Developer Base', channels: ['code-help', 'api-bugs', 'showcase'] },
+        gaming: { name: 'Gamer Zone', channels: ['match-making', 'voice-lounge', 'clips'] }
     };
 
-    const towerPool = {
-        'Wood': ['Пулеметчик', 'Лучник'],
-        'Steel': ['Снайпер', 'Огнемет'],
-        'Quantum': ['Лазер', 'Тесла-вышка']
-    };
+    let currentServer = 'main';
+    let currentChannel = 'general';
 
-    // ПУТЬ ВРАГА (индексы клеток)
-    const enemyPath = [12,13,14,26,38,50,51,52,40,28,16,17,18,19,31,43,55,67,68,69];
+    // --- ИНИЦИАЛИЗАЦИЯ TG ---
+    const user = tg.initDataUnsafe?.user || { first_name: 'Guest', username: 'guest' };
+    document.getElementById('navUser').innerText = user.first_name;
+    document.getElementById('profName').innerText = user.first_name;
+    document.getElementById('profTag').innerText = '@' + (user.username || 'unknown');
+    document.getElementById('navAvatar').innerText = user.first_name[0].toUpperCase();
+    document.getElementById('profPfp').innerText = user.first_name[0].toUpperCase();
 
-    function createMap() {
-        const mapDiv = document.getElementById('map');
-        mapDiv.innerHTML = '';
-        for (let i = 0; i < 96; i++) { // 12x8 = 96 клеток
-            const cell = document.createElement('div');
-            cell.className = 'cell';
-            cell.id = `c-${i}`;
-            
-            if (enemyPath.includes(i)) {
-                cell.classList.add('path');
-                cell.innerText = '•';
-            } else {
-                cell.onclick = () => placeTower(i);
-            }
-            mapDiv.appendChild(cell);
-        }
-    }
-
-    function updateBattleUI() {
-        const list = document.getElementById('tower-select-list');
-        list.innerHTML = '';
+    // --- ФУНКЦИИ ИНТЕРФЕЙСА ---
+    function renderChannels(srvKey) {
+        const list = document.getElementById('channelList');
+        list.innerHTML = `<div class="category-item">Text Channels <i class="fa-solid fa-plus"></i></div>`;
         
-        // Получаем уникальные башни из инвентаря
-        const uniqueTowers = [...new Set(gameState.inventory)];
-        
-        uniqueTowers.forEach(tName => {
-            const count = gameState.inventory.filter(x => x === tName).length;
-            const opt = document.createElement('div');
-            opt.className = 'tower-option' + (gameState.selectedTower === tName ? ' selected' : '');
-            opt.innerText = `${tName} (x${count})`;
-            opt.onclick = () => {
-                gameState.selectedTower = tName;
-                updateBattleUI();
-            };
-            list.appendChild(opt);
-        });
-
-        if(uniqueTowers.length === 0) list.innerHTML = '<small>Нет башен в инвентаре!</small>';
-    }
-
-    function placeTower(index) {
-        if (!gameState.selectedTower) {
-            alert("Выберите башню в панели внизу!");
-            return;
-        }
-
-        const cell = document.getElementById(`c-${index}`);
-        if (cell.classList.contains('tower-placed')) return;
-
-        // Ставим башню
-        cell.classList.add('tower-placed');
-        cell.innerText = gameState.selectedTower;
-
-        // Удаляем одну штуку из инвентаря
-        const itemIdx = gameState.inventory.indexOf(gameState.selectedTower);
-        gameState.inventory.splice(itemIdx, 1);
-        
-        gameState.selectedTower = null; // Сбрасываем выбор
-        updateBattleUI();
-    }
-
-    function goTo(screenId) {
-        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-
-        if(screenId === 'inventory') renderInventory();
-        if(screenId === 'play') {
-            createMap();
-            updateBattleUI();
-        }
-    }
-
-    function buyBox(type, price) {
-        if (gameState.coins >= price) {
-            gameState.coins -= price;
-            updateUI();
-            openBox(type);
-        } else {
-            alert("Маловато золотишка!");
-        }
-    }
-
-    function openBox(type) {
-        const items = towerPool[type];
-        const winItem = items[Math.floor(Math.random() * items.length)];
-        const animScreen = document.getElementById('loot-anim');
-        const nameText = document.getElementById('loot-name');
-        
-        animScreen.style.display = 'flex';
-        nameText.innerText = '???';
-        
-        setTimeout(() => {
-            nameText.innerText = winItem;
-            gameState.inventory.push(winItem);
-        }, 800);
-    }
-
-    function closeLoot() {
-        document.getElementById('loot-anim').style.display = 'none';
-    }
-
-    function renderInventory() {
-        const list = document.getElementById('inv-list');
-        list.innerHTML = '';
-        if(gameState.inventory.length === 0) {
-            list.innerHTML = '<p style="grid-column: 1/4">У вас пока нет башен. Купите их в магазине!</p>';
-            return;
-        }
-        gameState.inventory.forEach(item => {
-            const card = document.createElement('div');
-            card.className = 'card';
-            card.innerHTML = `<h3>${item}</h3><p>Готов к бою</p>`;
-            list.appendChild(card);
+        servers[srvKey].channels.forEach(ch => {
+            const div = document.createElement('div');
+            div.className = `channel-link ${ch === currentChannel ? 'active' : ''}`;
+            div.innerHTML = `<i class="fa-solid fa-hashtag"></i> ${ch}`;
+            div.onclick = () => switchChannel(ch, div);
+            list.appendChild(div);
         });
     }
 
-    function updateUI() {
-        document.getElementById('coins').innerText = gameState.coins;
+    function switchChannel(name, el) {
+        currentChannel = name;
+        document.querySelectorAll('.channel-link').forEach(c => c.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('chanTitle').innerText = name;
+        document.getElementById('chatInput').placeholder = `Message #${name}`;
+        // На мобилках можно закрывать сайдбар после выбора
+        if(window.innerWidth < 600) document.getElementById('sidebar').classList.remove('open');
     }
 
-    updateUI();
+    document.querySelectorAll('.server-btn[data-server]').forEach(btn => {
+        btn.onclick = () => {
+            const srv = btn.getAttribute('data-server');
+            document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            currentServer = srv;
+            document.getElementById('serverNameDisp').innerText = servers[srv].name;
+            currentChannel = servers[srv].channels[0];
+            document.getElementById('chanTitle').innerText = currentChannel;
+            renderChannels(srv);
+        };
+    });
+
+    // --- ЧАТ ---
+    const input = document.getElementById('chatInput');
+    input.onkeypress = (e) => {
+        if (e.key === 'Enter' && input.value.trim()) {
+            addMessage(user.first_name, input.value, true);
+            input.value = '';
+        }
+    };
+
+    function addMessage(author, text, isMe = false) {
+        const container = document.getElementById('messages');
+        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        const msgHtml = `
+            <div class="msg-row">
+                <div class="msg-avatar" style="${isMe ? 'background:var(--accent)' : 'background:#7289da'}">${author[0].toUpperCase()}</div>
+                <div class="msg-body">
+                    <div class="msg-header">
+                        <span class="msg-author" style="${isMe ? 'color:var(--success)' : ''}">${author}</span>
+                        <span class="msg-time">Today at ${time}</span>
+                    </div>
+                    <div class="msg-text">${text}</div>
+                </div>
+            </div>
+        `;
+        container.insertAdjacentHTML('beforeend', msgHtml);
+        container.scrollTop = container.scrollHeight;
+    }
+
+    // --- МОДАЛКИ ---
+    function openProfile() {
+        document.getElementById('overlay').style.display = 'block';
+        document.getElementById('profileCard').style.display = 'block';
+    }
+    function closeProfile() {
+        document.getElementById('overlay').style.display = 'none';
+        document.getElementById('profileCard').style.display = 'none';
+    }
+
+    // Стартовый рендер
+    renderChannels('main');
+
+    // Кнопка назад в ТГ (закрывает профиль если открыт)
+    tg.BackButton.onClick(() => {
+        closeProfile();
+        tg.BackButton.hide();
+    });
 </script>
 </body>
 </html>
