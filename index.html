@@ -3,264 +3,224 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Discord Mobile Pro</title>
+    <title>Telecord Ultimate</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-darker: #111214; --bg-dark: #1e1f22; --bg-sidebar: #2b2d31; --bg-main: #313338;
-            --text-muted: #949ba4; --text-light: #dbdee1; --accent: #5865f2; --success: #23a55a;
-            --danger: #ed4245; --warning: #f1c40f;
+            --bg-dark: #09090a; --bg-sidebar: #111214; --bg-main: #161719;
+            --accent: #3b82f6; --text-muted: #71717a; --ping: rgba(245, 158, 11, 0.15);
+            --role-owner: #000000; --role-admin: #ef4444;
+            --role-mod: #f59e0b; --role-member: #3b82f6; --role-bot: #1e3a8a;
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { margin: 0; font-family: 'gg sans', 'Noto Sans', sans-serif; background: var(--bg-dark); color: white; display: flex; height: 100vh; overflow: hidden; }
+        body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: var(--bg-dark); color: #e4e4e7; display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- ЛЕВАЯ ПАНЕЛЬ: СЕРВЕРЫ --- */
-        .server-rail { width: 72px; background: var(--bg-darker); display: flex; flex-direction: column; align-items: center; padding: 12px 0; gap: 8px; flex-shrink: 0; z-index: 10; }
-        .server-btn { width: 48px; height: 48px; background: var(--bg-main); border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); position: relative; color: var(--text-light); font-size: 20px; }
-        .server-btn:hover, .server-btn.active { border-radius: 16px; background: var(--accent); color: white; }
-        .server-btn.active::before { content: ''; position: absolute; left: -12px; width: 8px; height: 40px; background: white; border-radius: 0 4px 4px 0; }
-        .server-btn i { pointer-events: none; }
-
-        /* --- САЙДБАР: КАНАЛЫ --- */
-        .sidebar { width: 240px; background: var(--bg-sidebar); display: flex; flex-direction: column; flex-shrink: 0; transition: transform 0.3s ease; }
-        .server-info-header { height: 48px; padding: 0 16px; display: flex; align-items: center; justify-content: space-between; font-weight: bold; box-shadow: 0 1px 0 rgba(0,0,0,0.2); cursor: pointer; }
-        .server-info-header:hover { background: rgba(255,255,255,0.05); }
-
-        .content-scrollable { flex: 1; overflow-y: auto; padding: 8px; }
-        .category-item { color: var(--text-muted); font-size: 12px; font-weight: bold; margin: 18px 0 4px 8px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; }
-        .channel-link { padding: 6px 8px; border-radius: 4px; display: flex; align-items: center; gap: 8px; color: var(--text-muted); cursor: pointer; margin-bottom: 2px; }
-        .channel-link:hover { background: rgba(78, 80, 88, 0.3); color: var(--text-light); }
-        .channel-link.active { background: rgba(78, 80, 88, 0.6); color: white; }
-        .channel-link i { font-size: 18px; opacity: 0.6; }
-
-        /* --- ПАНЕЛЬ ПОЛЬЗОВАТЕЛЯ --- */
-        .user-controls { height: 52px; background: #232428; padding: 0 8px; display: flex; align-items: center; gap: 8px; }
-        .user-avatar-stack { position: relative; width: 32px; height: 32px; cursor: pointer; }
-        .user-avatar-stack img, .static-avatar { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .online-status { width: 14px; height: 14px; background: var(--success); border-radius: 50%; position: absolute; bottom: -2px; right: -2px; border: 3px solid #232428; }
-
-        /* --- ЧАТ (ОСНОВНОЕ ОКНО) --- */
-        .main-chat { flex: 1; background: var(--bg-main); display: flex; flex-direction: column; position: relative; }
-        .top-nav { height: 48px; border-bottom: 1px solid rgba(0,0,0,0.2); display: flex; align-items: center; padding: 0 16px; gap: 12px; z-index: 5; }
-        .messages-container { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 16px; scroll-behavior: smooth; }
+        /* САЙДБАР */
+        .server-rail { width: 68px; background: var(--bg-dark); display: flex; flex-direction: column; align-items: center; padding: 12px 0; border-right: 1px solid #27272a; gap: 10px; }
+        .tc-logo { width: 48px; height: 48px; background: var(--accent); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); cursor: pointer; }
         
-        /* Сообщения */
-        .msg-row { display: flex; gap: 16px; animation: slideIn 0.2s ease-out; }
-        @keyframes slideIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--accent); flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-weight: bold; }
-        .msg-body { display: flex; flex-direction: column; }
-        .msg-header { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; }
-        .msg-author { font-weight: 600; font-size: 15px; cursor: pointer; }
-        .msg-author:hover { text-decoration: underline; }
-        .msg-time { color: var(--text-muted); font-size: 11px; }
-        .msg-text { color: var(--text-light); font-size: 15px; line-height: 1.375; white-space: pre-wrap; }
-        .badge { font-size: 10px; padding: 1px 4px; border-radius: 3px; text-transform: uppercase; font-weight: bold; }
-        .badge-admin { background: var(--danger); }
+        .sidebar { width: 240px; background: var(--bg-sidebar); display: flex; flex-direction: column; border-right: 1px solid #27272a; }
+        .sidebar-header { padding: 16px; font-size: 16px; font-weight: 700; border-bottom: 1px solid #27272a; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
+        .sidebar-header:hover { background: #1c1d21; }
 
-        /* Ввод сообщения */
-        .chat-input-area { padding: 0 16px 20px 16px; }
-        .input-pill { background: #383a40; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; }
-        .input-pill input { background: transparent; border: none; color: white; flex: 1; outline: none; font-size: 15px; height: 24px; }
+        .member-list { flex: 1; overflow-y: auto; padding: 12px; }
+        .role-group { margin-bottom: 16px; }
+        .role-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+        .user-block { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
+        .user-block:hover { background: rgba(255,255,255,0.05); }
+        .user-nickname { font-size: 13px; font-weight: 500; }
 
-        /* --- МОДАЛКИ (ПРОФИЛЬ) --- */
-        .overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 100; backdrop-filter: blur(2px); }
-        .profile-card { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 320px; background: #111214; border-radius: 12px; overflow: hidden; z-index: 101; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid #333; }
-        .profile-banner { height: 80px; background: var(--accent); position: relative; }
-        .profile-pfp { width: 80px; height: 80px; border-radius: 50%; border: 6px solid #111214; background: var(--bg-main); position: absolute; top: 40px; left: 16px; display: flex; align-items: center; justify-content: center; font-size: 32px; font-weight: bold; }
-        .profile-info { padding: 50px 16px 16px 16px; }
-        .profile-name { font-size: 20px; font-weight: bold; }
-        .profile-tag { color: var(--text-muted); font-size: 14px; margin-bottom: 12px; }
-        .profile-btn { width: 100%; padding: 10px; border-radius: 4px; border: none; background: var(--accent); color: white; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        /* ЧАТ */
+        .chat-container { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); }
+        .chat-header { height: 56px; padding: 0 16px; display: flex; align-items: center; border-bottom: 1px solid #27272a; gap: 10px; }
+        .messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+        
+        .msg-bubble { background: #1c1d21; padding: 10px 14px; border-radius: 4px 12px 12px 12px; max-width: 85%; position: relative; border-left: 2px solid transparent; animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        .msg-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .ping { background: var(--ping); border-left: 2px solid #f59e0b !important; color: #fbbf24; }
+        
+        /* ИНПУТ */
+        .input-area { padding: 16px; border-top: 1px solid #27272a; }
+        .input-wrap { background: #09090a; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid #27272a; }
+        input { background: transparent; border: none; color: white; flex: 1; outline: none; font-size: 14px; }
+        .typing-indicator { font-size: 11px; color: var(--text-muted); height: 14px; margin-bottom: 4px; padding-left: 4px; display: none; }
 
-        /* Mobile Adjustments */
-        @media (max-width: 600px) {
-            .sidebar { width: 0; overflow: hidden; position: absolute; height: 100%; z-index: 8; }
-            .sidebar.open { width: 240px; }
-        }
+        /* НАСТРОЙКИ (МОДАЛКА) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
+        .modal-content { background: var(--bg-sidebar); border-radius: 12px; width: 100%; max-width: 400px; padding: 24px; border: 1px solid #27272a; }
+
+        .owner-t { color: var(--role-owner); text-shadow: 0 0 2px #fff; }
+        .admin-t { color: var(--role-admin); }
+        .mod-t { color: var(--role-mod); }
+        .mem-t { color: var(--role-member); }
+        .bot-t { color: var(--role-bot); }
+        
+        .bot-badge { background: var(--role-bot); font-size: 9px; padding: 1px 4px; border-radius: 3px; color: white; vertical-align: middle; }
     </style>
 </head>
 <body>
 
 <div class="server-rail">
-    <div class="server-btn active" data-server="main" title="Discord Clone"><i class="fa-brands fa-discord"></i></div>
-    <div class="server-btn" data-server="dev" title="Developer Base"><i class="fa-solid fa-code"></i></div>
-    <div class="server-btn" data-server="gaming" title="Gamer Zone"><i class="fa-solid fa-ghost"></i></div>
-    <div style="width: 32px; height: 2px; background: #35373c;"></div>
-    <div class="server-btn"><i class="fa-solid fa-plus"></i></div>
+    <div class="tc-logo">TC</div>
+    <div style="width: 30px; height: 1px; background: #27272a;"></div>
+    <i class="fa-solid fa-moon" style="color: #52525b; cursor: pointer;"></i>
 </div>
 
-<div class="sidebar" id="sidebar">
-    <div class="server-info-header">
-        <span id="serverNameDisp">Discord Clone</span>
-        <i class="fa-solid fa-chevron-down"></i>
+<div class="sidebar">
+    <div class="sidebar-header" onclick="openSettings()">
+        <span>Telecord</span>
+        <i class="fa-solid fa-gear" id="settingsIcon" style="display:none;"></i>
     </div>
-    <div class="content-scrollable" id="channelList">
+    <div class="member-list">
+        <div class="role-group">
+            <div class="role-title owner-t"><i class="fa-solid fa-crown"></i> Owner</div>
+            <div class="user-block" onclick="mention('Admin_Boss')">
+                <div class="user-nickname owner-t">Admin_Boss</div>
+            </div>
         </div>
-    <div class="user-controls">
-        <div class="user-avatar-stack" onclick="openProfile()">
-            <div class="static-avatar" id="navAvatar">?</div>
-            <div class="online-status"></div>
+        <div class="role-group">
+            <div class="role-title bot-t">Bot</div>
+            <div class="user-block">
+                <div class="user-nickname bot-t">Telecord Bot <span class="bot-badge">БОТ</span></div>
+            </div>
         </div>
-        <div style="flex: 1; min-width: 0;">
-            <div id="navUser" style="font-weight: bold; font-size: 14px; overflow: hidden; text-overflow: ellipsis;">User</div>
-            <div style="font-size: 12px; color: var(--text-muted);">Online</div>
+        <div class="role-group">
+            <div class="role-title admin-t">Admin</div>
+            <div class="user-block" onclick="mention('Alex_Admin')">
+                <div class="user-nickname admin-t">Alex_Admin</div>
+            </div>
         </div>
-        <i class="fa-solid fa-microphone" style="color: var(--text-muted); cursor: pointer; padding: 5px;"></i>
-        <i class="fa-solid fa-gear" style="color: var(--text-muted); cursor: pointer; padding: 5px;" onclick="openProfile()"></i>
-    </div>
-</div>
-
-<div class="main-chat">
-    <div class="top-nav">
-        <i class="fa-solid fa-hashtag" style="color: var(--text-muted); font-size: 20px;"></i>
-        <span id="chanTitle" style="font-weight: bold;">general</span>
-    </div>
-    <div class="messages-container" id="messages">
-        <div class="msg-row">
-            <div class="msg-avatar" style="background: #e91e63;">B</div>
-            <div class="msg-body">
-                <div class="msg-header">
-                    <span class="msg-author msg-admin">Bot Helper <span class="badge badge-admin">BOT</span></span>
-                    <span class="msg-time">Today at 10:00 AM</span>
-                </div>
-                <div class="msg-text">Welcome! This is a high-level Discord implementation. Switch servers, check profiles, and chat away!</div>
+        <div class="role-group">
+            <div class="role-title mem-t">Member</div>
+            <div class="user-block">
+                <div class="user-nickname mem-t" id="currentUserName">User</div>
             </div>
         </div>
     </div>
-    <div class="chat-input-area">
-        <div class="input-pill">
-            <i class="fa-solid fa-circle-plus" style="color: var(--text-muted); font-size: 22px; cursor: pointer;"></i>
-            <input type="text" id="chatInput" placeholder="Message #general">
-            <i class="fa-solid fa-gift" style="color: var(--text-muted); cursor: pointer;"></i>
-            <i class="fa-solid fa-face-smile" style="color: var(--text-muted); cursor: pointer;"></i>
+    
+    <div style="padding: 12px; background: #09090b; border-top: 1px solid #27272a; display: flex; align-items: center; gap: 10px;">
+        <div style="width: 32px; height: 32px; border-radius: 6px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold;" id="userInitial">?</div>
+        <div style="flex: 1;">
+            <div id="meName" style="font-size: 13px; font-weight: 700;">Loading...</div>
+            <div style="font-size: 10px; color: #22c55e;">Online</div>
         </div>
     </div>
 </div>
 
-<div class="overlay" id="overlay" onclick="closeProfile()"></div>
-<div class="profile-card" id="profileCard">
-    <div class="profile-banner"></div>
-    <div class="profile-pfp" id="profPfp">?</div>
-    <div class="profile-info">
-        <div class="profile-name" id="profName">User</div>
-        <div class="profile-tag" id="profTag">@user_tg</div>
-        <div style="font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px;">About Me</div>
-        <div style="font-size: 14px; color: var(--text-light); margin-bottom: 16px;">Exploring Telegram Mini Apps. Making things happen!</div>
-        <div style="font-size: 12px; font-weight: bold; text-transform: uppercase; color: var(--text-light); margin-bottom: 8px;">Member Since</div>
-        <div style="font-size: 14px; color: var(--text-light); margin-bottom: 16px;">Dec 2025</div>
-        <button class="profile-btn">Edit Profile</button>
+<div class="chat-container">
+    <div class="chat-header">
+        <i class="fa-solid fa-hashtag" style="color: var(--text-muted);"></i>
+        <span style="font-weight: 700;">общее_обсуждение</span>
+    </div>
+    <div class="messages" id="chat">
+        <div class="msg-bubble" style="border-left-color: var(--accent)">
+            <div class="msg-meta">System • 00:01</div>
+            <div>Markdown поддерживается: **жирный**, *курсив*. Используй `/` для команд.</div>
+        </div>
+    </div>
+    <div class="typing-indicator" id="typing">Кто-то печатает...</div>
+    <div class="input-area">
+        <div class="input-wrap">
+            <i class="fa-solid fa-face-smile" style="color: #52525b; cursor: pointer;"></i>
+            <input type="text" id="msgInput" placeholder="Написать сообщение или /help...">
+            <i class="fa-solid fa-paper-plane" style="color: var(--accent); cursor: pointer;" onclick="send()"></i>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="settingsModal" onclick="this.style.display='none'">
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <h2 style="margin-top: 0;">Настройки Telecord</h2>
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+            <div style="display: flex; justify-content: space-between;">
+                <span>Приватный режим</span>
+                <input type="checkbox" checked>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span>Уведомления ботом</span>
+                <input type="checkbox" checked>
+            </div>
+            <button style="background: #ef4444; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Очистить все логи</button>
+        </div>
     </div>
 </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    tg.ready();
+    const chat = document.getElementById('chat');
+    const input = document.getElementById('msgInput');
+    const user = tg.initDataUnsafe?.user || { first_name: "Owner_Dev", id: 123 };
 
-    // --- ДАННЫЕ ПРИЛОЖЕНИЯ ---
-    const servers = {
-        main: { name: 'Discord Clone', channels: ['general', 'rules', 'news', 'offtopic'] },
-        dev: { name: 'Developer Base', channels: ['code-help', 'api-bugs', 'showcase'] },
-        gaming: { name: 'Gamer Zone', channels: ['match-making', 'voice-lounge', 'clips'] }
-    };
+    // Проверка на Овнера (для теста считаем тебя овнером)
+    const isOwner = true; 
+    if(isOwner) document.getElementById('settingsIcon').style.display = 'block';
 
-    let currentServer = 'main';
-    let currentChannel = 'general';
-
-    // --- ИНИЦИАЛИЗАЦИЯ TG ---
-    const user = tg.initDataUnsafe?.user || { first_name: 'Guest', username: 'guest' };
-    document.getElementById('navUser').innerText = user.first_name;
-    document.getElementById('profName').innerText = user.first_name;
-    document.getElementById('profTag').innerText = '@' + (user.username || 'unknown');
-    document.getElementById('navAvatar').innerText = user.first_name[0].toUpperCase();
-    document.getElementById('profPfp').innerText = user.first_name[0].toUpperCase();
-
-    // --- ФУНКЦИИ ИНТЕРФЕЙСА ---
-    function renderChannels(srvKey) {
-        const list = document.getElementById('channelList');
-        list.innerHTML = `<div class="category-item">Text Channels <i class="fa-solid fa-plus"></i></div>`;
-        
-        servers[srvKey].channels.forEach(ch => {
-            const div = document.createElement('div');
-            div.className = `channel-link ${ch === currentChannel ? 'active' : ''}`;
-            div.innerHTML = `<i class="fa-solid fa-hashtag"></i> ${ch}`;
-            div.onclick = () => switchChannel(ch, div);
-            list.appendChild(div);
-        });
+    if (user) {
+        document.getElementById('currentUserName').innerText = user.first_name;
+        document.getElementById('meName').innerText = user.first_name;
+        document.getElementById('userInitial').innerText = user.first_name[0].toUpperCase();
     }
 
-    function switchChannel(name, el) {
-        currentChannel = name;
-        document.querySelectorAll('.channel-link').forEach(c => c.classList.remove('active'));
-        el.classList.add('active');
-        document.getElementById('chanTitle').innerText = name;
-        document.getElementById('chatInput').placeholder = `Message #${name}`;
-        // На мобилках можно закрывать сайдбар после выбора
-        if(window.innerWidth < 600) document.getElementById('sidebar').classList.remove('open');
-    }
-
-    document.querySelectorAll('.server-btn[data-server]').forEach(btn => {
-        btn.onclick = () => {
-            const srv = btn.getAttribute('data-server');
-            document.querySelectorAll('.server-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            currentServer = srv;
-            document.getElementById('serverNameDisp').innerText = servers[srv].name;
-            currentChannel = servers[srv].channels[0];
-            document.getElementById('chanTitle').innerText = currentChannel;
-            renderChannels(srv);
-        };
-    });
-
-    // --- ЧАТ ---
-    const input = document.getElementById('chatInput');
-    input.onkeypress = (e) => {
-        if (e.key === 'Enter' && input.value.trim()) {
-            addMessage(user.first_name, input.value, true);
-            input.value = '';
-        }
-    };
-
-    function addMessage(author, text, isMe = false) {
-        const container = document.getElementById('messages');
-        const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const msgHtml = `
-            <div class="msg-row">
-                <div class="msg-avatar" style="${isMe ? 'background:var(--accent)' : 'background:#7289da'}">${author[0].toUpperCase()}</div>
-                <div class="msg-body">
-                    <div class="msg-header">
-                        <span class="msg-author" style="${isMe ? 'color:var(--success)' : ''}">${author}</span>
-                        <span class="msg-time">Today at ${time}</span>
-                    </div>
-                    <div class="msg-text">${text}</div>
-                </div>
+    function botReply(text, isAlert = false) {
+        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        const html = `
+            <div class="msg-bubble" style="border-left-color: var(--role-bot); background: #111318;">
+                <div class="msg-meta">Telecord Bot • ${time}</div>
+                <div style="color: ${isAlert ? '#ef4444' : '#60a5fa'}">${text}</div>
             </div>
         `;
-        container.insertAdjacentHTML('beforeend', msgHtml);
-        container.scrollTop = container.scrollHeight;
+        chat.insertAdjacentHTML('beforeend', html);
+        chat.scrollTop = chat.scrollHeight;
+        // Звук (визуальный эффект)
+        tg.HapticFeedback.notificationOccurred('success');
     }
 
-    // --- МОДАЛКИ ---
-    function openProfile() {
-        document.getElementById('overlay').style.display = 'block';
-        document.getElementById('profileCard').style.display = 'block';
-    }
-    function closeProfile() {
-        document.getElementById('overlay').style.display = 'none';
-        document.getElementById('profileCard').style.display = 'none';
+    function mention(name) {
+        input.value += `@${name} `;
+        input.focus();
     }
 
-    // Стартовый рендер
-    renderChannels('main');
+    function openSettings() {
+        if(isOwner) document.getElementById('settingsModal').style.display = 'flex';
+    }
 
-    // Кнопка назад в ТГ (закрывает профиль если открыт)
-    tg.BackButton.onClick(() => {
-        closeProfile();
-        tg.BackButton.hide();
+    function send() {
+        const val = input.value.trim();
+        if (!val) return;
+
+        if (val.startsWith('/')) {
+            const [cmd, target, time] = val.split(' ');
+            if (cmd === '/ban') botReply(`🔨 **${target || 'Юзер'}** забанен на ${time || 'бессрочно'}.`, true);
+            else if (cmd === '/role') botReply(`✨ Роль игрока **${target || 'игрок'}** обновлена на ${time || 'Member'}.`);
+            else if (cmd === '/help') botReply("Команды: `/ban <nick> <time>`, `/role <nick> <role>`");
+            input.value = '';
+            return;
+        }
+
+        const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+        // Рендер пинга
+        const isPing = val.includes('@');
+        let processedText = val.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+
+        const msg = `
+            <div class="msg-bubble ${isPing ? 'ping' : ''}" style="align-self: flex-end; border-left: none; border-right: 2px solid var(--accent); background: #22232a;">
+                <div class="msg-meta" style="text-align: right;">Вы • ${time} <i class="fa-solid fa-check-double"></i></div>
+                <div>${processedText}</div>
+            </div>
+        `;
+        chat.insertAdjacentHTML('beforeend', msg);
+        chat.scrollTop = chat.scrollHeight;
+        input.value = '';
+    }
+
+    input.addEventListener('input', () => {
+        document.getElementById('typing').style.display = input.value ? 'block' : 'none';
     });
+
+    input.addEventListener('keypress', (e) => { if (e.key === 'Enter') send(); });
 </script>
 </body>
 </html>
