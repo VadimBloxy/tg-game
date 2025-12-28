@@ -10,139 +10,109 @@
         :root {
             --bg-dark: #09090a; --bg-sidebar: #111214; --bg-main: #161719;
             --accent: #3b82f6; --text-muted: #71717a; --ping: rgba(245, 158, 11, 0.15);
-            --role-owner: #000000; --role-admin: #ef4444;
+            --role-owner: #ffffff; --role-admin: #ef4444;
             --role-mod: #f59e0b; --role-member: #3b82f6; --role-bot: #1e3a8a;
         }
 
-        body { margin: 0; font-family: 'Inter', system-ui, sans-serif; background: var(--bg-dark); color: #e4e4e7; display: flex; height: 100vh; overflow: hidden; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg-dark); color: #e4e4e7; display: flex; height: 100vh; overflow: hidden; }
 
-        /* САЙДБАР */
-        .server-rail { width: 68px; background: var(--bg-dark); display: flex; flex-direction: column; align-items: center; padding: 12px 0; border-right: 1px solid #27272a; gap: 10px; }
-        .tc-logo { width: 48px; height: 48px; background: var(--accent); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); cursor: pointer; }
-        
-        .sidebar { width: 240px; background: var(--bg-sidebar); display: flex; flex-direction: column; border-right: 1px solid #27272a; }
-        .sidebar-header { padding: 16px; font-size: 16px; font-weight: 700; border-bottom: 1px solid #27272a; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: 0.3s; }
-        .sidebar-header:hover { background: #1c1d21; }
+        /* ЛЕВАЯ ПАНЕЛЬ ИКОНОК */
+        .server-rail { width: 68px; background: var(--bg-dark); display: flex; flex-direction: column; align-items: center; padding: 12px 0; border-right: 1px solid #27272a; gap: 10px; flex-shrink: 0; }
+        .tc-logo { width: 48px; height: 48px; background: var(--accent); border-radius: 14px; display: flex; align-items: center; justify-content: center; font-weight: 900; box-shadow: 0 0 20px rgba(59, 130, 246, 0.2); }
 
-        .member-list { flex: 1; overflow-y: auto; padding: 12px; }
-        .role-group { margin-bottom: 16px; }
-        .role-title { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
-        .user-block { padding: 4px 8px; border-radius: 6px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 8px; }
-        .user-block:hover { background: rgba(255,255,255,0.05); }
-        .user-nickname { font-size: 13px; font-weight: 500; }
-
-        /* ЧАТ */
-        .chat-container { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); }
-        .chat-header { height: 56px; padding: 0 16px; display: flex; align-items: center; border-bottom: 1px solid #27272a; gap: 10px; }
+        /* ЧАТ (ЦЕНТР) */
+        .chat-container { flex: 1; display: flex; flex-direction: column; background: var(--bg-main); min-width: 0; }
+        .chat-header { height: 56px; padding: 0 16px; display: flex; align-items: center; border-bottom: 1px solid #27272a; justify-content: space-between; }
         .messages { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
         
-        .msg-bubble { background: #1c1d21; padding: 10px 14px; border-radius: 4px 12px 12px 12px; max-width: 85%; position: relative; border-left: 2px solid transparent; animation: fadeIn 0.3s ease; }
+        .msg-bubble { background: #1c1d21; padding: 10px 14px; border-radius: 4px 12px 12px 12px; max-width: 85%; position: relative; border-left: 2px solid transparent; animation: fadeIn 0.2s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .msg-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: flex; justify-content: space-between; }
+        .msg-meta { font-size: 11px; color: var(--text-muted); margin-bottom: 4px; display: flex; gap: 8px; }
         .ping { background: var(--ping); border-left: 2px solid #f59e0b !important; color: #fbbf24; }
-        
+
         /* ИНПУТ */
         .input-area { padding: 16px; border-top: 1px solid #27272a; }
         .input-wrap { background: #09090a; border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; border: 1px solid #27272a; }
         input { background: transparent; border: none; color: white; flex: 1; outline: none; font-size: 14px; }
-        .typing-indicator { font-size: 11px; color: var(--text-muted); height: 14px; margin-bottom: 4px; padding-left: 4px; display: none; }
 
-        /* НАСТРОЙКИ (МОДАЛКА) */
-        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; padding: 20px; }
-        .modal-content { background: var(--bg-sidebar); border-radius: 12px; width: 100%; max-width: 400px; padding: 24px; border: 1px solid #27272a; }
-
-        .owner-t { color: var(--role-owner); text-shadow: 0 0 2px #fff; }
-        .admin-t { color: var(--role-admin); }
-        .mod-t { color: var(--role-mod); }
-        .mem-t { color: var(--role-member); }
-        .bot-t { color: var(--role-bot); }
+        /* ПРАВАЯ ПАНЕЛЬ (УЧАСТНИКИ) */
+        .sidebar-right { width: 220px; background: var(--bg-sidebar); border-left: 1px solid #27272a; display: flex; flex-direction: column; flex-shrink: 0; }
+        .sidebar-header { padding: 16px; font-size: 14px; font-weight: 700; border-bottom: 1px solid #27272a; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); }
+        .member-list { flex: 1; overflow-y: auto; padding: 12px; }
+        .role-group { margin-bottom: 16px; }
+        .role-title { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
         
-        .bot-badge { background: var(--role-bot); font-size: 9px; padding: 1px 4px; border-radius: 3px; color: white; vertical-align: middle; }
+        .user-block { padding: 6px; border-radius: 4px; display: flex; align-items: center; gap: 10px; margin-bottom: 4px; cursor: pointer; }
+        .user-block:hover { background: rgba(255,255,255,0.05); }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; }
+
+        /* ЦВЕТА РОЛЕЙ */
+        .owner-t { color: #000000; text-shadow: 0 0 8px rgba(255,255,255,0.3); font-weight: 800; }
+        .admin-t { color: var(--role-admin); }
+        .bot-t { color: #3b82f6; }
+        .mem-t { color: var(--role-member); }
+
+        /* ЭКРАН БАНА */
+        #banScreen { display:none; position:fixed; inset:0; background:black; z-index:9999; flex-direction:column; align-items:center; justify-content:center; }
+        
+        .typing-indicator { font-size: 11px; color: var(--text-muted); padding: 4px 16px; display: none; }
     </style>
 </head>
 <body>
 
-<div class="server-rail">
-    <div class="tc-logo">TC</div>
-    <div style="width: 30px; height: 1px; background: #27272a;"></div>
-    <i class="fa-solid fa-moon" style="color: #52525b; cursor: pointer;"></i>
+<div id="banScreen">
+    <i class="fa-solid fa-gavel" style="font-size: 50px; color: red;"></i>
+    <h1 style="color: white;">ДОСТУП ОГРАНИЧЕН</h1>
+    <p id="banText" style="color: gray;"></p>
 </div>
 
-<div class="sidebar">
-    <div class="sidebar-header" onclick="openSettings()">
-        <span>Telecord</span>
-        <i class="fa-solid fa-gear" id="settingsIcon" style="display:none;"></i>
-    </div>
-    <div class="member-list">
-        <div class="role-group">
-            <div class="role-title owner-t"><i class="fa-solid fa-crown"></i> Owner</div>
-            <div class="user-block" onclick="mention('Admin_Boss')">
-                <div class="user-nickname owner-t">Admin_Boss</div>
-            </div>
-        </div>
-        <div class="role-group">
-            <div class="role-title bot-t">Bot</div>
-            <div class="user-block">
-                <div class="user-nickname bot-t">Telecord Bot <span class="bot-badge">БОТ</span></div>
-            </div>
-        </div>
-        <div class="role-group">
-            <div class="role-title admin-t">Admin</div>
-            <div class="user-block" onclick="mention('Alex_Admin')">
-                <div class="user-nickname admin-t">Alex_Admin</div>
-            </div>
-        </div>
-        <div class="role-group">
-            <div class="role-title mem-t">Member</div>
-            <div class="user-block">
-                <div class="user-nickname mem-t" id="currentUserName">User</div>
-            </div>
-        </div>
-    </div>
-    
-    <div style="padding: 12px; background: #09090b; border-top: 1px solid #27272a; display: flex; align-items: center; gap: 10px;">
-        <div style="width: 32px; height: 32px; border-radius: 6px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: bold;" id="userInitial">?</div>
-        <div style="flex: 1;">
-            <div id="meName" style="font-size: 13px; font-weight: 700;">Loading...</div>
-            <div style="font-size: 10px; color: #22c55e;">Online</div>
-        </div>
-    </div>
+<div class="server-rail">
+    <div class="tc-logo">TC</div>
 </div>
 
 <div class="chat-container">
     <div class="chat-header">
-        <i class="fa-solid fa-hashtag" style="color: var(--text-muted);"></i>
-        <span style="font-weight: 700;">общее_обсуждение</span>
+        <div><i class="fa-solid fa-hashtag"></i> <b>общее_обсуждение</b></div>
+        <i class="fa-solid fa-gear" id="settingsIcon" style="cursor:pointer; display:none;" onclick="alert('Настройки Owner открыты')"></i>
     </div>
     <div class="messages" id="chat">
         <div class="msg-bubble" style="border-left-color: var(--accent)">
-            <div class="msg-meta">System • 00:01</div>
-            <div>Markdown поддерживается: **жирный**, *курсив*. Используй `/` для команд.</div>
+            <div class="msg-meta">System • 12:00</div>
+            <div>Telecord запущен. Добро пожаловать, **Овнер**.</div>
         </div>
     </div>
     <div class="typing-indicator" id="typing">Кто-то печатает...</div>
     <div class="input-area">
         <div class="input-wrap">
-            <i class="fa-solid fa-face-smile" style="color: #52525b; cursor: pointer;"></i>
-            <input type="text" id="msgInput" placeholder="Написать сообщение или /help...">
+            <input type="text" id="msgInput" placeholder="Напишите сообщение...">
             <i class="fa-solid fa-paper-plane" style="color: var(--accent); cursor: pointer;" onclick="send()"></i>
         </div>
     </div>
 </div>
 
-<div class="modal" id="settingsModal" onclick="this.style.display='none'">
-    <div class="modal-content" onclick="event.stopPropagation()">
-        <h2 style="margin-top: 0;">Настройки Telecord</h2>
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-            <div style="display: flex; justify-content: space-between;">
-                <span>Приватный режим</span>
-                <input type="checkbox" checked>
+<div class="sidebar-right">
+    <div class="sidebar-header">Участники</div>
+    <div class="member-list">
+        <div class="role-group">
+            <div class="role-title owner-t">Owner — 1</div>
+            <div class="user-block" onclick="mention('Owner')">
+                <div class="status-dot"></div>
+                <div class="user-nickname owner-t" id="ownerDisplay">Owner</div>
             </div>
-            <div style="display: flex; justify-content: space-between;">
-                <span>Уведомления ботом</span>
-                <input type="checkbox" checked>
+        </div>
+
+        <div class="role-group">
+            <div class="role-title bot-t">Bot — 1</div>
+            <div class="user-block">
+                <div class="status-dot" style="background: #3b82f6;"></div>
+                <div class="user-nickname bot-t">Telecord Bot <span style="background:#1e3a8a; font-size:8px; padding:2px; border-radius:3px; color:white;">БОТ</span></div>
             </div>
-            <button style="background: #ef4444; color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer;">Очистить все логи</button>
+        </div>
+
+        <div class="role-group">
+            <div class="role-title mem-t">Member</div>
+            <div id="memberContainer">
+                </div>
         </div>
     </div>
 </div>
@@ -150,32 +120,31 @@
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
+    
     const chat = document.getElementById('chat');
     const input = document.getElementById('msgInput');
-    const user = tg.initDataUnsafe?.user || { first_name: "Owner_Dev", id: 123 };
-
-    // Проверка на Овнера (для теста считаем тебя овнером)
+    const user = tg.initDataUnsafe?.user || { first_name: "Owner", id: 0 };
+    
+    // ПРОВЕРКА: ТЫ ОВНЕР?
     const isOwner = true; 
-    if(isOwner) document.getElementById('settingsIcon').style.display = 'block';
-
-    if (user) {
-        document.getElementById('currentUserName').innerText = user.first_name;
-        document.getElementById('meName').innerText = user.first_name;
-        document.getElementById('userInitial').innerText = user.first_name[0].toUpperCase();
+    if(isOwner) {
+        document.getElementById('settingsIcon').style.display = 'block';
+        document.getElementById('ownerDisplay').innerText = user.first_name;
     }
 
-    function botReply(text, isAlert = false) {
+    let xp = 0;
+    let lvl = 1;
+
+    function botReply(text, isError = false) {
         const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
         const html = `
-            <div class="msg-bubble" style="border-left-color: var(--role-bot); background: #111318;">
+            <div class="msg-bubble" style="border-left-color: #1e3a8a; background: #0f1115;">
                 <div class="msg-meta">Telecord Bot • ${time}</div>
-                <div style="color: ${isAlert ? '#ef4444' : '#60a5fa'}">${text}</div>
+                <div style="color: ${isError ? '#ef4444' : '#60a5fa'}">${text}</div>
             </div>
         `;
         chat.insertAdjacentHTML('beforeend', html);
         chat.scrollTop = chat.scrollHeight;
-        // Звук (визуальный эффект)
-        tg.HapticFeedback.notificationOccurred('success');
     }
 
     function mention(name) {
@@ -183,8 +152,36 @@
         input.focus();
     }
 
-    function openSettings() {
-        if(isOwner) document.getElementById('settingsModal').style.display = 'flex';
+    function handleCommand(val) {
+        if(!isOwner) {
+            botReply("У вас нет прав для использования команд!", true);
+            return;
+        }
+
+        const parts = val.split(' ');
+        const cmd = parts[0].toLowerCase();
+        const target = parts[1];
+        const time = parts.slice(2).join(' ') || "бессрочно";
+
+        if (cmd === '/ban') {
+            botReply(`🔨 Игрок **${target || 'unknown'}** забанен. Срок: **${time}**`, true);
+            if(target === user.first_name || target === "@" + user.first_name) {
+                setTimeout(() => {
+                    document.getElementById('banScreen').style.display = 'flex';
+                    document.getElementById('banText').innerText = `Причина: Самоблокировка\nСрок: ${time}`;
+                }, 1000);
+            }
+        } 
+        else if (cmd === '/role') {
+            botReply(`✨ Игроку **${target}** выдана роль **${parts[2] || 'Member'}**`);
+        }
+        else if (cmd === '/help') {
+            botReply("Команды Owner:<br>/ban [ник] [время]<br>/role [ник] [роль]<br>/clear");
+        }
+        else if (cmd === '/clear') {
+            chat.innerHTML = '';
+            botReply("Чат очищен.");
+        }
     }
 
     function send() {
@@ -192,28 +189,34 @@
         if (!val) return;
 
         if (val.startsWith('/')) {
-            const [cmd, target, time] = val.split(' ');
-            if (cmd === '/ban') botReply(`🔨 **${target || 'Юзер'}** забанен на ${time || 'бессрочно'}.`, true);
-            else if (cmd === '/role') botReply(`✨ Роль игрока **${target || 'игрок'}** обновлена на ${time || 'Member'}.`);
-            else if (cmd === '/help') botReply("Команды: `/ban <nick> <time>`, `/role <nick> <role>`");
+            handleCommand(val);
             input.value = '';
             return;
         }
 
         const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        // Рендер пинга
         const isPing = val.includes('@');
-        let processedText = val.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
+        
+        // Рендер сообщения с поддержкой **жирного**
+        let text = val.replace(/\*\*(.*?)\*\*/g, '<b>$1</b>');
 
         const msg = `
             <div class="msg-bubble ${isPing ? 'ping' : ''}" style="align-self: flex-end; border-left: none; border-right: 2px solid var(--accent); background: #22232a;">
-                <div class="msg-meta" style="text-align: right;">Вы • ${time} <i class="fa-solid fa-check-double"></i></div>
-                <div>${processedText}</div>
+                <div class="msg-meta" style="text-align: right;">
+                    <span style="color:var(--accent); font-size:9px;">LVL ${lvl}</span>
+                    Вы • ${time} <i class="fa-solid fa-check-double"></i>
+                </div>
+                <div>${text}</div>
             </div>
         `;
+        
         chat.insertAdjacentHTML('beforeend', msg);
         chat.scrollTop = chat.scrollHeight;
         input.value = '';
+
+        // Опыт
+        xp += 25;
+        if(xp >= 100) { xp = 0; lvl++; botReply(`🎉 Уровень повышен! Ваш уровень: **${lvl}**`); }
     }
 
     input.addEventListener('input', () => {
@@ -222,5 +225,6 @@
 
     input.addEventListener('keypress', (e) => { if (e.key === 'Enter') send(); });
 </script>
+
 </body>
 </html>
